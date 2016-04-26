@@ -1,4 +1,3 @@
-setwd("f20160309/")
 library(dplyr)
 library(jsonlite)
 library(lubridate)
@@ -8,8 +7,11 @@ library(lubridate)
 # https://transitfeeds.com/p/mbta/91
 
 # Grab the MBTA schedule file and unpack it; note your wd should be empty when you start
-download.file("http://www.mbta.com/gtfs_archive/20160309.zip", destfile = "20160309.zip")
-unzip("20160309.zip")
+if(file.exists("20160309.zip")==FALSE) {
+  setwd("f20160309/")
+  download.file("http://www.mbta.com/gtfs_archive/20160309.zip", destfile = "20160309.zip")
+  unzip("20160309.zip")
+}
 
 # Read in the filenames, then slurp them up into a list
 fileList <- list.files(pattern=".txt")
@@ -75,12 +77,14 @@ for(j in 1:nrow(distinct_stop_pairs)) {
   to_j <- distinct_stop_pairs[j,]$next_stop
   fromStop <- paste("&from_stop=", from_j, sep="")
   toStop <- paste("&to_stop=", to_j, sep="")
+  #print(paste(fromStop, toStop))
 
 # The inner loop cycles through each week of interest.  
   for(i in 0:numWeeks) {
     fromTime <- paste("&from_datetime=", as.numeric(startTime + days(i * 7)), sep="")
     toTime <- paste("&to_datetime=", as.numeric(startTime + days(i * 7) + days(7) - minutes(1)), sep="")
     TRequest <- paste(TTravelURL, TKeyAPIDoc, TFormat, fromStop, toStop, fromTime, toTime, sep="")
+    print(TRequest)
     foo <- fromJSON(TRequest)[[1]]
 
 # Assuming we get a result back, we process it within the
@@ -96,9 +100,10 @@ for(j in 1:nrow(distinct_stop_pairs)) {
                  benchmark_travel_time_sec = as.numeric(benchmark_travel_time_sec)) %>%
           select(-route_id)
       finished_dataset <- union(finished_dataset, bar)
+    } else {
+      print(paste("Nothing returned for", fromStop, "to", toStop, "during period", fromTime, "-", toTime))
     }
-    else
-      print(paste("Nothing returned for", fromStop, "to", toStop, "during period", fromTime, "-", toTime.))
+    Sys.sleep(3) #slow down a bit
   }
 }
 
