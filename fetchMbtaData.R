@@ -7,8 +7,12 @@ library(dplyr)
 library(tidyr)
 library(readr)
 
+# We're going to pull 7 days worth of data, one pair of stations at a time.
+# So, first we need all the stations paired up along the routes.
 
 
+
+# We'll also want dwell times to identify trains just passing through.
 
 
 
