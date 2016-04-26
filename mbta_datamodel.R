@@ -1,14 +1,13 @@
-setwd("/home/sconnor/Documents/Classes/CSCI E-107/final project/")
+setwd("f20160309/")
 library(dplyr)
 library(jsonlite)
 library(lubridate)
 #library(tidyr)
-#library(readr)
 
 # https://developers.google.com/transit/gtfs/reference#feed-files
 # https://transitfeeds.com/p/mbta/91
 
-# Grab the MBTA schedule file and unpack it; note your wb should be empty when you start
+# Grab the MBTA schedule file and unpack it; note your wd should be empty when you start
 download.file("http://www.mbta.com/gtfs_archive/20160309.zip", destfile = "20160309.zip")
 unzip("20160309.zip")
 
@@ -16,7 +15,6 @@ unzip("20160309.zip")
 fileList <- list.files(pattern=".txt")
 fileList <- fileList[!fileList %in% c('feed_info.txt')]
 f20160309 <- sapply(fileList, read.csv)
-
 
 #create objects for just the data frames we want; this is just a convenience.
 stops <- f20160309$stops.txt
@@ -99,6 +97,8 @@ for(j in 1:nrow(distinct_stop_pairs)) {
           select(-route_id)
       finished_dataset <- union(finished_dataset, bar)
     }
+    else
+      print(paste("Nothing returned for", fromStop, "to", toStop, "during period", fromTime, "-", toTime.))
   }
 }
 
