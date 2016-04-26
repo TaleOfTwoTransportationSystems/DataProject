@@ -11,16 +11,15 @@ library(lubridate)
 
 TKeyJeff <- ""
 TKeyAPIDoc <- "?api_key=wX9NwuHnZU2ToO7GmGR9uw"
-#http://realtime.mbta.com/developer/api/v2/stopsbyroute?api_key=wX9NwuHnZU2ToO7GmGR9uw&route=Red&format=json
 TRouteURL <- "http://realtime.mbta.com/developer/api/v2/stopsbyroute"
 TTravelURL <- "http://realtime.mbta.com/developer/api/v2.1/traveltimes"
 TFormat <- "&format=json"
-TRoutes <- c("Red", "Green", "Orange", "Blue")
 startTime <- as.POSIXct("2016-01-25 04:00:00")
 
 # We're going to pull 7 days worth of data, one pair of stations at a time.
 # So, first we need all the stations paired up along the routes.
 RedLineRoute <- fromJSON(paste(TRouteURL, TKeyAPIDoc, TFormat, "&route=Red", sep=""))[[1]]
+OrangeLineRoute <- fromJSON(paste(TRouteURL, TKeyAPIDoc, TFormat, "&route=Orange", sep=""))[[1]]
 
 fromStop <- paste("&from_stop=", 70063, sep="")
 toStop <- paste("&to_stop=", 70069, sep="")
