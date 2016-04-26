@@ -25,6 +25,7 @@ GreenDLineRoute <- fromJSON(paste(TRouteURL, TKeyAPIDoc, TFormat, "&route=Green-
 GreenELineRoute <- fromJSON(paste(TRouteURL, TKeyAPIDoc, TFormat, "&route=Green-E", sep=""))[[1]]
 BlueLineRoute <- fromJSON(paste(TRouteURL, TKeyAPIDoc, TFormat, "&route=Blue", sep=""))[[1]]
 OrangeLineRoute <- fromJSON(paste(TRouteURL, TKeyAPIDoc, TFormat, "&route=Orange", sep=""))[[1]]
+MattapanLineRoute <- fromJSON(paste(TRouteURL, TKeyAPIDoc, TFormat, "&route=Mattapan", sep=""))[[1]]
 
 fromStop <- paste("&from_stop=", 70063, sep="")
 toStop <- paste("&to_stop=", 70069, sep="")
@@ -42,6 +43,3 @@ for(i in 0:numWeeks) {
 # We'll also want dwell times to identify trains just passing through.
 
 
-
-# epoch time
-# https://stackoverflow.com/questions/13456241/convert-unix-epoch-to-date-object-in-r
