@@ -8,7 +8,7 @@ library(lubridate)
 
 # Grab the MBTA schedule file and unpack it; note your wd should be empty when you start
 if(file.exists("20160309.zip")==FALSE) {
-  setwd("f20160309/")
+  setwd("f20160309/") #set your working directory here -- or create this folder in the project folder
   download.file("http://www.mbta.com/gtfs_archive/20160309.zip", destfile = "20160309.zip")
   unzip("20160309.zip")
 }
@@ -47,17 +47,6 @@ TRouteURL <- "http://realtime.mbta.com/developer/api/v2/stopsbyroute"
 TTravelURL <- "http://realtime.mbta.com/developer/api/v2.1/traveltimes"
 TFormat <- "&format=json"
 startTime <- as.POSIXct("2016-01-25 04:00:00")
-
-# We're going to pull 7 days worth of data, one pair of stations at a time.
-# So, first we need all the stations paired up along the routes.
-#RedLineRoute <- fromJSON(paste(TRouteURL, TKeyAPIDoc, TFormat, "&route=Red", sep=""))[[1]]
-#GreenBLineRoute <- fromJSON(paste(TRouteURL, TKeyAPIDoc, TFormat, "&route=Green-B", sep=""))[[1]]
-#GreenCLineRoute <- fromJSON(paste(TRouteURL, TKeyAPIDoc, TFormat, "&route=Green-C", sep=""))[[1]]
-#GreenDLineRoute <- fromJSON(paste(TRouteURL, TKeyAPIDoc, TFormat, "&route=Green-D", sep=""))[[1]]
-#GreenELineRoute <- fromJSON(paste(TRouteURL, TKeyAPIDoc, TFormat, "&route=Green-E", sep=""))[[1]]
-#BlueLineRoute <- fromJSON(paste(TRouteURL, TKeyAPIDoc, TFormat, "&route=Blue", sep=""))[[1]]
-#OrangeLineRoute <- fromJSON(paste(TRouteURL, TKeyAPIDoc, TFormat, "&route=Orange", sep=""))[[1]]
-#MattapanLineRoute <- fromJSON(paste(TRouteURL, TKeyAPIDoc, TFormat, "&route=Mattapan", sep=""))[[1]]
 
 # create a holding frame for the data; we do this outside the loops so that it will persist.
 finished_dataset <- data.frame(direction=character(),
@@ -99,12 +88,24 @@ for(j in 1:nrow(distinct_stop_pairs)) {
                  travel_time_sec = as.numeric(travel_time_sec),
                  benchmark_travel_time_sec = as.numeric(benchmark_travel_time_sec)) %>%
           select(-route_id)
-      finished_dataset <- union(finished_dataset, bar)
+      #finished_dataset <- union(finished_dataset, bar) # this results in a long list of lists
+      finished_dataset <- bind_rows(finished_dataset, bar)
     } else {
       print(paste("Nothing returned for", fromStop, "to", toStop, "during period", fromTime, "-", toTime))
     }
-    Sys.sleep(3) #slow down a bit
+    Sys.sleep(2) #slow down a bit
   }
 }
 
 plot(density(finished_dataset$travel_time_sec))
+
+# Nice list of stations for mapping, etc.
+RedLineRoute <- fromJSON(paste(TRouteURL, TKeyAPIDoc, TFormat, "&route=Red", sep=""))[[1]]
+GreenBLineRoute <- fromJSON(paste(TRouteURL, TKeyAPIDoc, TFormat, "&route=Green-B", sep=""))[[1]]
+GreenCLineRoute <- fromJSON(paste(TRouteURL, TKeyAPIDoc, TFormat, "&route=Green-C", sep=""))[[1]]
+GreenDLineRoute <- fromJSON(paste(TRouteURL, TKeyAPIDoc, TFormat, "&route=Green-D", sep=""))[[1]]
+GreenELineRoute <- fromJSON(paste(TRouteURL, TKeyAPIDoc, TFormat, "&route=Green-E", sep=""))[[1]]
+BlueLineRoute <- fromJSON(paste(TRouteURL, TKeyAPIDoc, TFormat, "&route=Blue", sep=""))[[1]]
+OrangeLineRoute <- fromJSON(paste(TRouteURL, TKeyAPIDoc, TFormat, "&route=Orange", sep=""))[[1]]
+MattapanLineRoute <- fromJSON(paste(TRouteURL, TKeyAPIDoc, TFormat, "&route=Mattapan", sep=""))[[1]]
+
