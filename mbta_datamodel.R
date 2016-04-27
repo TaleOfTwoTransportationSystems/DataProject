@@ -41,8 +41,8 @@ distinct_stop_pairs$stop_id <- as.character(distinct_stop_pairs$stop_id)
 distinct_stop_pairs$next_stop <- as.character(distinct_stop_pairs$next_stop)
 
 # API information for the real-time feed
-TKeyJeff <- ""
-TKeyAPIDoc <- "?api_key=wX9NwuHnZU2ToO7GmGR9uw"
+TKeyJeff <- "?api_key=tNprgYF1K027zEIVluAkCw"
+#TKeyAPIDoc <- "?api_key=wX9NwuHnZU2ToO7GmGR9uw"
 TRouteURL <- "http://realtime.mbta.com/developer/api/v2/stopsbyroute"
 TTravelURL <- "http://realtime.mbta.com/developer/api/v2.1/traveltimes"
 TFormat <- "&format=json"
@@ -72,7 +72,7 @@ for(j in 1:nrow(distinct_stop_pairs)) {
   for(i in 0:numWeeks) {
     fromTime <- paste("&from_datetime=", as.numeric(startTime + days(i * 7)), sep="")
     toTime <- paste("&to_datetime=", as.numeric(startTime + days(i * 7) + days(7) - minutes(1)), sep="")
-    TRequest <- paste(TTravelURL, TKeyAPIDoc, TFormat, fromStop, toStop, fromTime, toTime, sep="")
+    TRequest <- paste(TTravelURL, TKeyJeff, TFormat, fromStop, toStop, fromTime, toTime, sep="")
     foo <- fromJSON(TRequest)[[1]]
 
 # Assuming we get a result back, we process it within the
@@ -99,12 +99,12 @@ for(j in 1:nrow(distinct_stop_pairs)) {
 plot(density(finished_dataset$travel_time_sec))
 
 # Nice list of stations for mapping, etc.
-RedLineRoute <- fromJSON(paste(TRouteURL, TKeyAPIDoc, TFormat, "&route=Red", sep=""))[[1]]
-GreenBLineRoute <- fromJSON(paste(TRouteURL, TKeyAPIDoc, TFormat, "&route=Green-B", sep=""))[[1]]
-GreenCLineRoute <- fromJSON(paste(TRouteURL, TKeyAPIDoc, TFormat, "&route=Green-C", sep=""))[[1]]
-GreenDLineRoute <- fromJSON(paste(TRouteURL, TKeyAPIDoc, TFormat, "&route=Green-D", sep=""))[[1]]
-GreenELineRoute <- fromJSON(paste(TRouteURL, TKeyAPIDoc, TFormat, "&route=Green-E", sep=""))[[1]]
-BlueLineRoute <- fromJSON(paste(TRouteURL, TKeyAPIDoc, TFormat, "&route=Blue", sep=""))[[1]]
-OrangeLineRoute <- fromJSON(paste(TRouteURL, TKeyAPIDoc, TFormat, "&route=Orange", sep=""))[[1]]
-MattapanLineRoute <- fromJSON(paste(TRouteURL, TKeyAPIDoc, TFormat, "&route=Mattapan", sep=""))[[1]]
+RedLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Red", sep=""))[[1]]
+GreenBLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-B", sep=""))[[1]]
+GreenCLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-C", sep=""))[[1]]
+GreenDLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-D", sep=""))[[1]]
+GreenELineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-E", sep=""))[[1]]
+BlueLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Blue", sep=""))[[1]]
+OrangeLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Orange", sep=""))[[1]]
+MattapanLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Mattapan", sep=""))[[1]]
 
