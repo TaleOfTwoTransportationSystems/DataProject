@@ -117,7 +117,7 @@ write.csv(finished_dataset, "train_travel_times.csv")
 names(finished_dataset)[1] <- "index"
 
 # splitting date & time
-# (note, we may want to shift the times ahead four hours so we don't need to deal with trains that tavel after midnight)
+# (note, we may want to shift the times ahead four hours so we don't need to deal with trains that travel after midnight)
 finished_dataset <- mutate(finished_dataset, dep_d=as.Date(dep_dt), 
                                              dep_t=format(as.POSIXct(dep_dt), format="%H:%M:%S"), 
                                              arr_d=as.Date(arr_dt), 
@@ -134,4 +134,21 @@ finished_dataset <- bind_rows(RedLineRoute$stop[1][[1]], RedLineRoute$stop[2][[1
                     rename(from_stop = stop_id, from_name = parent_station_name, from_lat = stop_lat, from_lon = stop_lon) %>% 
                     inner_join(finished_dataset, by="from_stop")
 finished_dataset <- arrange(finished_dataset, direction, dep_dt)
+
+
+# Get schedule data:
+# Tarchive_calDates <- read_csv("~/Google Drive/CSCIe107/MBTA/20160309/calendar_dates.txt")
+# Tarchive_cal <- read_csv("~/Google Drive/CSCIe107/MBTA/20160309/calendar.txt")
+# Tarchive_stopTimes <- read.csv("~/Google Drive/CSCIe107/MBTA/20160309/stop_times.txt")
+# Tarchive_stops <- read_csv("~/Google Drive/CSCIe107/MBTA/20160309/stops.txt")
+# Tarchive_trips <- read.csv("~/Google Drive/CSCIe107/MBTA/20160309/trips.txt")
+
+# stop_times.txt has the stops & times, but not dates
+# use trip_id (in stop_times) to look up service_id in trips.txt
+# then use service_id to look up date in calendar_dates.txt
+#
+# actually, we probably need to work in the other direction;
+# for a date in the finished_dataset, find matching date ranges in calendar_dates.txt
+# for matching date ranges, take the corresponding service_ids
+# then in trips, get corresonding trip_ids
 
