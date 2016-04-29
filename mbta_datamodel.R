@@ -110,3 +110,28 @@ for(j in 1:nrow(distinct_stop_pairs)) {
 }
 
 write.csv(finished_dataset, "train_travel_times.csv")
+
+#finished_dataset <- read_csv("train_travel_times.csv") # start here if you don't want to run all the requests again
+
+# adding a name to our unnamed first column -- perhaps this should be done when we first make the table?
+names(finished_dataset)[1] <- "index"
+
+# splitting date & time
+# (note, we may want to shift the times ahead four hours so we don't need to deal with trains that tavel after midnight)
+finished_dataset <- mutate(finished_dataset, dep_d=as.Date(dep_dt), 
+                                             dep_t=format(as.POSIXct(dep_dt), format="%H:%M:%S"), 
+                                             arr_d=as.Date(arr_dt), 
+                                             arr_t=format(as.POSIXct(arr_dt), format="%H:%M:%S"))
+# adding parent_station_name, lat and lon
+finished_dataset <- bind_rows(RedLineRoute$stop[1][[1]], RedLineRoute$stop[2][[1]]) %>% 
+                    select(stop_id, parent_station_name, stop_lat, stop_lon) %>% 
+                    mutate(stop_id=as.integer(stop_id)) %>% 
+                    rename(to_stop = stop_id, to_name = parent_station_name, to_lat = stop_lat, to_lon = stop_lon) %>% 
+                    inner_join(finished_dataset, by="to_stop")
+finished_dataset <- bind_rows(RedLineRoute$stop[1][[1]], RedLineRoute$stop[2][[1]]) %>% 
+                    select(stop_id, parent_station_name, stop_lat, stop_lon) %>% 
+                    mutate(stop_id=as.integer(stop_id)) %>% 
+                    rename(from_stop = stop_id, from_name = parent_station_name, from_lat = stop_lat, from_lon = stop_lon) %>% 
+                    inner_join(finished_dataset, by="from_stop")
+finished_dataset <- arrange(finished_dataset, direction, dep_dt)
+
