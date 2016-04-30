@@ -1,7 +1,7 @@
 library(dplyr)
 library(jsonlite)
 library(lubridate)
-#library(tidyr)
+library(readr)
 
 # https://developers.google.com/transit/gtfs/reference#feed-files
 # https://transitfeeds.com/p/mbta/91
@@ -111,7 +111,7 @@ for(j in 1:nrow(distinct_stop_pairs)) {
 
 write.csv(finished_dataset, "train_travel_times.csv")
 
-#finished_dataset <- read_csv("train_travel_times.csv") # start here if you don't want to run all the requests again
+#finished_dataset <- read_csv("train_travel_times.csv") # can skip loops and load this instead
 
 # adding a name to our unnamed first column -- perhaps this should be done when we first make the table?
 names(finished_dataset)[1] <- "index"
@@ -137,14 +137,26 @@ finished_dataset <- arrange(finished_dataset, direction, dep_dt)
 
 
 # Get schedule data:
-# Tarchive_calDates <- read_csv("~/Google Drive/CSCIe107/MBTA/20160309/calendar_dates.txt")
-# Tarchive_cal <- read_csv("~/Google Drive/CSCIe107/MBTA/20160309/calendar.txt")
-# Tarchive_stopTimes <- read.csv("~/Google Drive/CSCIe107/MBTA/20160309/stop_times.txt")
-# Tarchive_stops <- read_csv("~/Google Drive/CSCIe107/MBTA/20160309/stops.txt")
-# Tarchive_trips <- read.csv("~/Google Drive/CSCIe107/MBTA/20160309/trips.txt")
+Tarchive_cal <- read_csv("~/Google Drive/CSCIe107/MBTA/20151211/calendar.txt")
+Tarchive_trips <- read.csv("~/Google Drive/CSCIe107/MBTA/20151211/trips.txt")
+Tarchive_stopTimes <- read.csv("~/Google Drive/CSCIe107/MBTA/20151211/stop_times.txt")
+#Tarchive_calDates <- read_csv("~/Google Drive/CSCIe107/MBTA/20151211/calendar_dates.txt")
+#Tarchive_stops <- read_csv("~/Google Drive/CSCIe107/MBTA/20151211/stops.txt")
 
 # for a date in the finished_dataset, find matching date ranges in calendar.txt (filtering by service_ids starting with RTL)
 # for matching date ranges, take the corresponding service_ids (will be multiple types of service per day)
 # then in trips, get corresonding trip_ids (per line, and on a per-direction basis)
 # finally, in stop_times.txt, get the arrival and departure times for the various stops for these trips.
+# why does calendar_dates.txt have more entries than calendar.txt?
 
+# OK, as a first step, let's trim back the Tarchive tables to just the subway (RTL) data:
+Tarchive_cal <- filter(Tarchive_cal, grepl("RTL", service_id))
+Tarchive_trips <- filter(Tarchive_trips, grepl("RTL", service_id))
+Tarchive_stopTimes <- filter(Tarchive_stopTimes, trip_id %in% Tarchive_trips$trip_id)
+
+# Oh, and we span 2 archives:
+Tarchive_cal2 <- read_csv("~/Google Drive/CSCIe107/MBTA/20160309/calendar.txt")
+Tarchive_trips2 <- read.csv("~/Google Drive/CSCIe107/MBTA/20160309/trips.txt")
+Tarchive_stopTimes2 <- read.csv("~/Google Drive/CSCIe107/MBTA/20160309/stop_times.txt")
+
+# Convert the dates:
