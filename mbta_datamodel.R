@@ -138,19 +138,19 @@ finished_dataset <- arrange(finished_dataset, direction, dep_dt)
 
 # Get schedule data:
 Tarchive_cal <- read_csv("~/Google Drive/CSCIe107/MBTA/20151211/calendar.txt")
+Tarchive_calDates <- read_csv("~/Google Drive/CSCIe107/MBTA/20151211/calendar_dates.txt")
 Tarchive_trips <- read.csv("~/Google Drive/CSCIe107/MBTA/20151211/trips.txt")
 Tarchive_stopTimes <- read.csv("~/Google Drive/CSCIe107/MBTA/20151211/stop_times.txt")
-#Tarchive_calDates <- read_csv("~/Google Drive/CSCIe107/MBTA/20151211/calendar_dates.txt")
 #Tarchive_stops <- read_csv("~/Google Drive/CSCIe107/MBTA/20151211/stops.txt")
 
 # for a date in the finished_dataset, find matching date ranges in calendar.txt (filtering by service_ids starting with RTL)
 # for matching date ranges, take the corresponding service_ids (will be multiple types of service per day)
 # then in trips, get corresonding trip_ids (per line, and on a per-direction basis)
 # finally, in stop_times.txt, get the arrival and departure times for the various stops for these trips.
-# why does calendar_dates.txt have more entries than calendar.txt?
 
 # OK, as a first step, let's trim back the Tarchive tables to just the subway (RTL) data:
 Tarchive_cal <- filter(Tarchive_cal, grepl("RTL", service_id))
+Tarchive_calDates <- filter(Tarchive_calDates, grepl("RTL", service_id))
 Tarchive_trips <- filter(Tarchive_trips, grepl("RTL", service_id))
 Tarchive_stopTimes <- filter(Tarchive_stopTimes, trip_id %in% Tarchive_trips$trip_id)
 
@@ -158,22 +158,27 @@ Tarchive_stopTimes <- filter(Tarchive_stopTimes, trip_id %in% Tarchive_trips$tri
 Tarchive_cal2 <- read_csv("~/Google Drive/CSCIe107/MBTA/20160309/calendar.txt")
 Tarchive_trips2 <- read.csv("~/Google Drive/CSCIe107/MBTA/20160309/trips.txt")
 Tarchive_stopTimes2 <- read.csv("~/Google Drive/CSCIe107/MBTA/20160309/stop_times.txt")
+Tarchive_calDates2 <- read_csv("~/Google Drive/CSCIe107/MBTA/20160309/calendar_dates.txt")
 
 Tarchive_cal2 <- filter(Tarchive_cal2, grepl("RTL", service_id))
+Tarchive_calDates2 <- filter(Tarchive_calDates2, grepl("RTL", service_id))
 Tarchive_trips2 <- filter(Tarchive_trips2, grepl("RTL", service_id))
 Tarchive_stopTimes2 <- filter(Tarchive_stopTimes2, trip_id %in% Tarchive_trips$trip_id)
 
 Tarchive_cal <- bind_rows(Tarchive_cal, Tarchive_cal2)
+Tarchive_calDates <- bind_rows(Tarchive_calDates, Tarchive_calDates2)
 Tarchive_trips <- bind_rows(Tarchive_trips, Tarchive_trips2)
 Tarchive_stopTimes <- bind_rows(Tarchive_stopTimes, Tarchive_stopTimes2)
 
 rm(Tarchive_cal2)
+rm(Tarchive_calDates2)
 rm(Tarchive_trips2)
 rm(Tarchive_stopTimes2)
 
 # Convert the dates:
-Tarchive_cal <- mutate(Tarchive_cal, start_date=as.Date(as.character(start_date), format="%Y%m%d", origin=), 
-                                     end_date=as.Date(as.character(end_date), format="%Y%m%d"))
+Tarchive_cal <- mutate(Tarchive_cal, start_date=as.Date(as.character(start_date), format="%Y%m%d", origin="1970-01-01"), 
+                                     end_date=as.Date(as.character(end_date), format="%Y%m%d", origin="1970-01-01"))
+Tarchive_calDates <- mutate(Tarchive_calDates, date=as.Date(as.character(date), format="%Y%m%d", origin="1970-01-01"))
 
 # Now, loop through each day between the start date and today,
 # for each day, get the relevant service_ids and,
@@ -182,21 +187,29 @@ Tarchive_cal <- mutate(Tarchive_cal, start_date=as.Date(as.character(start_date)
 for(i in 0:(as.integer(unclass(now() - startTime)))) {
     iDate <- as.Date(startTime+days(i))
     #service_ids
-    todaysServices <- filter(Tarchive_cal, start_date<=iDate & end_date>=iDate) %>%
-                      select(service_id)
-    if(wday(iDate)==1) {
-        #Sunday
-        todaysServices <- filter(todaysServices, grepl("Sunday", service_id))
-    } else if(wday(iDate)==7) {
-        #Saturday
-        todaysServices <- filter(todaysServices, grepl("Saturday", service_id))
+    if(iDate %in% Tarchive_calDates$date) {
+        #exception (holiday, etc. -- pull services from calendar_date
+        todaysServices <- filter(Tarchive_calDates, date==iDate) %>% select(service_id)
     } else {
-        todaysServices <- filter(todaysServices, grepl("Weekday", service_id))
+        #normal dat -- pull services from calendar
+        todaysServices <- filter(Tarchive_cal, start_date<=iDate & end_date>=iDate) %>%
+                          select(service_id)
+        if(wday(iDate)==1) {
+            #Sunday
+            todaysServices <- filter(todaysServices, grepl("Sunday", service_id))
+        } else if(wday(iDate)==7) {
+            #Saturday
+            todaysServices <- filter(todaysServices, grepl("Saturday", service_id))
+        } else {
+            todaysServices <- filter(todaysServices, grepl("Weekday", service_id))
+        }
     }
     
     #trip_ids
     todayTrips <- filter(Tarchive_trips, service_id %in% todaysServices$service_id) %>% filter(route_id=="Red")
-    print(nrow(todayTrips))
+    print(paste(i, "; Date: ", iDate, "; # Services: ", nrow(todaysServices), "; # Trips: ", nrow(todayTrips), sep=""))
+    # getting too many trips (and services) on some days
+    
     # stop_times
     
 }
