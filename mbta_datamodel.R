@@ -61,6 +61,7 @@ rm(matt_in, matt_out, red_north, red_south)
 distinct_stop_pairs_full <- distinct_stop_pairs
 
 
+# The following can be skipped if "train_travel_times.csv" is present in the working directory
 # create a holding frame for the data; we do this outside the loops so that it will persist.
 finished_dataset <- data.frame(direction=as.numeric(character()),
                     dep_dt=as.POSIXct(character()), 
@@ -111,13 +112,17 @@ for(j in 1:nrow(distinct_stop_pairs)) {
 
 write.csv(finished_dataset, "train_travel_times.csv")
 
-#finished_dataset <- read_csv("train_travel_times.csv") # can skip loops and load this instead
 
-# adding a name to our unnamed first column -- perhaps this should be done when we first make the table?
-names(finished_dataset)[1] <- "index"
+# if the dataset is not in the environment, load it from the CSV saved above:
+if(length(ls(pattern="finished_dataset")) == 0) {
+    finished_dataset <- read_csv("train_travel_times.csv") # can skip MBTA queries and load this instead
+    names(finished_dataset)[1] <- "index" # adding a name to our unnamed first column -- this gets added by read_csv
+}
 
+ 
 # splitting date & time
-# (note, we may want to shift the times ahead four hours so we don't need to deal with trains that travel after midnight)
+# (Note, we may want to shift the times ahead four hours so we don't need to deal with trains that travel after midnight.
+# Or not, since the GTFS supports this with times greater than 24:00:00.)
 finished_dataset <- mutate(finished_dataset, dep_d=as.Date(dep_dt), 
                                              dep_t=format(as.POSIXct(dep_dt), format="%H:%M:%S"), 
                                              arr_d=as.Date(arr_dt), 
@@ -136,6 +141,7 @@ finished_dataset <- bind_rows(RedLineRoute$stop[1][[1]], RedLineRoute$stop[2][[1
 finished_dataset <- arrange(finished_dataset, direction, dep_dt)
 
 
+# The following can be skipped if "schedule_times.csv.gz" is present in the working directory
 # Get schedule data:
 Tarchive_cal <- read_csv("~/Google Drive/CSCIe107/MBTA/20151211/calendar.txt") %>% mutate(zip_file="20151211")
 Tarchive_calDates <- read_csv("~/Google Drive/CSCIe107/MBTA/20151211/calendar_dates.txt")
@@ -181,6 +187,7 @@ Tarchive_calDates <- mutate(Tarchive_calDates, date=as.Date(as.character(date), 
 # for each day, get the relevant service_ids and,
 # find the corresponding trip_ids, then
 # pull all the corresponding train arrival and departure times
+schedule_dataset <- data.frame()
 for(i in 0:(as.integer(unclass(now() - startTime)))) {
     iDate <- as.Date(startTime+days(i))
     
@@ -217,12 +224,30 @@ for(i in 0:(as.integer(unclass(now() - startTime)))) {
     }
         
     #trip_ids
-    todayTrips <- filter(Tarchive_trips, service_id %in% todaysServices$service_id) %>% 
+    todaysTrips <- filter(Tarchive_trips, service_id %in% todaysServices$service_id) %>% 
                   filter(route_id=="Red") %>% 
                   distinct()
 #     print(paste(i, "; Date: ", iDate, "; # Services: ", nrow(todaysServices), "; # Trips: ", nrow(todayTrips), 
 #                 "; Exception = ", (iDate %in% Tarchive_calDates$date), sep=""))
 
     #stop_times
-    #convert times
+    todaysStops <- filter(Tarchive_stopTimes, trip_id %in% todaysTrips$trip_id) %>% 
+                   mutate(arrival_date=iDate, departure_date=iDate)
+    
+    schedule_dataset <- bind_rows(schedule_dataset, todaysStops)
 }
+
+write.csv(schedule_dataset, "schedule_times.csv")
+rm(list=ls(pattern="Tarchive"))
+rm(list=ls(pattern="todays"))
+
+
+# if the dataset is not in the environment, load it from the CSV saved above:
+if(length(ls(pattern="schedule_dataset")) == 0) {
+    schedule_dataset <- read_csv("schedule_times.csv.gz") # can skip archive CSVs and load this instead
+    names(schedule_dataset)[1] <- "index" # adding a name to our unnamed first column -- this gets added by read_csv
+}
+
+
+#https://stackoverflow.com/questions/28753444/how-to-create-an-interactive-plot-of-gtfs-data-in-r-using-leaflet
+
