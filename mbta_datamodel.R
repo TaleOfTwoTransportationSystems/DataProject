@@ -143,11 +143,6 @@ Tarchive_trips <- read.csv("~/Google Drive/CSCIe107/MBTA/20151211/trips.txt")
 Tarchive_stopTimes <- read.csv("~/Google Drive/CSCIe107/MBTA/20151211/stop_times.txt")
 #Tarchive_stops <- read_csv("~/Google Drive/CSCIe107/MBTA/20151211/stops.txt")
 
-# for a date in the finished_dataset, find matching date ranges in calendar.txt (filtering by service_ids starting with RTL)
-# for matching date ranges, take the corresponding service_ids (will be multiple types of service per day)
-# then in trips, get corresonding trip_ids (per line, and on a per-direction basis)
-# finally, in stop_times.txt, get the arrival and departure times for the various stops for these trips.
-
 # OK, as a first step, let's trim back the Tarchive tables to just the subway (RTL) data:
 Tarchive_cal <- filter(Tarchive_cal, grepl("RTL", service_id))
 Tarchive_calDates <- filter(Tarchive_calDates, grepl("RTL", service_id)) # exception_type; 1=added; 2=removed
@@ -160,11 +155,13 @@ Tarchive_calDates2 <- read_csv("~/Google Drive/CSCIe107/MBTA/20160309/calendar_d
 Tarchive_trips2 <- read.csv("~/Google Drive/CSCIe107/MBTA/20160309/trips.txt")
 Tarchive_stopTimes2 <- read.csv("~/Google Drive/CSCIe107/MBTA/20160309/stop_times.txt")
 
+# trim2 -- dealing with multiple archive files really cries out for a function here, doesn't it
 Tarchive_cal2 <- filter(Tarchive_cal2, grepl("RTL", service_id))
 Tarchive_calDates2 <- filter(Tarchive_calDates2, grepl("RTL", service_id)) # exception_type; 1=added; 2=removed
 Tarchive_trips2 <- filter(Tarchive_trips2, grepl("RTL", service_id))
 Tarchive_stopTimes2 <- filter(Tarchive_stopTimes2, trip_id %in% Tarchive_trips$trip_id)
 
+# combine our archives
 Tarchive_cal <- bind_rows(Tarchive_cal, Tarchive_cal2)
 Tarchive_calDates <- bind_rows(Tarchive_calDates, Tarchive_calDates2)
 Tarchive_trips <- bind_rows(Tarchive_trips, Tarchive_trips2)
@@ -186,6 +183,7 @@ Tarchive_calDates <- mutate(Tarchive_calDates, date=as.Date(as.character(date), 
 # pull all the corresponding train arrival and departure times
 for(i in 0:(as.integer(unclass(now() - startTime)))) {
     iDate <- as.Date(startTime+days(i))
+    
     #service_ids
     todaysServices <- filter(Tarchive_cal, start_date<=iDate & end_date>=iDate) %>%
         select(service_id) %>%
@@ -225,6 +223,6 @@ for(i in 0:(as.integer(unclass(now() - startTime)))) {
 #     print(paste(i, "; Date: ", iDate, "; # Services: ", nrow(todaysServices), "; # Trips: ", nrow(todayTrips), 
 #                 "; Exception = ", (iDate %in% Tarchive_calDates$date), sep=""))
 
-    # stop_times
-    
+    #stop_times
+    #convert times
 }
