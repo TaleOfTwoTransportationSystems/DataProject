@@ -137,7 +137,7 @@ finished_dataset <- arrange(finished_dataset, direction, dep_dt)
 
 
 # Get schedule data:
-Tarchive_cal <- read_csv("~/Google Drive/CSCIe107/MBTA/20151211/calendar.txt")
+Tarchive_cal <- read_csv("~/Google Drive/CSCIe107/MBTA/20151211/calendar.txt") %>% mutate(zip_file="20151211")
 Tarchive_calDates <- read_csv("~/Google Drive/CSCIe107/MBTA/20151211/calendar_dates.txt")
 Tarchive_trips <- read.csv("~/Google Drive/CSCIe107/MBTA/20151211/trips.txt")
 Tarchive_stopTimes <- read.csv("~/Google Drive/CSCIe107/MBTA/20151211/stop_times.txt")
@@ -150,18 +150,18 @@ Tarchive_stopTimes <- read.csv("~/Google Drive/CSCIe107/MBTA/20151211/stop_times
 
 # OK, as a first step, let's trim back the Tarchive tables to just the subway (RTL) data:
 Tarchive_cal <- filter(Tarchive_cal, grepl("RTL", service_id))
-Tarchive_calDates <- filter(Tarchive_calDates, grepl("RTL", service_id))
+Tarchive_calDates <- filter(Tarchive_calDates, grepl("RTL", service_id)) # exception_type; 1=added; 2=removed
 Tarchive_trips <- filter(Tarchive_trips, grepl("RTL", service_id))
 Tarchive_stopTimes <- filter(Tarchive_stopTimes, trip_id %in% Tarchive_trips$trip_id)
 
 # Oh, and we span 2 archives:
-Tarchive_cal2 <- read_csv("~/Google Drive/CSCIe107/MBTA/20160309/calendar.txt")
+Tarchive_cal2 <- read_csv("~/Google Drive/CSCIe107/MBTA/20160309/calendar.txt") %>% mutate(zip_file="20160309")
+Tarchive_calDates2 <- read_csv("~/Google Drive/CSCIe107/MBTA/20160309/calendar_dates.txt")
 Tarchive_trips2 <- read.csv("~/Google Drive/CSCIe107/MBTA/20160309/trips.txt")
 Tarchive_stopTimes2 <- read.csv("~/Google Drive/CSCIe107/MBTA/20160309/stop_times.txt")
-Tarchive_calDates2 <- read_csv("~/Google Drive/CSCIe107/MBTA/20160309/calendar_dates.txt")
 
 Tarchive_cal2 <- filter(Tarchive_cal2, grepl("RTL", service_id))
-Tarchive_calDates2 <- filter(Tarchive_calDates2, grepl("RTL", service_id))
+Tarchive_calDates2 <- filter(Tarchive_calDates2, grepl("RTL", service_id)) # exception_type; 1=added; 2=removed
 Tarchive_trips2 <- filter(Tarchive_trips2, grepl("RTL", service_id))
 Tarchive_stopTimes2 <- filter(Tarchive_stopTimes2, trip_id %in% Tarchive_trips$trip_id)
 
@@ -187,29 +187,44 @@ Tarchive_calDates <- mutate(Tarchive_calDates, date=as.Date(as.character(date), 
 for(i in 0:(as.integer(unclass(now() - startTime)))) {
     iDate <- as.Date(startTime+days(i))
     #service_ids
+    todaysServices <- filter(Tarchive_cal, start_date<=iDate & end_date>=iDate) %>%
+        select(service_id) %>%
+        distinct()
+
+    #remove exceptions
     if(iDate %in% Tarchive_calDates$date) {
-        #exception (holiday, etc. -- pull services from calendar_date
-        todaysServices <- filter(Tarchive_calDates, date==iDate) %>% select(service_id)
-    } else {
-        #normal dat -- pull services from calendar
-        todaysServices <- filter(Tarchive_cal, start_date<=iDate & end_date>=iDate) %>%
-                          select(service_id)
-        if(wday(iDate)==1) {
-            #Sunday
-            todaysServices <- filter(todaysServices, grepl("Sunday", service_id))
-        } else if(wday(iDate)==7) {
-            #Saturday
-            todaysServices <- filter(todaysServices, grepl("Saturday", service_id))
-        } else {
-            todaysServices <- filter(todaysServices, grepl("Weekday", service_id))
+        servicesRemoved <- unique(filter(Tarchive_calDates, date==iDate & exception_type==2)[[1]])
+        if(length(servicesRemoved)>1) {
+            todaysServices <- filter(todaysServices, !service_id %in% servicesRemoved)
         }
     }
     
+    #remove remaining regularly scheduled services that don't match this day of the week
+    if(wday(iDate)==1) {
+        todaysServices <- filter(todaysServices, grepl("Sunday", service_id))
+    } else if(wday(iDate)==7) {
+        todaysServices <- filter(todaysServices, grepl("Saturday", service_id))
+    } else {
+        todaysServices <- filter(todaysServices, grepl("Weekday", service_id))
+    }
+        
+    #add exceptions
+    if(iDate %in% Tarchive_calDates$date) {
+        servicesAdded <- filter(Tarchive_calDates, date==iDate & exception_type==1) %>% 
+                         select(service_id) %>% 
+                         distinct()
+        if(nrow(servicesAdded)>1) {
+            todaysServices <- bind_rows(todaysServices, servicesAdded)
+        }
+    }
+        
     #trip_ids
-    todayTrips <- filter(Tarchive_trips, service_id %in% todaysServices$service_id) %>% filter(route_id=="Red")
-    print(paste(i, "; Date: ", iDate, "; # Services: ", nrow(todaysServices), "; # Trips: ", nrow(todayTrips), sep=""))
-    # getting too many trips (and services) on some days
-    
+    todayTrips <- filter(Tarchive_trips, service_id %in% todaysServices$service_id) %>% 
+                  filter(route_id=="Red") %>% 
+                  distinct()
+#     print(paste(i, "; Date: ", iDate, "; # Services: ", nrow(todaysServices), "; # Trips: ", nrow(todayTrips), 
+#                 "; Exception = ", (iDate %in% Tarchive_calDates$date), sep=""))
+
     # stop_times
     
 }
