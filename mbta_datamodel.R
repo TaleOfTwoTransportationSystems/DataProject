@@ -260,17 +260,25 @@ if(length(ls(pattern="schedule_dataset")) == 0) {
 #http://rpubs.com/kateto/netviz
 #https://briatte.github.io/ggnet/
 
-RedLineSB <- RedLineRoute$stop[1][[1]]
-RedLineNB <- RedLineRoute$stop[2][[1]]
+#https://xkcd.com/1196/
 
+RedLineSB <- RedLineRoute$stop[1][[1]]
 RedLineSB <- mutate(RedLineSB, stop_lat=as.numeric(stop_lat), stop_lon=as.numeric(stop_lon))
-RedLineSB <- mutate(RedLineNB, stop_lat=as.numeric(stop_lat), stop_lon=as.numeric(stop_lon))
+
+#add latlon data to red_south for polylines
+#(this currently gets rm'ed from the environment above)
 
 Tmap <- leaflet() %>%
     addTiles() %>%
-    addMarkers(lat=RedLineSB$stop_lat,
-               lng=RedLineSB$stop_lon,
-               popup=RedLineSB$parent_station_name)
+    addCircleMarkers(data = RedLineSB,
+               lat = ~ stop_lat,
+               lng = ~ stop_lon,
+               color = "#1F1F1F",
+               weight = 3,
+               opacity = 0.9,
+               fillColor="red",
+               fillOpacity = 0.5,
+               popup = ~ parent_station_name)
 Tmap
 
 
