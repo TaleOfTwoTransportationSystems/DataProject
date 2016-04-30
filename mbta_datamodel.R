@@ -189,14 +189,14 @@ for(i in 0:(as.integer(unclass(now() - startTime)))) {
         todaysServices <- filter(todaysServices, grepl("Sunday", service_id))
     } else if(wday(iDate)==7) {
         #Saturday
-        todaysServices <- filter(todaysServices, grepl("Ssturday", service_id))
+        todaysServices <- filter(todaysServices, grepl("Saturday", service_id))
     } else {
         todaysServices <- filter(todaysServices, grepl("Weekday", service_id))
     }
     
     #trip_ids
     todayTrips <- filter(Tarchive_trips, service_id %in% todaysServices$service_id) %>% filter(route_id=="Red")
-
+    print(nrow(todayTrips))
     # stop_times
     
 }
