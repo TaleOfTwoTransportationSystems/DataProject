@@ -2,6 +2,7 @@ library(dplyr)
 library(jsonlite)
 library(lubridate)
 library(readr)
+library(leaflet)
 
 # https://developers.google.com/transit/gtfs/reference#feed-files
 # https://transitfeeds.com/p/mbta/91
@@ -249,9 +250,24 @@ if(length(ls(pattern="schedule_dataset")) == 0) {
 }
 
 
+# Map-based plotting
+#https://rstudio.github.io/leaflet/
 #http://www.r-bloggers.com/plotting-gtfs-data-with-r-2/
 #https://stackoverflow.com/questions/28753444/how-to-create-an-interactive-plot-of-gtfs-data-in-r-using-leaflet
 #https://darrkj.github.io/blog/2015/jul202015/
+
+# Network-based plotting
+#http://rpubs.com/kateto/netviz
+#https://briatte.github.io/ggnet/
+
+Tmap <- leaflet() %>%
+    addTiles() %>%
+    addMarkers(lat=as.numeric(RedLineSB$stop_lat),
+               lng=as.numeric(RedLineSB$stop_lon))
+Tmap
+
+
+
 
 
 
