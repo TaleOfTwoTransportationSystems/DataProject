@@ -172,3 +172,31 @@ rm(Tarchive_trips2)
 rm(Tarchive_stopTimes2)
 
 # Convert the dates:
+Tarchive_cal <- mutate(Tarchive_cal, start_date=as.Date(as.character(start_date), format="%Y%m%d", origin=), 
+                                     end_date=as.Date(as.character(end_date), format="%Y%m%d"))
+
+# Now, loop through each day between the start date and today,
+# for each day, get the relevant service_ids and,
+# find the corresponding trip_ids, then
+# pull all the corresponding train arrival and departure times
+for(i in 0:(as.integer(unclass(now() - startTime)))) {
+    iDate <- as.Date(startTime+days(i))
+    #service_ids
+    todaysServices <- filter(Tarchive_cal, start_date<=iDate & end_date>=iDate) %>%
+                      select(service_id)
+    if(wday(iDate)==1) {
+        #Sunday
+        todaysServices <- filter(todaysServices, grepl("Sunday", service_id))
+    } else if(wday(iDate)==7) {
+        #Saturday
+        todaysServices <- filter(todaysServices, grepl("Ssturday", service_id))
+    } else {
+        todaysServices <- filter(todaysServices, grepl("Weekday", service_id))
+    }
+    
+    #trip_ids
+    todayTrips <- filter(Tarchive_trips, service_id %in% todaysServices$service_id) %>% filter(route_id=="Red")
+
+    # stop_times
+    
+}
