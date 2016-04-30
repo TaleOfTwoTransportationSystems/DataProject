@@ -249,5 +249,9 @@ if(length(ls(pattern="schedule_dataset")) == 0) {
 }
 
 
+#http://www.r-bloggers.com/plotting-gtfs-data-with-r-2/
 #https://stackoverflow.com/questions/28753444/how-to-create-an-interactive-plot-of-gtfs-data-in-r-using-leaflet
+#https://darrkj.github.io/blog/2015/jul202015/
+
+
 
