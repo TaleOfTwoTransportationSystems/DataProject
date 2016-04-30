@@ -148,5 +148,3 @@ finished_dataset <- arrange(finished_dataset, direction, dep_dt)
 # then in trips, get corresonding trip_ids (per line, and on a per-direction basis)
 # finally, in stop_times.txt, get the arrival and departure times for the various stops for these trips.
 
-
-
