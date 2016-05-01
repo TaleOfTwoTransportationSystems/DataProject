@@ -26,6 +26,7 @@ travel_times$departing <- paste(travel_times$from_stop, travel_times$direction, 
 # demonstrate what the data looks like.
 plot(as.numeric(travel_times[travel_times$from_stop == "70065",]$dep_dt - travel_times[travel_times$from_stop == "70065",]$dt,unit = 'mins'),
      travel_times[travel_times$from_stop == "70065",]$dt,
+     main="train departures from Porter Square heading inbound",
      xlab="Minutes since midnight", ylab = "Date of Trip", pch=".")
 
 # Construct a table of wait times. This is defined as: for each stop/heading/departure,
@@ -70,19 +71,23 @@ weekday_train_gaps <- train_gaps %>%
 # Plot of times between trains by time of day, weekday Southbound
 plot(weekday_train_gaps$dep_time,
      log(weekday_train_gaps$between_trains),
+     main="times between trains by time of day, weekday Southbound",
      xlab="Hour of Day (24+ is past midnight)", ylab = "wait time (log minutes)", pch=".")
 
 # Boxplot of times between trains by station, weekday Southbound.
 boxplot(between_trains~stop_seq,
      data = weekday_train_gaps,
+     main="times between trains by station, weekday Southbound",
      xlab="Stop Sequence", ylab = "wait time (seconds)", pch=".", ylim=c(0, 2000))
 
 # density plot of times between trains by station, weekday Southbound.
 ggplot(weekday_train_gaps, aes(x=between_trains)) +
   geom_density(aes(group=stop_name, colour=stop_name, fill=stop_name), alpha=0.3) +
+  ggtitle("density plot of times between trains by station, weekday Southbound") +
   xlim(0, 3000)
 
 # And a simple plot of the densities of travel times for Northbound trains of weekdays, all times of day.
 ggplot((train_travels %>% filter(direction == 1, is_weekend == FALSE)), aes(x=travel_time_sec)) +
   geom_density(aes(group=departing, colour=departing, fill=departing), alpha=0.3) +
+  ggtitle("plot of the densities of travel times for Northbound trains of weekdays") +
   xlim(0, 200) + ylim(0, .25)
