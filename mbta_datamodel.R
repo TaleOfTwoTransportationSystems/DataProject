@@ -2,6 +2,7 @@ library(dplyr)
 library(jsonlite)
 library(lubridate)
 library(readr)
+library(tidyr)
 library(leaflet)
 
 # https://developers.google.com/transit/gtfs/reference#feed-files
@@ -262,17 +263,28 @@ if(length(ls(pattern="schedule_dataset")) == 0) {
 
 #https://xkcd.com/1196/
 
-RedLineSB <- RedLineRoute$stop[1][[1]]
-RedLineSB <- mutate(RedLineSB, stop_lat=as.numeric(stop_lat), stop_lon=as.numeric(stop_lon))
+RedSouthStops <- RedLineRoute$stop[1][[1]]
+RedSouthStops <- mutate(RedSouthStops, stop_lat=as.numeric(stop_lat), stop_lon=as.numeric(stop_lon))
 
-#add latlon data to red_south for polylines
-#(this currently gets rm'ed from the environment above)
+# Deal with the split -- the red line is the only MBTA line structured with a split
+# (The green line is explicitly split in the MBTA data.)
+Red_ASouthStops <- filter(RedSouthStops, stop_order %in% c(1, seq(10, 110, 10), seq(130, 170, 10))) #Ashmont
+Red_BSouthStops <- filter(RedSouthStops, stop_order %in% c(1, seq(10, 110, 10), 120, seq(180, 220, 10))) #Braintree
+RedStations <- filter(RedSouthStops, !duplicated(RedSouthStops$parent_station_name)) %>%
+    select(parent_station_name, stop_lat, stop_lon) %>%
+    rename(lat=stop_lat, lng=stop_lon)
+
+#for polylines
+RedSegments <- bind_cols(rename(Red_ASouthStops[1:nrow(Red_ASouthStops)-1,5:7], 
+                                north_station_name=parent_station_name, north_lat=stop_lat, north_lng=stop_lon), 
+                         rename(Red_ASouthStops[2:nrow(Red_ASouthStops),5:7], 
+                                south_station_name=parent_station_name, south_lat=stop_lat, south_lng=stop_lon)) %>%
+    mutate(segment_name=paste(north_station_name, south_station_name, sep="-"))
+#now what? The leaflet package seems to want to work with sp objects.
 
 Tmap <- leaflet() %>%
     addTiles() %>%
-    addCircleMarkers(data = RedLineSB,
-               lat = ~ stop_lat,
-               lng = ~ stop_lon,
+    addCircleMarkers(data = RedStations,
                color = "#1F1F1F",
                weight = 3,
                opacity = 0.9,
@@ -280,6 +292,5 @@ Tmap <- leaflet() %>%
                fillOpacity = 0.5,
                popup = ~ parent_station_name)
 Tmap
-
 
 
