@@ -1,0 +1,177 @@
+text,created,favoriteCount,retweetCount,arr_dt,bounded,severity,alerts_at_station_code
+Mattapan Trolley experiencing moderate delays due to a disabled train at Central Ave #mbta,2016-01-25T23:36:17Z,0,0,2016-01-25T23:36:17Z,,2,"70069_Central - Inbound, 70070_Central - Outbound"
+#RedLine experiencing minor northbound delays between North Quincy and JFK/UMass due to a signal problem. #mbta,2016-01-26T11:46:33Z,0,0,2016-01-26T11:46:33Z,northbound,0,
+Shuttle buses replacing #RedLine service North Quincy to JFK due to disabled work equipment. Customers may utilize the Commuter rai... #mbta,2016-01-28T10:08:44Z,1,2,2016-01-28T10:08:44Z,,0,
+#RedLine experiencing moderate residual delays due to earlier disabled work equipment. #mbta,2016-01-28T11:39:40Z,0,0,2016-01-28T11:39:40Z,,0,
+#RedLine experiencing moderate delays due to police action at Alewife. #mbta,2016-01-28T23:00:48Z,0,0,2016-01-28T23:00:48Z,,2,"70076_Park Street - to Alewife, 70078_Downtown Crossing - to Alewife"
+#RedLine experiencing moderate delays due to a disabled train at Charles. #mbta,2016-01-30T00:46:50Z,0,0,2016-01-30T00:46:50Z,,2,"70073_Charles/MGH - Inbound, 70074_Charles/MGH - Outbound"
+#RedLine experiencing minor delays due to a track problem at Charles/MGH. #mbta,2016-01-30T03:06:21Z,0,0,2016-01-30T03:06:21Z,,1,"70073_Charles/MGH - Inbound, 70074_Charles/MGH - Outbound"
+#RedLine experiencing moderate delays due to an earlier disabled train at Downtown Crossing. #mbta,2016-01-30T17:46:13Z,1,0,2016-01-30T17:46:13Z,,2,"70077_Downtown Crossing - to Ashmont/Braintree, 70078_Downtown Crossing - to Alewife"
+#RedLine experiencing minor southbound delays due to an earlier disabled train at Andrew Station. #mbta,2016-02-02T14:25:23Z,0,0,2016-02-02T14:25:23Z,southbound,0,70083_Andrew - Outbound
+#RedLine experiencing moderate delays due to a disabled train at Quincy Center #mbta,2016-02-02T23:21:08Z,0,0,2016-02-02T23:21:08Z,,2,"70101_Quincy Center - Outbound, 70102_Quincy Center - Inbound"
+#RedLine (Ashmont branch) experiencing minor northbound delays due to police action at Savin Hill #mbta,2016-02-03T16:43:47Z,0,0,2016-02-03T16:43:47Z,northbound,0,70088_Savin Hill - Inbound
+#RedLine experiencing minor southbound delays due to a disabled train at Porter Station. #mbta,2016-02-04T12:45:06Z,0,0,2016-02-04T12:45:06Z,southbound,0,70066_Porter - Outbound
+#RedLine experiencing moderate delays due to a disabled train at Central. #mbta,2016-02-04T21:32:24Z,0,0,2016-02-04T21:32:24Z,,2,"70069_Central - Inbound, 70070_Central - Outbound"
+#RedLine experiencing minor northbound delays due to a disabled train at JFK/UMass Station. #mbta,2016-02-05T12:25:00Z,0,0,2016-02-05T12:25:00Z,northbound,0,
+#RedLine experiencing minor northbound delays due to a disabled train at Harvard Station. #mbta,2016-02-05T16:49:08Z,0,0,2016-02-05T16:49:08Z,northbound,0,70067_Harvard - Inbound
+Shuttle buses replacing #RedLine service between Alewife and Harvard Stations in both directions due to a power problem at Harvard ... #mbta,2016-02-05T17:07:39Z,1,1,2016-02-05T17:07:39Z,northbound_and_southbound,0,"70067_Harvard - Inbound, 70068_Harvard - Outbound"
+#RedLine experiencing moderate residual delays due to an earlier power problem at Harvard Station. #mbta,2016-02-05T18:12:24Z,0,0,2016-02-05T18:12:24Z,,0,"70067_Harvard - Inbound, 70068_Harvard - Outbound"
+#RedLine experiencing moderate delays between Braintree and JFK/Umass stations due to an earlier disabled train. #mbta,2016-02-06T00:28:23Z,0,0,2016-02-06T00:28:23Z,,2,
+#RedLine (Braintree branch) experiencing moderate delays due to a signal problem at Braintree #mbta,2016-02-07T20:46:27Z,0,0,2016-02-07T20:46:27Z,,2,"70075_Park Street - to Ashmont/Braintree, 70077_Downtown Crossing - to Ashmont/Braintree, 70095_JFK/UMASS Braintree - Outbound, 70096_JFK/UMASS Braintree - Inbound"
+#RedLine experiencing minor delays between Andrew and Central. #mbta,2016-02-08T17:38:29Z,0,0,2016-02-08T17:38:29Z,,1,
+#RedLine experiencing moderate delays due to a disabled train at South Station. #mbta,2016-02-08T19:12:58Z,0,0,2016-02-08T19:12:58Z,,2,"70079_South Station - Outbound, 70080_South Station - Inbound"
+#RedLine experiencing minor delays due to a disabled train at North Quincy. #mbta,2016-02-08T20:58:13Z,0,0,2016-02-08T20:58:13Z,,1,"70097_North Quincy - Outbound, 70098_North Quincy - Inbound"
+#RedLine experiencing moderate delays due to a disabled train at JFK/Umass #mbta,2016-02-08T23:57:41Z,1,0,2016-02-08T23:57:41Z,,2,"70085_JFK/UMASS Ashmont - Outbound, 70086_JFK/UMASS Ashmont - Inbound, 70095_JFK/UMASS Braintree - Outbound, 70096_JFK/UMASS Braintree - Inbound"
+#RedLine experiencing moderate delays due to a disabled train at Central #mbta,2016-02-10T03:10:43Z,0,0,2016-02-10T03:10:43Z,,2,"70069_Central - Inbound, 70070_Central - Outbound"
+"Buses replacing Mattapan Trolley from Ashmont to Mattapan Stations in both directions from start to end of service on Saturday, Mar... #mbta",2016-02-10T18:04:13Z,0,0,2016-02-10T18:04:13Z,northbound_and_southbound,0,
+"Buses replacing #RedLine service between Alewife and Harvard Square Stations on March 26-27 as well as April 2-3, 9-10, and 23-24 f... #mbta",2016-02-10T18:18:14Z,0,0,2016-02-10T18:18:14Z,,0,
+Mattapan Trolley experiencing minor delays due to the removal of a tree near the overhead wire between Central Avenue and Valley Ro... #mbta,2016-02-10T18:35:59Z,0,0,2016-02-10T18:35:59Z,,1,
+#RedLine experiencing moderate delays due to a disabled train at Braintree Station #mbta,2016-02-10T20:14:24Z,0,0,2016-02-10T20:14:24Z,,2,"70075_Park Street - to Ashmont/Braintree, 70077_Downtown Crossing - to Ashmont/Braintree, 70095_JFK/UMASS Braintree - Outbound, 70096_JFK/UMASS Braintree - Inbound"
+#RedLine experiencing moderate delays due to police action at South Station. #mbta,2016-02-11T21:13:07Z,0,0,2016-02-11T21:13:07Z,,2,"70079_South Station - Outbound, 70080_South Station - Inbound"
+#RedLine experiencing minor northbound delays due to a signal problem near JFK/UMass Station. #mbta,2016-02-12T12:58:54Z,0,0,2016-02-12T12:58:54Z,northbound,0,
+#RedLine Braintree branch experiencing minor northbound delays due to an earlier disabled train. #mbta,2016-02-12T13:39:47Z,0,0,2016-02-12T13:39:47Z,northbound,0,
+#RedLine experiencing moderate delays in both directions. #mbta,2016-02-12T20:55:50Z,0,0,2016-02-12T20:55:50Z,northbound_and_southbound,2,
+#RedLine experiencing minor delays due to switch problem at Harvard #mbta,2016-02-13T10:36:13Z,0,0,2016-02-13T10:36:13Z,,1,"70067_Harvard - Inbound, 70068_Harvard - Outbound"
+#RedLine experiencing minor northbound delays due to an earlier disabled train #mbta,2016-02-13T20:08:57Z,0,0,2016-02-13T20:08:57Z,northbound,0,
+#RedLine experiencing moderate delays due to an earlier track problem at Andrew #mbta,2016-02-13T23:03:34Z,0,0,2016-02-13T23:03:34Z,,2,"70083_Andrew - Outbound, 70084_Andrew - Inbound"
+#RedLine experiencing moderate southbound delays due to a disabled train near JFK/UMASS #mbta,2016-02-14T01:23:08Z,0,0,2016-02-14T01:23:08Z,southbound,0,
+#RedLine experiencing moderate southbound delays due to disabled train #mbta,2016-02-14T05:15:04Z,0,0,2016-02-14T05:15:04Z,southbound,0,
+Shuttle buses replacing #RedLine service between Ashmont and JFK/UMASS northbound service due to track problem #mbta,2016-02-14T11:05:28Z,1,3,2016-02-14T11:05:28Z,northbound,0,
+#RedLine experiencing moderate delays due to a track problem at Central. #mbta,2016-02-14T12:25:44Z,1,1,2016-02-14T12:25:44Z,,2,"70069_Central - Inbound, 70070_Central - Outbound"
+Please board all trains on the southbound platform at Quincy Adams and Quincy Center stations. #mbta,2016-02-14T15:09:35Z,0,0,2016-02-14T15:09:35Z,southbound,0,
+#RedLine (Braintree branch) experiencing minor northbound delays due to a disabled train near Quincy Adams Station. #mbta,2016-02-15T13:18:44Z,1,0,2016-02-15T13:18:44Z,northbound,0,
+#RedLine Braintree branch experiencing minor northbound delays due to a disabled train at Quincy Adams #mbta,2016-02-16T03:15:00Z,0,0,2016-02-16T03:15:00Z,northbound,0,70104_Quincy Adams - Inbound
+#RedLine experiencing moderate northbound delays due to medical emergency #mbta,2016-02-17T03:42:15Z,0,0,2016-02-17T03:42:15Z,northbound,0,
+"Braintree Garage construction beginning Monday, February 22, 2016, through August 2016, causing diminished parking availability. #mbta",2016-02-17T13:22:41Z,0,0,2016-02-17T13:22:41Z,,0,
+#RedLine experiencing minor northbound delays due to a disabled train near South Station. #mbta,2016-02-18T13:03:54Z,0,1,2016-02-18T13:03:54Z,northbound,0,
+#RedLine experiencing minor delays due to a disabled train at Park Street. #mbta,2016-02-18T23:03:13Z,0,0,2016-02-18T23:03:13Z,,1,"70075_Park Street - to Ashmont/Braintree, 70076_Park Street - to Alewife"
+#RedLine experiencing moderate delays due to a disabled train at Kendall. #mbta,2016-02-18T23:50:21Z,0,0,2016-02-18T23:50:21Z,,2,"70071_Kendall/MIT - Inbound, 70072_Kendall/MIT - Outbound"
+#RedLine experiencing minor northbound delays due to a disabled train near Davis Station. #mbta,2016-02-19T16:13:31Z,0,0,2016-02-19T16:13:31Z,northbound,0,
+#RedLine experiencing minor delays due to an earlier disabled train at Andrew Station. #mbta,2016-02-22T13:17:45Z,0,0,2016-02-22T13:17:45Z,,1,"70083_Andrew - Outbound, 70084_Andrew - Inbound"
+#RedLine (Ashmont branch) experiencing minor delays due to a signal problem at Shawmut Station #mbta,2016-02-22T13:56:17Z,0,0,2016-02-22T13:56:17Z,,1,"70091_Shawmut - Outbound, 70092_Shawmut - Inbound"
+#RedLine experiencing minor southbound delays due to a medical emergency at Charles/MGH #mbta,2016-02-22T22:18:15Z,0,0,2016-02-22T22:18:15Z,southbound,0,"70073_Charles/MGH - Inbound, 70074_Charles/MGH - Outbound"
+#RedLine experiencing minor delays due to a signal problem between Kendall/MIT and Charles/MGH #mbta,2016-02-24T13:56:07Z,0,0,2016-02-24T13:56:07Z,,1,
+#RedLine experiencing minor southbound delays due to switch problem in the JFK area. #mbta,2016-02-24T15:00:51Z,0,0,2016-02-24T15:00:51Z,southbound,0,
+#RedLine experiencing moderate delays due to a signal problem at Alewife #mbta,2016-02-24T20:35:17Z,0,0,2016-02-24T20:35:17Z,,2,"70076_Park Street - to Alewife, 70078_Downtown Crossing - to Alewife"
+#RedLine experiencing moderate delays due to a signal problem at Alewife. #mbta,2016-02-24T22:59:20Z,0,0,2016-02-24T22:59:20Z,,2,"70076_Park Street - to Alewife, 70078_Downtown Crossing - to Alewife"
+#RedLine experiencing minor northbound delays due to a signal problem near JFK/UMass Station. #mbta,2016-02-25T12:18:15Z,0,1,2016-02-25T12:18:15Z,northbound,0,
+#RedLine experiencing minor northbound delays due to a disabled train. #mbta,2016-02-25T22:22:17Z,0,0,2016-02-25T22:22:17Z,northbound,0,
+#RedLine experiencing moderate delays due to police action #mbta,2016-02-26T04:57:50Z,0,0,2016-02-26T04:57:50Z,,2,
+Mattapan Trolley experiencing moderate delays due to a disabled train at Butler. #mbta,2016-02-26T21:53:19Z,0,0,2016-02-26T21:53:19Z,,2,
+#RedLine experiencing moderate delays due to police action at Andrew. #mbta,2016-02-26T22:09:40Z,0,1,2016-02-26T22:09:40Z,,2,"70083_Andrew - Outbound, 70084_Andrew - Inbound"
+#RedLine experiencing minor southbound delays due to disabled train #mbta,2016-02-27T06:31:13Z,0,0,2016-02-27T06:31:13Z,southbound,0,
+#RedLine experiencing minor northbound delays due to police action at Downtown Crossing #mbta,2016-02-27T17:56:02Z,0,0,2016-02-27T17:56:02Z,northbound,0,
+#RedLine Ashmont branch experiencing minor southbound delays #mbta,2016-02-28T20:48:23Z,0,0,2016-02-28T20:48:23Z,southbound,0,
+#RedLine experiencing minor southbound delays due to a track problem at Alewife #mbta,2016-02-28T21:45:57Z,0,0,2016-02-28T21:45:57Z,southbound,0,
+#RedLine experiencing minor delays due to a track problem at Alewife #mbta,2016-02-28T22:30:40Z,0,0,2016-02-28T22:30:40Z,,1,"70076_Park Street - to Alewife, 70078_Downtown Crossing - to Alewife"
+#RedLine experiencing minor in both directions delays due to an earlier track problem at Alewife #mbta,2016-02-28T23:26:34Z,0,0,2016-02-28T23:26:34Z,northbound_and_southbound,0,"70076_Park Street - to Alewife, 70078_Downtown Crossing - to Alewife"
+#RedLine experiencing moderate delays due to a switch problem at Alewife #mbta,2016-03-01T00:02:47Z,0,0,2016-03-01T00:02:47Z,,2,"70076_Park Street - to Alewife, 70078_Downtown Crossing - to Alewife"
+#RedLine experiencing minor delays due to an earlier switch problem at Alewife #mbta,2016-03-01T00:39:20Z,0,0,2016-03-01T00:39:20Z,,1,"70076_Park Street - to Alewife, 70078_Downtown Crossing - to Alewife"
+#RedLine experiencing minor delays due to police action at Davis #mbta,2016-03-01T03:18:51Z,0,0,2016-03-01T03:18:51Z,,1,"70063_Davis - Inbound, 70064_Davis - Outbound"
+#RedLine Ashmont branch experiencing minor northbound delays #mbta,2016-03-01T20:23:09Z,0,0,2016-03-01T20:23:09Z,northbound,0,
+"Buses replacing #RedLine service between Park Street and Kendall/MIT Stations on Saturday, March 12, from start to end of service.",2016-03-03T11:11:36Z,0,0,2016-03-03T11:11:36Z,,0,
+#RedLine (Braintree branch) experiencing minor northbound delays due to a signal problem between North Quincy and JFK/UMass Stations.,2016-03-03T12:18:51Z,0,0,2016-03-03T12:18:51Z,northbound,0,
+#RedLine experiencing minor northbound delays between Park Street and Alewife Stations. #mbta,2016-03-03T17:07:30Z,0,0,2016-03-03T17:07:30Z,northbound,0,
+#RedLine experiencing moderate delays due to police action at Quincy Adams. #mbta,2016-03-05T01:21:07Z,0,0,2016-03-05T01:21:07Z,,2,"70103_Quincy Adams - Outbound, 70104_Quincy Adams - Inbound"
+#RedLine Braintree branch experiencing minor northbound delays #mbta,2016-03-05T23:25:49Z,0,0,2016-03-05T23:25:49Z,northbound,0,
+Credit/debit card purchases at fare vending machines at Alewife Station are currently unavailable. Cash only is accepted. #mbta,2016-03-07T11:06:16Z,0,0,2016-03-07T11:06:16Z,,0,
+"Braintree Garage construction continues through Aug 2016, causing diminished parking availability. One Ivory St entrance closed Mar 8-25",2016-03-07T11:35:18Z,0,0,2016-03-07T11:35:18Z,,0,
+#RedLine experiencing minor southbound delays due to a disabled train near Quincy Adams Station. #mbta,2016-03-07T13:37:56Z,0,0,2016-03-07T13:37:56Z,southbound,0,
+#RedLine experiencing minor southbound delays due to an earlier disabled train at Alewife #mbta,2016-03-07T22:57:24Z,0,0,2016-03-07T22:57:24Z,southbound,0,
+Mattapan Trolley experiencing minor delays due to a disabled train at Central Ave #mbta,2016-03-08T20:42:46Z,0,0,2016-03-08T20:42:46Z,,1,"70069_Central - Inbound, 70070_Central - Outbound"
+#RedLine experiencing minor northbound delays due to an earlier disabled train at Charles/MGH Station. #mbta,2016-03-09T13:45:59Z,0,0,2016-03-09T13:45:59Z,northbound,0,"70073_Charles/MGH - Inbound, 70074_Charles/MGH - Outbound"
+#RedLine experiencing moderate southbound delays #mbta,2016-03-12T23:25:42Z,0,0,2016-03-12T23:25:42Z,southbound,0,
+"Special St Patrick's shuttles will be available to &amp; from S Station &amp; along Summer St &amp; E 1st St in South Boston 10:30am-6pm on Sun, Mar 20",2016-03-15T15:56:34Z,0,0,2016-03-15T15:56:34Z,,0,
+Special St. Patricks Day shuttle bus service will be available to &amp; from S Station &amp; along Summer St &amp; East 1st St in South Boston 10:30am-6,2016-03-15T15:56:55Z,0,0,2016-03-15T15:56:55Z,,0,
+Special St. Patrick's Day shuttle bus service will be available to &amp; from S Station &amp; along Summer St &amp; East 1st St in South Boston 10:30am-,2016-03-15T15:57:13Z,1,0,2016-03-15T15:57:13Z,,0,
+#RedLine experiencing moderate delays due to police action at Central #mbta,2016-03-15T19:43:29Z,0,0,2016-03-15T19:43:29Z,,2,"70069_Central - Inbound, 70070_Central - Outbound"
+#RedLine experiencing moderate delays due to earlier police action at Central #mbta,2016-03-15T20:09:30Z,0,0,2016-03-15T20:09:30Z,,2,"70069_Central - Inbound, 70070_Central - Outbound"
+"Braintree Garage construction con't thru 8/16. Main pick-up/drop-off inaccessible from Ivory St &amp; partially out of svc starting Mon, Mar 21",2016-03-16T10:32:08Z,0,0,2016-03-16T10:32:08Z,,0,
+Mattapan Trolley experiencing minor outbound delays due to a disabled train at Capen Street Station. #mbta,2016-03-16T11:52:04Z,0,0,2016-03-16T11:52:04Z,,0,
+"Buses replacing #RedLine service between Alewife and Harvard Sq Stations on Mar 26, April 2-3, 9-10, and 23-24 from start to end of service",2016-03-17T14:00:50Z,0,0,2016-03-17T14:00:50Z,,0,
+#RedLine experiencing moderate delays due to a disabled train at Quincy Center. #mbta,2016-03-17T19:34:29Z,0,0,2016-03-17T19:34:29Z,,2,"70101_Quincy Center - Outbound, 70102_Quincy Center - Inbound"
+#RedLine experiencing moderate delays due to signal problems between Alewife and Harvard stations. #mbta,2016-03-18T11:37:19Z,2,1,2016-03-18T11:37:19Z,,2,
+#RedLine experiencing minor delays due to signal problems between Alewife and Harvard stations. #mbta,2016-03-18T12:03:20Z,0,0,2016-03-18T12:03:20Z,,1,
+#RedLine experiencing minor northbound delays due to disabled train #mbta,2016-03-18T13:14:14Z,0,0,2016-03-18T13:14:14Z,northbound,0,
+#RedLine experiencing minor southbound delays due to a medical emergency at Charles/MGH #mbta,2016-03-18T17:30:21Z,0,0,2016-03-18T17:30:21Z,southbound,0,"70073_Charles/MGH - Inbound, 70074_Charles/MGH - Outbound"
+Mattapan Trolley experiencing moderate delays due to a disabled train at Milton #mbta,2016-03-18T19:43:29Z,0,0,2016-03-18T19:43:29Z,,2,
+#RedLine Braintree branch experiencing moderate delays due to a signal problem at Braintree #mbta,2016-03-18T21:16:06Z,0,0,2016-03-18T21:16:06Z,,2,"70075_Park Street - to Ashmont/Braintree, 70077_Downtown Crossing - to Ashmont/Braintree, 70095_JFK/UMASS Braintree - Outbound, 70096_JFK/UMASS Braintree - Inbound"
+#RedLine Braintree branch experiencing minor delays due to a signal problem at Braintree #mbta,2016-03-18T22:22:59Z,0,0,2016-03-18T22:22:59Z,,1,"70075_Park Street - to Ashmont/Braintree, 70077_Downtown Crossing - to Ashmont/Braintree, 70095_JFK/UMASS Braintree - Outbound, 70096_JFK/UMASS Braintree - Inbound"
+This weekend's scheduled Mattapan Trolley diversion between Ashmont and Mattapan has ended. Regular Mattapan Trolley service is resuming,2016-03-20T20:31:07Z,0,0,2016-03-20T20:31:07Z,,0,
+Mattapan Trolley experiencing minor delays due to police action #mbta,2016-03-22T01:15:07Z,0,0,2016-03-22T01:15:07Z,,1,
+#RedLine experiencing moderate delays due to disabled train #mbta,2016-03-23T04:26:05Z,0,0,2016-03-23T04:26:05Z,,2,
+#RedLine experiencing moderate delays due to disabled train departing Central northbound #mbta,2016-03-23T04:28:13Z,0,0,2016-03-23T04:28:13Z,northbound,2,
+#RedLine experiencing severe delays due to disabled train departing Central northbound #mbta,2016-03-23T04:43:44Z,0,0,2016-03-23T04:43:44Z,northbound,3,
+Mattapan Trolley experiencing moderate delays due to a disabled train at Ashmont. #mbta,2016-03-23T20:25:39Z,0,0,2016-03-23T20:25:39Z,,2,"70075_Park Street - to Ashmont/Braintree, 70077_Downtown Crossing - to Ashmont/Braintree, 70085_JFK/UMASS Ashmont - Outbound, 70086_JFK/UMASS Ashmont - Inbound"
+#RedLine experiencing minor northbound delays due to a disabled train at Quincy Adams Station. #mbta,2016-03-24T10:20:22Z,0,0,2016-03-24T10:20:22Z,northbound,0,70104_Quincy Adams - Inbound
+#RedLine experiencing moderate northbound delays due to a disabled train at Quincy Adams Station. #mbta,2016-03-24T10:24:32Z,0,0,2016-03-24T10:24:32Z,northbound,0,70104_Quincy Adams - Inbound
+#RedLine experiencing minor northbound delays due to an earlier disabled train at Quincy Adams Station. #mbta,2016-03-24T10:33:52Z,0,0,2016-03-24T10:33:52Z,northbound,0,70104_Quincy Adams - Inbound
+#RedLine experiencing minor southbound delays due to a switch problem at Alewife Station. #mbta,2016-03-24T11:28:16Z,1,1,2016-03-24T11:28:16Z,southbound,0,
+#RedLine experiencing moderate southbound delays due to a switch problem at Alewife Station. #mbta,2016-03-24T11:32:46Z,0,1,2016-03-24T11:32:46Z,southbound,0,
+#RedLine experiencing severe delays in both directions due to a switch problem at Alewife Station. #mbta,2016-03-24T11:57:28Z,0,0,2016-03-24T11:57:28Z,northbound_and_southbound,3,"70076_Park Street - to Alewife, 70078_Downtown Crossing - to Alewife"
+"Red Ln experiencing severe delays both ways. Customers can also use alternate Commuter Rail service at Braintree, Quincy Center, &amp; JFK/UMass",2016-03-24T12:03:00Z,0,1,2016-03-24T12:03:00Z,northbound_and_southbound,3,
+"Red Ln experiencing moderate residual delays both ways. Customers can use alternate Commuter Rail service at Braintree, Quincy Center, &amp; JFK",2016-03-24T13:19:23Z,0,0,2016-03-24T13:19:23Z,northbound_and_southbound,0,
+#RedLine experiencing minor residual delays in both directions due to an earlier switch problem at Alewife Station. #mbta,2016-03-24T13:27:24Z,0,0,2016-03-24T13:27:24Z,northbound_and_southbound,0,"70076_Park Street - to Alewife, 70078_Downtown Crossing - to Alewife"
+#RedLine experiencing moderate delays due to an earlier disabled train at Park Street. #mbta,2016-03-24T21:37:09Z,1,0,2016-03-24T21:37:09Z,,2,"70075_Park Street - to Ashmont/Braintree, 70076_Park Street - to Alewife"
+#RedLine experiencing minor delays due to medical emergency at Broadway. #mbta,2016-03-25T01:21:08Z,0,0,2016-03-25T01:21:08Z,,1,"70081_Broadway - Outbound, 70082_Broadway - Inbound"
+#RedLine experiencing moderate northbound delays due to an ill person on a train at South Station #mbta,2016-03-26T00:00:37Z,0,0,2016-03-26T00:00:37Z,northbound,0,
+#RedLine experiencing moderate delays due to a signal problem. #mbta,2016-03-26T17:41:46Z,0,0,2016-03-26T17:41:46Z,,2,
+"Buses replacing #RedLine service between Alewife and Harvard Square Stations on April 2-3, 9-10, and 23-24 from start to end of service.",2016-03-27T11:15:34Z,0,0,2016-03-27T11:15:34Z,,0,
+#RedLine experiencing minor southbound delays due to a disabled train at Porter Station. #mbta,2016-03-28T10:48:06Z,0,0,2016-03-28T10:48:06Z,southbound,0,70066_Porter - Outbound
+#RedLine experiencing minor southbound delays due to a disabled train at Kendall/MIT Station. #mbta,2016-03-28T11:51:00Z,0,0,2016-03-28T11:51:00Z,southbound,0,"70071_Kendall/MIT - Inbound, 70072_Kendall/MIT - Outbound"
+#RedLine experiencing minor northbound delays due to a medical emergency at South Station #mbta,2016-03-29T02:23:54Z,0,0,2016-03-29T02:23:54Z,northbound,0,
+#RedLine experiencing moderate delays due to a signal problem at Alewife #mbta,2016-03-29T19:00:37Z,0,0,2016-03-29T19:00:37Z,,2,"70076_Park Street - to Alewife, 70078_Downtown Crossing - to Alewife"
+#RedLine experiencing minor delays due to an earlier signal problem at Alewife #mbta,2016-03-29T20:06:03Z,0,0,2016-03-29T20:06:03Z,,1,"70076_Park Street - to Alewife, 70078_Downtown Crossing - to Alewife"
+#RedLine Ashmont branch experiencing minor delays due to an earlier disabled train #mbta,2016-03-30T18:48:37Z,0,0,2016-03-30T18:48:37Z,,1,
+#RedLine experiencing minor delays due to signal problem at Alewife. #mbta,2016-03-31T01:33:13Z,0,0,2016-03-31T01:33:13Z,,1,"70076_Park Street - to Alewife, 70078_Downtown Crossing - to Alewife"
+#RedLine (Braintree branch) experiencing moderate northbound delays due to a disabled train at Braintree Station. #mbta,2016-03-31T21:11:28Z,0,0,2016-03-31T21:11:28Z,northbound,0,70096_JFK/UMASS Braintree - Inbound
+Buses replacing Mattapan Trolley service between Central Avenue and Mattapan Stations on April 16-17 from start to end of service,2016-04-01T16:45:37Z,0,0,2016-04-01T16:45:37Z,,0,
+#RedLine experiencing moderate delays due to a medical emergency at Harvard #mbta,2016-04-02T21:19:28Z,0,0,2016-04-02T21:19:28Z,,2,"70067_Harvard - Inbound, 70068_Harvard - Outbound"
+#RedLine experiencing moderate delays due to an earlier medical emergency at Harvard #mbta,2016-04-02T22:11:41Z,0,0,2016-04-02T22:11:41Z,,2,"70067_Harvard - Inbound, 70068_Harvard - Outbound"
+#RedLine experiencing moderate delays due to a disabled train at Kendall/MIT #mbta,2016-04-03T17:17:31Z,0,0,2016-04-03T17:17:31Z,,2,"70071_Kendall/MIT - Inbound, 70072_Kendall/MIT - Outbound"
+#RedLine Braintree branch experiencing moderate northbound delays #mbta,2016-04-03T19:44:41Z,0,0,2016-04-03T19:44:41Z,northbound,0,
+#RedLine (Ashmont branch) experiencing minor northbound delays. #mbta,2016-04-04T13:08:17Z,0,0,2016-04-04T13:08:17Z,northbound,0,
+#RedLine experiencing minor southbound delays due to a signal problem at Porter Station. #mbta,2016-04-05T12:28:50Z,0,0,2016-04-05T12:28:50Z,southbound,0,70066_Porter - Outbound
+"Braintree Station Garage Upper entrance accessible from Union Street ramp will be out of service starting the afternoon on Friday, April 8.",2016-04-07T16:22:19Z,0,0,2016-04-07T16:22:19Z,,0,
+Buses replacing Mattapan Trolley service between Ashmont and Mattapan Stations on April 16-17 from start to end of service #mbta,2016-04-07T19:16:11Z,0,0,2016-04-07T19:16:11Z,,0,
+#RedLine experiencing minor southbound delays due to police action #mbta,2016-04-08T02:31:39Z,0,0,2016-04-08T02:31:39Z,southbound,0,
+#RedLine experiencing minor southbound delays due to disabled train #mbta,2016-04-08T11:35:04Z,2,3,2016-04-08T11:35:04Z,southbound,0,
+#RedLine experiencing moderate southbound delays beginning at 7:42 AM due to disabled train #mbta,2016-04-08T11:49:15Z,1,1,2016-04-08T11:49:15Z,southbound,0,
+#RedLine experiencing minor residual southbound delays due to an earlier disabled train. #mbta,2016-04-08T12:24:46Z,0,0,2016-04-08T12:24:46Z,southbound,0,
+#RedLine experiencing minor delays due to disabled train at Park St. northbound. #mbta,2016-04-08T12:44:17Z,0,0,2016-04-08T12:44:17Z,northbound,1,
+#RedLine experiencing moderate delays due to a disabled train at Charles/MGH #mbta,2016-04-08T20:16:57Z,0,0,2016-04-08T20:16:57Z,,2,"70073_Charles/MGH - Inbound, 70074_Charles/MGH - Outbound"
+#RedLine Braintree branch experiencing minor northbound delays #mbta,2016-04-09T20:34:44Z,0,0,2016-04-09T20:34:44Z,northbound,0,
+Buses replacing #RedLine service between Alewife and Harvard Square Stations on April 23-24 from start to end of service. #mbta,2016-04-11T10:01:32Z,0,0,2016-04-11T10:01:32Z,,0,
+#RedLine experiencing minor northbound delays due to signal problems at Braintree Station. #mbta,2016-04-12T14:14:36Z,0,0,2016-04-12T14:14:36Z,northbound,0,70096_JFK/UMASS Braintree - Inbound
+#RedLine experiencing moderate northbound delays due to signal problems at Braintree Station. #mbta,2016-04-12T14:35:27Z,0,0,2016-04-12T14:35:27Z,northbound,0,70096_JFK/UMASS Braintree - Inbound
+Mattapan Trolley experiencing minor delays due to an earlier disabled train. #mbta,2016-04-13T17:34:58Z,0,0,2016-04-13T17:34:58Z,,1,
+#RedLine experiencing moderate delays due to a medical emergency at South Station #mbta,2016-04-13T20:32:49Z,0,0,2016-04-13T20:32:49Z,,2,"70079_South Station - Outbound, 70080_South Station - Inbound"
+#RedLine experiencing severe delays due to an earlier medical emergency at South Station #mbta,2016-04-13T20:50:50Z,0,0,2016-04-13T20:50:50Z,,3,"70079_South Station - Outbound, 70080_South Station - Inbound"
+#RedLine experiencing minor residual delays due to an earlier medical emergency at South Station #mbta,2016-04-13T21:13:22Z,0,0,2016-04-13T21:13:22Z,,0,"70079_South Station - Outbound, 70080_South Station - Inbound"
+#RedLine experiencing minor southbound delays due to disabled train #mbta,2016-04-14T10:46:35Z,1,0,2016-04-14T10:46:35Z,southbound,0,
+#RedLine experiencing minor southbound delays due to switch problem #mbta,2016-04-14T22:56:03Z,0,0,2016-04-14T22:56:03Z,southbound,0,
+#RedLine experiencing minor delays due to medical emergency at Harvard #mbta,2016-04-15T04:50:56Z,0,0,2016-04-15T04:50:56Z,,1,"70067_Harvard - Inbound, 70068_Harvard - Outbound"
+Mattapan Trolley experiencing minor delays due to a disabled train at Butler Station. #mbta,2016-04-15T19:48:46Z,0,0,2016-04-15T19:48:46Z,,1,
+#RedLine experiencing minor southbound delays due to an earlier disabled train. #mbta,2016-04-15T21:29:37Z,0,0,2016-04-15T21:29:37Z,southbound,0,
+This weekend's scheduled Mattapan Trolley diversion between Ashmont and Mattapan has ended. Regular Mattapan Trolley service is resuming,2016-04-17T22:12:26Z,0,0,2016-04-17T22:12:26Z,,0,
+#RedLine experiencing moderate delays due to police action at Park Street #mbta,2016-04-18T22:04:00Z,0,1,2016-04-18T22:04:00Z,,2,"70075_Park Street - to Ashmont/Braintree, 70076_Park Street - to Alewife"
+#RedLine experiencing minor delays due to earlier police action #mbta,2016-04-18T22:08:01Z,0,0,2016-04-18T22:08:01Z,,1,
+#RedLine Braintree branch experiencing minor delays due to a signal problem near Quincy Center #mbta,2016-04-19T19:25:05Z,0,0,2016-04-19T19:25:05Z,,1,
+#RedLine experiencing moderate delays due to a disabled train at Charles/MGH. #mbta,2016-04-24T15:28:40Z,0,0,2016-04-24T15:28:40Z,,2,"70073_Charles/MGH - Inbound, 70074_Charles/MGH - Outbound"
+#RedLine Ashmont branch experiencing minor northbound delays due to police action #mbta,2016-04-25T00:46:17Z,0,0,2016-04-25T00:46:17Z,northbound,0,
+#RedLine Ashmont branch experiencing moderate delays due to earlier police action #mbta,2016-04-25T00:58:18Z,0,0,2016-04-25T00:58:18Z,,2,
+Braintree Station Garage main pick-up/drop-off accessible from Ivory street will be closed starting Thursday 4/28 and reopening Monday 5/2.,2016-04-26T21:29:37Z,0,1,2016-04-26T21:29:37Z,,0,
+Mattapan Trolley experiencing moderate delays due to a disabled train at Milton #mbta,2016-04-26T22:16:10Z,0,0,2016-04-26T22:16:10Z,,2,
+#RedLine experiencing moderate delays due to an earlier disabled train at Porter #mbta,2016-04-27T01:47:34Z,0,0,2016-04-27T01:47:34Z,,2,"70065_Porter - Inbound, 70066_Porter - Outbound"
+#RedLine experiencing minor delays in both directions due to a signal problem at JFK/UMass. #mbta,2016-04-27T14:39:35Z,0,0,2016-04-27T14:39:35Z,northbound_and_southbound,1,"70085_JFK/UMASS Ashmont - Outbound, 70086_JFK/UMASS Ashmont - Inbound, 70095_JFK/UMASS Braintree - Outbound, 70096_JFK/UMASS Braintree - Inbound"
+#RedLine experiencing moderate delays in both directions due to a signal problem at JFK/UMass Station. #mbta,2016-04-27T14:45:35Z,0,0,2016-04-27T14:45:35Z,northbound_and_southbound,2,"70085_JFK/UMASS Ashmont - Outbound, 70086_JFK/UMASS Ashmont - Inbound, 70095_JFK/UMASS Braintree - Outbound, 70096_JFK/UMASS Braintree - Inbound"
+#RedLine experiencing minor delays in both directions due to a signal problem at JFK/UMass Station. #mbta,2016-04-27T15:08:17Z,0,0,2016-04-27T15:08:17Z,northbound_and_southbound,1,"70085_JFK/UMASS Ashmont - Outbound, 70086_JFK/UMASS Ashmont - Inbound, 70095_JFK/UMASS Braintree - Outbound, 70096_JFK/UMASS Braintree - Inbound"
+#RedLine experiencing minor southbound delays due to an earlier disabled train at Porter #mbta,2016-04-27T21:23:42Z,0,0,2016-04-27T21:23:42Z,southbound,0,70066_Porter - Outbound
+Mattapan Trolley experiencing moderate delays due to a disabled train at Cedar Grove. #mbta,2016-04-28T21:56:07Z,0,0,2016-04-28T21:56:07Z,,2,
+#RedLine experiencing moderate northbound delays due to track problem #mbta,2016-04-29T03:41:12Z,0,0,2016-04-29T03:41:12Z,northbound,0,
+#RedLine experiencing minor delays due to disabled train at Alewife Station. #mbta,2016-04-29T13:13:31Z,0,0,2016-04-29T13:13:31Z,,1,"70076_Park Street - to Alewife, 70078_Downtown Crossing - to Alewife"
+#RedLine experiencing moderate delays between JFK/Umass and Braintree due to a disabled train. #mbta,2016-04-30T15:02:13Z,0,0,2016-04-30T15:02:13Z,,2,
+#RedLine experiencing minor delays due to a signal problem at Davis #mbta,2016-04-30T20:07:34Z,0,0,2016-04-30T20:07:34Z,,1,"70063_Davis - Inbound, 70064_Davis - Outbound"
+#RedLine experiencing moderate delays due to a signal problem at Alewife and Davis #mbta,2016-04-30T20:12:14Z,0,0,2016-04-30T20:12:14Z,,2,
+#RedLine experiencing minor delays due to an earlier signal problem at Alewife &amp; Davis #mbta,2016-05-01T00:13:11Z,0,0,2016-05-01T00:13:11Z,,1,
+#RedLine experiencing minor delays due to a signal problem at Alewife #mbta,2016-05-01T00:21:02Z,0,0,2016-05-01T00:21:02Z,,1,"70076_Park Street - to Alewife, 70078_Downtown Crossing - to Alewife"

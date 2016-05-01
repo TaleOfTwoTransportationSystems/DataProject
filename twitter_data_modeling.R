@@ -174,13 +174,13 @@ northbound_outbound <- c("Charles",
 # southbound_inbound <- northbound_outbound # contains same stations
 
 # One way of thinking about it in terms of getting to features are:
-# A) Recognizing train station where delay is been tweeted
+# A) creating common for recognizing train station where delay is been tweeted
 red_line_alert <- red_line_alert %>% 
   mutate(text_clone = text) %>% 
   separate(text_clone, into = c("before_at", "after_at"), sep=" at ") %>% 
   mutate(after_at = str_trim(gsub("#mbta|Station|Ave|Street|[.]", "", after_at, ignore.case = TRUE))) %>% 
   rowwise() %>% 
-  mutate( after_at_enhanced = ifelse(!is.na(after_at),
+  mutate( after_at = ifelse(!is.na(after_at),
                             ifelse(bounded != "", 
                                    ifelse(length(agrep(after_at, northbound_inbound, ignore.case = TRUE, value = TRUE,max =6))>0 & bounded == "northbound",
                                           paste(after_at, "inbound"),
@@ -199,8 +199,10 @@ red_line_alert <- red_line_alert %>%
                                    ))
                             , after_at),
     after_at_name_code = 
-           ifelse(!is.na(after_at_enhanced),
+           ifelse(!is.na(after_at),
                   toString(agrep(after_at, stop_names_codes$stop_code_name, value = TRUE, ignore.case = TRUE)), '')) %>%
   ungroup() %>%
-  select(-after_at, -before_at, -after_at_enhanced) %>% 
-  rename(alerts_at_station_code = after_at_name_code) %>% write_csv("temptest1.csv")
+  select(-after_at, -before_at) %>% 
+  rename(alerts_at_station_code = after_at_name_code) 
+
+red_line_alert %>% write_csv("red_line_tweets_enhanced.csv")
