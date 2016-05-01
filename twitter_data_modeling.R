@@ -138,23 +138,69 @@ red_line_alert <- red_line_alert %>%
 
 # Things are a bit tricky here, because red line has very different 
 # different meaning of southbound/northbound ~ inbound/putbound trains
-# Form the information online 
+# From the information online 
 # Red Line:  Toward Park Street (Green Line intersection) is Inbound; away is Outbound
 # http://www.boston-discovery-guide.com/boston-subway.html
 # 
 # Alewife -- inbound/southbound---> Park street  <--- inbound/northbound---- Braintree/Ashmont
 # Alewife <--outbound/northbound--- Park street  ---outbound/southbound----> Braintree/Ashmont
+# Lets make a map of stops that are northbound and southbound
+
+# stations with inbound/outbounds, northbound/southbound
+northbound_inbound <- c("Braintree", 
+                        "Quincy Adams",
+                        "Quincy Center",
+                        "Wollaston",
+                        "North Quincy",
+                        "JFK/UMASS Braintree",
+                        "Broadway",
+                        "South Station",
+                        "Downtown Crossing - to Alewife",
+                        "Savin",
+                        "Fields",
+                        "Shawmut",
+                        "Ashmont",
+                        "Park")
+
+northbound_outbound <- c("Charles",
+                         "Kendal",
+                         "Central",
+                         "Harvard",
+                         "Porter",
+                         "Davis",
+                         "Alewife")
+
+# southbound_outbound <- northbound_inbound # contains same stations
+# southbound_inbound <- northbound_outbound # contains same stations
 
 # One way of thinking about it in terms of getting to features are:
-# A) creating common for recognizing train station where delay is been tweeted
+# A) Recognizing train station where delay is been tweeted
 red_line_alert <- red_line_alert %>% 
   mutate(text_clone = text) %>% 
   separate(text_clone, into = c("before_at", "after_at"), sep=" at ") %>% 
   mutate(after_at = str_trim(gsub("#mbta|Station|Ave|Street|[.]", "", after_at, ignore.case = TRUE))) %>% 
   rowwise() %>% 
-  mutate(after_at_name_code = 
-           ifelse(!is.na(after_at),
+  mutate( after_at_enhanced = ifelse(!is.na(after_at),
+                            ifelse(bounded != "", 
+                                   ifelse(length(agrep(after_at, northbound_inbound, ignore.case = TRUE, value = TRUE,max =6))>0 & bounded == "northbound",
+                                          paste(after_at, "inbound"),
+                                          ifelse(length(agrep(after_at, northbound_inbound, ignore.case = TRUE,max =6))>0 & bounded == "southbound",
+                                                 paste(after_at, "outbound"),
+                                                 after_at
+                                                 )
+                                          )
+                                   , 
+                                   ifelse(length(agrep(after_at, northbound_outbound, ignore.case = TRUE, value = TRUE,max =6))>0 & bounded == "northbound",
+                                          paste(after_at, "outbound"),
+                                          ifelse(length(agrep(after_at, northbound_outbound, ignore.case = TRUE, value = TRUE, max =6))>0 & bounded == "southbound",
+                                                 paste(after_at, "inbound"),
+                                                 after_at
+                                          )
+                                   ))
+                            , after_at),
+    after_at_name_code = 
+           ifelse(!is.na(after_at_enhanced),
                   toString(agrep(after_at, stop_names_codes$stop_code_name, value = TRUE, ignore.case = TRUE)), '')) %>%
-  ungroup() %>% 
-  select(-after_at, -before_at) %>% 
-  rename(alerts_at_station_code = after_at_name_code)
+  ungroup() %>%
+  select(-after_at, -before_at, -after_at_enhanced) %>% 
+  rename(alerts_at_station_code = after_at_name_code) %>% write_csv("temptest1.csv")
