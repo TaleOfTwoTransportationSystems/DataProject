@@ -4,6 +4,7 @@ library(lubridate)
 library(readr)
 library(tidyr)
 library(leaflet)
+library(sp)
 
 # https://developers.google.com/transit/gtfs/reference#feed-files
 # https://transitfeeds.com/p/mbta/91
@@ -253,6 +254,7 @@ if(length(ls(pattern="schedule_dataset")) == 0) {
 
 # Map-based plotting
 #https://rstudio.github.io/leaflet/
+#https://gist.github.com/walkerke/12a737c4d87aca2ecc70
 #http://www.r-bloggers.com/plotting-gtfs-data-with-r-2/
 #https://stackoverflow.com/questions/28753444/how-to-create-an-interactive-plot-of-gtfs-data-in-r-using-leaflet
 #https://darrkj.github.io/blog/2015/jul202015/
@@ -274,23 +276,51 @@ RedStations <- filter(RedSouthStops, !duplicated(RedSouthStops$parent_station_na
     select(parent_station_name, stop_lat, stop_lon) %>%
     rename(lat=stop_lat, lng=stop_lon)
 
-#for polylines
-RedSegments <- bind_cols(rename(Red_ASouthStops[1:nrow(Red_ASouthStops)-1,5:7], 
-                                north_station_name=parent_station_name, north_lat=stop_lat, north_lng=stop_lon), 
-                         rename(Red_ASouthStops[2:nrow(Red_ASouthStops),5:7], 
-                                south_station_name=parent_station_name, south_lat=stop_lat, south_lng=stop_lon)) %>%
-    mutate(segment_name=paste(north_station_name, south_station_name, sep="-"))
-#now what? The leaflet package seems to want to work with sp objects.
-
 Tmap <- leaflet() %>%
-    addTiles() %>%
+    addTiles(urlTemplate = "http://{s}.tiles.wmflabs.org/bw-mapnik/{z}/{x}/{y}.png", 
+             attribution = '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>') %>%
     addCircleMarkers(data = RedStations,
                color = "#1F1F1F",
                weight = 3,
-               opacity = 0.9,
+               opacity = 1,
                fillColor="red",
                fillOpacity = 0.5,
-               popup = ~ parent_station_name)
+               popup = ~ parent_station_name) %>%
+    addPolylines(data=Red_ASouthStops,
+                 lat = ~ stop_lat,
+                 lng = ~ stop_lon,
+                 color = "#1F1F1F",
+                 weight = 2,
+                 opacity = 1) %>%
+    addPolylines(data=Red_BSouthStops,
+                 lat = ~ stop_lat,
+                 lng = ~ stop_lon,
+                 color = "#1F1F1F",
+                 weight = 2,
+                 opacity = 1)
+Tmap
+
+#highlight station (alerts, etc.)
+Tmap <- Tmap %>%
+    addCircles(data = filter(RedStations, parent_station_name=="Porter"),
+               radius = 1000)
+Tmap
+
+#highlight segment (delays, etc.)
+Tmap <- Tmap %>%
+    addPolylines(data = Red_BSouthStops[15:16,],
+                 lat = ~ stop_lat,
+                 lng = ~ stop_lon,
+                 color = "gold",
+                 weight = 8,
+                 opacity = .8) %>%
+    addCircleMarkers(data = RedStations,
+                     color = "#1F1F1F",
+                     weight = 3,
+                     opacity = 1,
+                     fillColor="white",
+                     fillOpacity = 0,
+                     popup = ~ parent_station_name)
 Tmap
 
 
