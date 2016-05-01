@@ -18,7 +18,7 @@ library(ggmap)
 #http://yihui.name/en/2014/07/library-vs-require/
 
 #Get data
-# load("/Users/Admin/Downloads/fetchMbtaData.RData")
+load("fetchMbtaData.RData")
 allstops<-stops %>% select(stop_code, stop_name, stop_lat, stop_lon) %>% 
   filter(is.na(stop_code)==FALSE) %>% mutate(from_stop=stop_code,to_stop=stop_code)
 finished_dataset$from_stop <- as.integer(finished_dataset$from_stop)
@@ -44,7 +44,7 @@ dataset<-dataset %>% mutate(date=strftime(dep_dt,format="%Y%m%d"))
 dataset$date<-as.integer(dataset$date)
 
 #Weather data
-weather<-read.csv("/Users/Admin/Downloads/weather.csv")
+weather<-read.csv("weather.csv")
 weather<-weather %>% 
   filter(DATE>20160124,STATION_NAME=="BOSTON LOGAN INTERNATIONAL AIRPORT MA US") %>%
   select(DATE,precipitation,snowfall) 
