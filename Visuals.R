@@ -43,13 +43,13 @@ colnames(dataset)[6]<-"from_stop"
 dataset<-dataset %>% mutate(date=strftime(dep_dt,format="%Y%m%d"))
 dataset$date<-as.integer(dataset$date)
 
-# #Weather data
-# weather<-read.csv("/Users/Admin/Downloads/weather.csv")
-# weather<-weather %>% 
-#   filter(DATE>20160124,STATION_NAME=="BOSTON LOGAN INTERNATIONAL AIRPORT MA US") %>%
-#   select(DATE,precipitation,snowfall) 
-# colnames(weather)[1]<-"date"
-# dataset<-dataset %>% left_join(weather,by="date")
+#Weather data
+weather<-read.csv("/Users/Admin/Downloads/weather.csv")
+weather<-weather %>% 
+  filter(DATE>20160124,STATION_NAME=="BOSTON LOGAN INTERNATIONAL AIRPORT MA US") %>%
+  select(DATE,precipitation,snowfall) 
+colnames(weather)[1]<-"date"
+dataset<-dataset %>% left_join(weather,by="date")
 
 #RedLine
 Red <-  RedLineRoute$stop[[1]] %>%
