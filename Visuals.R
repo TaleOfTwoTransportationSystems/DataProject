@@ -2,6 +2,7 @@ install.packages("rworldmap")
 install.packages(c("maps", "mapproj"))
 install.packages("leaflet")
 install.packages("dygraphs")
+require(ggmap)
 require(dygraphs)
 require(leaflet)
 require(readr)
@@ -38,8 +39,7 @@ colnames(dataset)[15]<-"end_lat"
 colnames(dataset)[16]<-"end_long"
 colnames(dataset)[6]<-"from_stop"
 
-dataset<-dataset %>% mutate(date=strftime(dep_dt,format="%Y%m%d"))
-dataset$date<-as.integer(dataset$date)
+dataset<-dataset %>% mutate(date=strftime(dep_dt,format="%Y/%m/%d %H:%M:%S"))
 
 #Weather data
 weather<-read.csv("/Users/Admin/Downloads/weather.csv")
@@ -48,6 +48,7 @@ weather<-weather %>%
   select(DATE,precipitation,snowfall) 
 colnames(weather)[1]<-"date"
 dataset<-dataset %>% left_join(weather,by="date")
+write.csv(dataset,file="map_dataset.csv")
 
 #RedLine
 Red <-  RedLineRoute$stop[[1]] %>%
@@ -105,6 +106,7 @@ all_lines$stop_lon<-as.numeric(all_lines$stop_lon)
 all_lines <- all_lines %>% 
   separate(stop_name, into = c("stop_name", "extra"), sep="-", fill="right") %>%
   select(-extra)
+write.csv(all_lines,file="T_lines.csv")
 
 #Map of Boston
 lon_range <- extendrange(dataset$end_long)
@@ -144,25 +146,36 @@ boston <- leaflet() %>%
   setView(lng = -71.0589, lat = 42.3601, zoom = 12) %>% 
   addTiles() %>% addProviderTiles("CartoDB.Positron") %>%
   addPolylines(data=redline,~stop_lon,~stop_lat,color="red") %>%
-  addPolylines(data=greenBline,~stop_lon,~stop_lat,color="green") %>%
-  addPolylines(data=greenCline,~stop_lon,~stop_lat,color="green") %>%
-  addPolylines(data=greenDline,~stop_lon,~stop_lat,color="green") %>%
+  addPolylines(data=greenBline,~stop_lon,~stop_lat,color="springgreen") %>%
+  addPolylines(data=greenCline,~stop_lon,~stop_lat,color="palegreen") %>%
+  addPolylines(data=greenDline,~stop_lon,~stop_lat,color="limegreen") %>%
   addPolylines(data=greenEline,~stop_lon,~stop_lat,color="green") %>%
   addPolylines(data=orangeline,~stop_lon,~stop_lat,color="orange") %>%
   addPolylines(data=blueline,~stop_lon,~stop_lat,color="blue") %>%
   addCircleMarkers(data=redline, ~stop_lon,~stop_lat,color="red",radius=1,popup=~stop_name) %>%
-  addCircleMarkers(data=greenBline,~stop_lon,~stop_lat,color="green",radius=1,popup=~stop_name) %>%
-  addCircleMarkers(data=greenCline,~stop_lon,~stop_lat,color="green",radius=1,popup=~stop_name) %>%
-  addCircleMarkers(data=greenDline,~stop_lon,~stop_lat,color="green",radius=1,popup=~stop_name) %>%
+  addCircleMarkers(data=greenBline,~stop_lon,~stop_lat,color="springgreen",radius=1,popup=~stop_name) %>%
+  addCircleMarkers(data=greenCline,~stop_lon,~stop_lat,color="palegreen",radius=1,popup=~stop_name) %>%
+  addCircleMarkers(data=greenDline,~stop_lon,~stop_lat,color="limegreen",radius=1,popup=~stop_name) %>%
   addCircleMarkers(data=greenEline,~stop_lon,~stop_lat,color="green",radius=1,popup=~stop_name) %>%
   addCircleMarkers(data=orangeline,~stop_lon,~stop_lat,color="orange",radius=1,popup=~stop_name) %>%
   addCircleMarkers(data=blueline,~stop_lon,~stop_lat,color="blue",radius=1,popup=~stop_name)
 boston
 
 #Travel times between stops
-traveltime<-dataset %>% group_by(start_stop,end_stop) %>% 
-  summarize(avg_traveltime=mean(travel_time_sec)) %>% 
-  separate(start_stop,c("start_stop","start_direction"),sep="-",fill="right") %>%
-  separate(end_stop,c("end_stop","end_direction",sep="-",fill="right"))
+traveltime<-dataset %>% group_by(start_stop,end_stop) %>% #Avg time between stops
+  summarize(avg_traveltime=mean(travel_time_sec))
+  #separate(end_stop,c("end_stop","end_direction"),sep="-",fill="right") %>% 
+  #separate(start_stop,c("start_stop","start_direction"),sep="-",fill="right") 
+
+betweenstops<-dataset %>% left_join(traveltime,by=c("start_stop","end_stop")) %>%
+  mutate(residualtime=avg_traveltime-travel_time_sec) %>%
+  mutate(hour=strftime(date,format="%H:%M"))
+
+travel<-betweenstops %>% 
+  filter(from_stop==70092 & to_stop==70090) %>% #Between Shawmut and Fields Corner
+  select(dep_dt,avg_traveltime,residualtime,hour) %>%
+  group_by(hour) %>% summarize(mean(residualtime))
+colnames(travel)[2]<-"ResidualTime"
+dygraph(travel$hour,travel$ResidualTime) #Having some trouble here...
 
 
