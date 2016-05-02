@@ -49,7 +49,9 @@ colnames(dataset)[15]<-"end_lat"
 colnames(dataset)[16]<-"end_long"
 colnames(dataset)[6]<-"from_stop"
 
-dataset<-dataset %>% mutate(hour=as.integer(strftime(dep_dt,format="%H")))
+t.lub <- ymd_hms(dataset$dep_dt)
+dataset$time <- round((hour(t.lub) + minute(t.lub)/60), digits=2)
+fulldata<-dataset
 
 #Weather data
 weather<-read.csv("weather.csv")
@@ -59,6 +61,7 @@ weather<-weather %>%
 colnames(weather)[1]<-"date"
 dataset<-dataset %>% left_join(weather,by="date")
 write.csv(dataset,file="map_dataset.csv")
+fulldata<-dataset
 
 #RedLine
 Red <-  RedLineRoute$stop[[1]] %>%
@@ -154,7 +157,7 @@ blueline<-all_lines %>% filter(line=="Blue")
 
 boston <- leaflet() %>% 
   setView(lng = -71.0589, lat = 42.3601, zoom = 12) %>% 
-  addTiles() %>% addProviderTiles("CartoDB.Positron") %>%
+  addProviderTiles("CartoDB.Positron") %>%
   addPolylines(data=redline,~stop_lon,~stop_lat,color="red") %>%
   addPolylines(data=greenBline,~stop_lon,~stop_lat,color="springgreen") %>%
   addPolylines(data=greenCline,~stop_lon,~stop_lat,color="palegreen") %>%
@@ -171,22 +174,24 @@ boston <- leaflet() %>%
   addCircleMarkers(data=blueline,~stop_lon,~stop_lat,color="blue",radius=1,popup=~stop_name)
 boston
 
-#Travel times between stops
-traveltime<-dataset %>% group_by(start_stop,end_stop) %>% #Avg time between stops
+#Average travel times between stops
+traveltime<fulldata %>% group_by(start_stop,end_stop) %>%
   summarize(avg_traveltime=mean(travel_time_sec))
-  #separate(end_stop,c("end_stop","end_direction"),sep="-",fill="right") %>% 
-  #separate(start_stop,c("start_stop","start_direction"),sep="-",fill="right") 
 
-betweenstops<-dataset %>% left_join(traveltime,by=c("start_stop","end_stop")) %>%
-  mutate(residualtime=avg_traveltime-travel_time_sec) %>%
-  mutate(hour=strftime(date,format="%H:%M"))
+betweenstops<-fulldata %>% left_join(traveltime,by=c("start_stop","end_stop")) %>%
+  mutate(residualtime=avg_traveltime-travel_time_sec)
 
 travel<-betweenstops %>% 
-  filter(from_stop==70092 & to_stop==70090) %>% #Between Shawmut and Fields Corner
-  select(dep_dt,avg_traveltime,residualtime,hour) %>%
-  group_by(hour) %>% summarize(mean(residualtime))
-colnames(travel)[2]<-"ResidualTime"
-dygraph(travel$hour,travel$ResidualTime) #Having some trouble here...
+  group_by(c(start_stop,end_stop),time) %>%
+  summarize(avgresid=mean(residualtime))
+
+travel<-betweenstops %>% 
+  filter(from_stop==70074 & to_stop==70072) %>%
+  group_by(time) %>% summarize(mean(residualtime))
+colnames(travel)[2]<-"Residual Time"
+
+dygraph(travel, main= "Charles/MGH and Kendall/MIT") %>% dyAxis("y", label = "Residual Time in Seconds") %>% 
+  dyAxis("x", label="Hour of Day") %>% dyRangeSelector()
 
 #Tweets
 train_travel_times<-read.csv("/Users/Admin/Documents/FinalProject/DataProject/train_travel_times.csv",stringsAsFactors = FALSE)
@@ -209,5 +214,6 @@ train_travel_times<-train_travel_times %>% left_join(allstops,by="stop_code") %>
 #Severity of alerts
 leaflet(data = train_travel_times) %>% addTiles() %>% addProviderTiles("CartoDB.Positron") %>%
   addPolylines(data=redline,~stop_lon,~stop_lat,color="red") %>%
+  addCircleMarkers(data=redline, ~stop_lon,~stop_lat,color="red",radius=1,popup=~stop_name) %>%
   addMarkers(~stop_lon, ~stop_lat, clusterOptions = markerClusterOptions())
 
