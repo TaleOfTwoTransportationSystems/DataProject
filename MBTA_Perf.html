@@ -151,7 +151,8 @@ library(jsonlite)
 library(lubridate)
 library(readr)
 library(tidyr)
-library(leaflet)</code></pre>
+library(leaflet)
+library(ggplot2)</code></pre>
 <p>Some things we hard code:</p>
 <pre class="r"><code># API information for the real-time feed
 TKeyJeff &lt;- &quot;?api_key=tNprgYF1K027zEIVluAkCw&quot;
@@ -212,16 +213,16 @@ distinct_stop_pairs_full &lt;- distinct_stop_pairs
 
 
 # The following can be skipped if &quot;train_travel_times.csv&quot; is present in the working directory
-if(length(ls(pattern=&quot;finished_dataset&quot;)) &gt; 0) {
+if(length(ls(pattern=&quot;travel_times&quot;)) &gt; 0) {
     # do nothing - we already have the data in the environment
 } else if (file.exists(&quot;train_travel_times.csv.gz&quot;)) {
     print(&quot;Loading previously generated data.&quot;)
-    finished_dataset &lt;- read_csv(&quot;train_travel_times.csv.gz&quot;) # can skip MBTA queries and load this instead
-    names(finished_dataset)[1] &lt;- &quot;index&quot; # adding a name to our unnamed first column -- this column gets added by read_csv
+    travel_times &lt;- read_csv(&quot;train_travel_times.csv.gz&quot;) # can skip MBTA queries and load this instead
+    names(travel_times)[1] &lt;- &quot;index&quot; # adding a name to our unnamed first column -- this column gets added by read_csv
 } else {
     print(&quot;Requesting data from realtime.mbta.com...&quot;)
     # create a holding frame for the data; we do this outside the loops so that it will persist.
-    finished_dataset &lt;- data.frame(direction=as.numeric(character()),
+    travel_times &lt;- data.frame(direction=as.numeric(character()),
                         dep_dt=as.POSIXct(character()), 
                         arr_dt=as.POSIXct(character()), 
                         travel_time_sec=as.numeric(character()),
@@ -249,7 +250,7 @@ if(length(ls(pattern=&quot;finished_dataset&quot;)) &gt; 0) {
         
         # Assuming we get a result back, we process it within the
         # inner loop, reformatting columns and dropping any we don't
-        # plan to use. We then append it to finished_dataset.
+        # plan to use. We then append it to travel_times.
         if (length(foo) &gt; 0) {
           bar &lt;- foo %&gt;%
             mutate(from_stop = from_j,
@@ -259,8 +260,7 @@ if(length(ls(pattern=&quot;finished_dataset&quot;)) &gt; 0) {
               travel_time_sec = as.numeric(travel_time_sec),
               benchmark_travel_time_sec = as.numeric(benchmark_travel_time_sec)) %&gt;%
             select(-route_id, -contains(&quot;threshold&quot;))
-          #finished_dataset &lt;- union(finished_dataset, bar) # this results in a long list of lists
-          finished_dataset &lt;- rbind(finished_dataset, bar)
+          travel_times &lt;- rbind(travel_times, bar)
         } else {
           print(paste(&quot;Nothing returned for&quot;, fromStop, &quot;to&quot;, toStop, &quot;during period&quot;, fromTime, &quot;-&quot;, toTime))
         }
@@ -269,25 +269,25 @@ if(length(ls(pattern=&quot;finished_dataset&quot;)) &gt; 0) {
     }
     
     # splitting date &amp; time
-    finished_dataset &lt;- mutate(finished_dataset, dep_d=as.Date(dep_dt), 
+    travel_times &lt;- mutate(travel_times, dep_d=as.Date(dep_dt), 
                                                  dep_t=format(as.POSIXct(dep_dt), format=&quot;%H:%M:%S&quot;), 
                                                  arr_d=as.Date(arr_dt), 
                                                  arr_t=format(as.POSIXct(arr_dt), format=&quot;%H:%M:%S&quot;))
     # adding parent_station_name, lat and lon
-    finished_dataset &lt;- bind_rows(RedLineRoute$stop[1][[1]], RedLineRoute$stop[2][[1]]) %&gt;% 
+    travel_times &lt;- bind_rows(RedLineRoute$stop[1][[1]], RedLineRoute$stop[2][[1]]) %&gt;% 
                         select(stop_id, parent_station_name, stop_lat, stop_lon) %&gt;% 
                         mutate(stop_id=as.integer(stop_id)) %&gt;% 
                         rename(to_stop = stop_id, to_name = parent_station_name, to_lat = stop_lat, to_lon = stop_lon) %&gt;% 
-                        inner_join(finished_dataset, by=&quot;to_stop&quot;)
-    finished_dataset &lt;- bind_rows(RedLineRoute$stop[1][[1]], RedLineRoute$stop[2][[1]]) %&gt;% 
+                        inner_join(travel_times, by=&quot;to_stop&quot;)
+    travel_times &lt;- bind_rows(RedLineRoute$stop[1][[1]], RedLineRoute$stop[2][[1]]) %&gt;% 
                         select(stop_id, parent_station_name, stop_lat, stop_lon) %&gt;% 
                         mutate(stop_id=as.integer(stop_id)) %&gt;% 
                         rename(from_stop = stop_id, from_name = parent_station_name, from_lat = stop_lat, from_lon = stop_lon) %&gt;% 
-                        inner_join(finished_dataset, by=&quot;from_stop&quot;)
-    finished_dataset &lt;- arrange(finished_dataset, direction, dep_dt)
+                        inner_join(travel_times, by=&quot;from_stop&quot;)
+    travel_times &lt;- arrange(travel_times, direction, dep_dt)
     
     z &lt;- gzfile(&quot;train_travel_times.csv.gz&quot;)
-    write.csv(finished_dataset, z) #so others don't need to pull the data again
+    write.csv(travel_times, z) #so others don't need to pull the data again
 }</code></pre>
 <pre><code>## [1] &quot;Loading previously generated data.&quot;</code></pre>
 <pre><code>## Warning: 641131 parsing failures.
@@ -299,7 +299,7 @@ if(length(ls(pattern=&quot;finished_dataset&quot;)) &gt; 0) {
 ##   3 dep_t valid date 05:29:48
 ## ... ..... .......... ........
 ## .See problems(...) for more details.</code></pre>
-<p>asdf</p>
+<p>asdf This is the data we were going to orginally compare to Hubway, etc. but it’s only <em>schedule</em> data! blah blah</p>
 <pre class="r"><code>for(i in 1:length(TArchiveURLs)) {
     if(file.exists(basename(TArchiveURLs[i]))) {
         print(paste(&quot;Using existing&quot;, TArchiveURLs[i]))
@@ -308,74 +308,8 @@ if(length(ls(pattern=&quot;finished_dataset&quot;)) &gt; 0) {
     }
     unzip(basename(TArchiveURLs[i]), exdir=strsplit(basename(TArchiveURLs[i]), &quot;\\.&quot;)[[1]][1], overwrite=FALSE)
 }</code></pre>
-<pre><code>## [1] &quot;Using existing http://www.mbta.com/uploadedfiles/MBTA_GTFS.zip&quot;</code></pre>
-<pre><code>## Warning in unzip(basename(TArchiveURLs[i]), exdir =
-## strsplit(basename(TArchiveURLs[i]), : not overwriting file 'MBTA_GTFS/
-## agency.txt</code></pre>
-<pre><code>## Warning in unzip(basename(TArchiveURLs[i]), exdir =
-## strsplit(basename(TArchiveURLs[i]), : not overwriting file 'MBTA_GTFS/
-## calendar.txt</code></pre>
-<pre><code>## Warning in unzip(basename(TArchiveURLs[i]), exdir =
-## strsplit(basename(TArchiveURLs[i]), : not overwriting file 'MBTA_GTFS/
-## calendar_dates.txt</code></pre>
-<pre><code>## Warning in unzip(basename(TArchiveURLs[i]), exdir =
-## strsplit(basename(TArchiveURLs[i]), : not overwriting file 'MBTA_GTFS/
-## feed_info.txt</code></pre>
-<pre><code>## Warning in unzip(basename(TArchiveURLs[i]), exdir =
-## strsplit(basename(TArchiveURLs[i]), : not overwriting file 'MBTA_GTFS/
-## frequencies.txt</code></pre>
-<pre><code>## Warning in unzip(basename(TArchiveURLs[i]), exdir =
-## strsplit(basename(TArchiveURLs[i]), : not overwriting file 'MBTA_GTFS/
-## routes.txt</code></pre>
-<pre><code>## Warning in unzip(basename(TArchiveURLs[i]), exdir =
-## strsplit(basename(TArchiveURLs[i]), : not overwriting file 'MBTA_GTFS/
-## shapes.txt</code></pre>
-<pre><code>## Warning in unzip(basename(TArchiveURLs[i]), exdir =
-## strsplit(basename(TArchiveURLs[i]), : not overwriting file 'MBTA_GTFS/
-## stops.txt</code></pre>
-<pre><code>## Warning in unzip(basename(TArchiveURLs[i]), exdir =
-## strsplit(basename(TArchiveURLs[i]), : not overwriting file 'MBTA_GTFS/
-## stop_times.txt</code></pre>
-<pre><code>## Warning in unzip(basename(TArchiveURLs[i]), exdir =
-## strsplit(basename(TArchiveURLs[i]), : not overwriting file 'MBTA_GTFS/
-## transfers.txt</code></pre>
-<pre><code>## Warning in unzip(basename(TArchiveURLs[i]), exdir =
-## strsplit(basename(TArchiveURLs[i]), : not overwriting file 'MBTA_GTFS/
-## trips.txt</code></pre>
-<pre><code>## [1] &quot;Using existing http://www.mbta.com/gtfs_archive/20151211.zip&quot;</code></pre>
-<pre><code>## Warning in unzip(basename(TArchiveURLs[i]), exdir =
-## strsplit(basename(TArchiveURLs[i]), : not overwriting file '20151211/
-## agency.txt</code></pre>
-<pre><code>## Warning in unzip(basename(TArchiveURLs[i]), exdir =
-## strsplit(basename(TArchiveURLs[i]), : not overwriting file '20151211/
-## calendar.txt</code></pre>
-<pre><code>## Warning in unzip(basename(TArchiveURLs[i]), exdir =
-## strsplit(basename(TArchiveURLs[i]), : not overwriting file '20151211/
-## calendar_dates.txt</code></pre>
-<pre><code>## Warning in unzip(basename(TArchiveURLs[i]), exdir =
-## strsplit(basename(TArchiveURLs[i]), : not overwriting file '20151211/
-## feed_info.txt</code></pre>
-<pre><code>## Warning in unzip(basename(TArchiveURLs[i]), exdir =
-## strsplit(basename(TArchiveURLs[i]), : not overwriting file '20151211/
-## frequencies.txt</code></pre>
-<pre><code>## Warning in unzip(basename(TArchiveURLs[i]), exdir =
-## strsplit(basename(TArchiveURLs[i]), : not overwriting file '20151211/
-## routes.txt</code></pre>
-<pre><code>## Warning in unzip(basename(TArchiveURLs[i]), exdir =
-## strsplit(basename(TArchiveURLs[i]), : not overwriting file '20151211/
-## shapes.txt</code></pre>
-<pre><code>## Warning in unzip(basename(TArchiveURLs[i]), exdir =
-## strsplit(basename(TArchiveURLs[i]), : not overwriting file '20151211/
-## stops.txt</code></pre>
-<pre><code>## Warning in unzip(basename(TArchiveURLs[i]), exdir =
-## strsplit(basename(TArchiveURLs[i]), : not overwriting file '20151211/
-## stop_times.txt</code></pre>
-<pre><code>## Warning in unzip(basename(TArchiveURLs[i]), exdir =
-## strsplit(basename(TArchiveURLs[i]), : not overwriting file '20151211/
-## transfers.txt</code></pre>
-<pre><code>## Warning in unzip(basename(TArchiveURLs[i]), exdir =
-## strsplit(basename(TArchiveURLs[i]), : not overwriting file '20151211/
-## trips.txt</code></pre>
+<pre><code>## [1] &quot;Using existing http://www.mbta.com/uploadedfiles/MBTA_GTFS.zip&quot;
+## [1] &quot;Using existing http://www.mbta.com/gtfs_archive/20151211.zip&quot;</code></pre>
 <pre class="r"><code># The following is fixed for two archives; should be loop based on length of TArchivesURLs
 setwd(strsplit(basename(TArchiveURLs[1]), &quot;\\.&quot;)[[1]][1])
 
@@ -410,24 +344,10 @@ Tarchive_stopTimes2 &lt;- filter(Tarchive_stopTimes2, trip_id %in% Tarchive_trip
 # combine our archives
 Tarchive_cal &lt;- bind_rows(Tarchive_cal, Tarchive_cal2)
 Tarchive_calDates &lt;- bind_rows(Tarchive_calDates, Tarchive_calDates2)
-Tarchive_trips &lt;- bind_rows(Tarchive_trips, Tarchive_trips2)</code></pre>
-<pre><code>## Warning in rbind_all(x, .id): Unequal factor levels: coercing to character</code></pre>
-<pre><code>## Warning in rbind_all(x, .id): Unequal factor levels: coercing to character
+Tarchive_trips &lt;- bind_rows(Tarchive_trips, Tarchive_trips2)
+Tarchive_stopTimes &lt;- bind_rows(Tarchive_stopTimes, Tarchive_stopTimes2)
 
-## Warning in rbind_all(x, .id): Unequal factor levels: coercing to character
-
-## Warning in rbind_all(x, .id): Unequal factor levels: coercing to character
-
-## Warning in rbind_all(x, .id): Unequal factor levels: coercing to character</code></pre>
-<pre class="r"><code>Tarchive_stopTimes &lt;- bind_rows(Tarchive_stopTimes, Tarchive_stopTimes2)</code></pre>
-<pre><code>## Warning in rbind_all(x, .id): Unequal factor levels: coercing to character
-
-## Warning in rbind_all(x, .id): Unequal factor levels: coercing to character
-
-## Warning in rbind_all(x, .id): Unequal factor levels: coercing to character
-
-## Warning in rbind_all(x, .id): Unequal factor levels: coercing to character</code></pre>
-<pre class="r"><code>setwd(&quot;..&quot;)
+setwd(&quot;..&quot;)
 
 rm(Tarchive_cal2)
 rm(Tarchive_calDates2)
@@ -492,6 +412,9 @@ for(i in 0:(as.integer(unclass(now() - startTime)))) {
     
     schedule_dataset &lt;- bind_rows(schedule_dataset, todaysStops)
 }</code></pre>
+<p>asdf</p>
+<pre class="r"><code>#TBD -- Shawn's looking into this</code></pre>
+<p>asdf Alerts come in from Twitter via CodeForBoston blah blah</p>
 <pre class="r"><code>#remove this when we're done
 ls.str()</code></pre>
 <pre><code>## distinct_stop_pairs : 'data.frame':  58 obs. of  2 variables:
@@ -500,26 +423,6 @@ ls.str()</code></pre>
 ## distinct_stop_pairs_full : 'data.frame': 58 obs. of  2 variables:
 ##  $ stop_id  : chr  &quot;70105&quot; &quot;70104&quot; &quot;70096&quot; &quot;70084&quot; ...
 ##  $ next_stop: chr  &quot;70104&quot; &quot;70096&quot; &quot;70084&quot; &quot;70082&quot; ...
-## finished_dataset : Classes 'tbl_df', 'tbl' and 'data.frame': 356300 obs. of  19 variables:
-##  $ index                    : int  1 2 3 4 5 6 7 8 9 10 ...
-##  $ from_stop                : int  70067 70069 70063 70071 70065 70063 70067 70073 70069 70067 ...
-##  $ from_name                : chr  &quot;Harvard&quot; &quot;Central&quot; &quot;Davis&quot; &quot;Kendall/MIT&quot; ...
-##  $ from_lat                 : num  42.4 42.4 42.4 42.4 42.4 ...
-##  $ from_lon                 : num  -71.1 -71.1 -71.1 -71.1 -71.1 ...
-##  $ to_stop                  : int  70069 70071 70081 70073 70101 70081 70069 70075 70071 70069 ...
-##  $ to_name                  : chr  &quot;Central&quot; &quot;Kendall/MIT&quot; &quot;Broadway&quot; &quot;Charles/MGH&quot; ...
-##  $ to_lat                   : num  42.4 42.4 42.3 42.4 42.3 ...
-##  $ to_lon                   : num  -71.1 -71.1 -71.1 -71.1 -71 ...
-##  $ index                    : int  264366 280388 181143 296859 249027 181144 264367 313333 280389 264368 ...
-##  $ direction                : int  0 0 0 0 0 0 0 0 0 0 ...
-##  $ dep_dt                   : POSIXct, format: &quot;2016-01-25 05:24:54&quot; &quot;2016-01-25 05:28:11&quot; ...
-##  $ arr_dt                   : POSIXct, format: &quot;2016-01-25 05:27:21&quot; &quot;2016-01-25 05:29:53&quot; ...
-##  $ travel_time_sec          : int  147 102 1477 295 2444 1591 134 72 82 159 ...
-##  $ benchmark_travel_time_sec: int  180 120 1200 120 2100 1200 180 120 120 180 ...
-##  $ dep_d                    : Date, format: &quot;2016-01-25&quot; &quot;2016-01-25&quot; ...
-##  $ dep_t                    : Date, format: NA NA ...
-##  $ arr_d                    : Date, format: &quot;2016-01-25&quot; &quot;2016-01-25&quot; ...
-##  $ arr_t                    : Date, format: NA NA ...
 ## i :  int 97
 ## iDate :  Date[1:1], format: &quot;2016-05-01&quot;
 ## MattapanLineRoute : 'data.frame':    2 obs. of  3 variables:
@@ -606,6 +509,26 @@ ls.str()</code></pre>
 ##  $ block_id             : chr  &quot;S931_-6&quot; &quot;S931_-7&quot; &quot;S931_-10&quot; &quot;S931_-9&quot; ...
 ##  $ shape_id             : chr  &quot;931_0011&quot; &quot;931_0011&quot; &quot;931_0011&quot; &quot;931_0011&quot; ...
 ##  $ wheelchair_accessible: int  1 1 1 1 1 1 1 1 1 1 ...
+## travel_times : Classes 'tbl_df', 'tbl' and 'data.frame': 356300 obs. of  19 variables:
+##  $ index                    : int  1 2 3 4 5 6 7 8 9 10 ...
+##  $ from_stop                : int  70067 70069 70063 70071 70065 70063 70067 70073 70069 70067 ...
+##  $ from_name                : chr  &quot;Harvard&quot; &quot;Central&quot; &quot;Davis&quot; &quot;Kendall/MIT&quot; ...
+##  $ from_lat                 : num  42.4 42.4 42.4 42.4 42.4 ...
+##  $ from_lon                 : num  -71.1 -71.1 -71.1 -71.1 -71.1 ...
+##  $ to_stop                  : int  70069 70071 70081 70073 70101 70081 70069 70075 70071 70069 ...
+##  $ to_name                  : chr  &quot;Central&quot; &quot;Kendall/MIT&quot; &quot;Broadway&quot; &quot;Charles/MGH&quot; ...
+##  $ to_lat                   : num  42.4 42.4 42.3 42.4 42.3 ...
+##  $ to_lon                   : num  -71.1 -71.1 -71.1 -71.1 -71 ...
+##  $ index                    : int  264366 280388 181143 296859 249027 181144 264367 313333 280389 264368 ...
+##  $ direction                : int  0 0 0 0 0 0 0 0 0 0 ...
+##  $ dep_dt                   : POSIXct, format: &quot;2016-01-25 05:24:54&quot; &quot;2016-01-25 05:28:11&quot; ...
+##  $ arr_dt                   : POSIXct, format: &quot;2016-01-25 05:27:21&quot; &quot;2016-01-25 05:29:53&quot; ...
+##  $ travel_time_sec          : int  147 102 1477 295 2444 1591 134 72 82 159 ...
+##  $ benchmark_travel_time_sec: int  180 120 1200 120 2100 1200 180 120 120 180 ...
+##  $ dep_d                    : Date, format: &quot;2016-01-25&quot; &quot;2016-01-25&quot; ...
+##  $ dep_t                    : Date, format: NA NA ...
+##  $ arr_d                    : Date, format: &quot;2016-01-25&quot; &quot;2016-01-25&quot; ...
+##  $ arr_t                    : Date, format: NA NA ...
 ## TRouteURL :  chr &quot;http://realtime.mbta.com/developer/api/v2/stopsbyroute&quot;
 ## TTravelURL :  chr &quot;http://realtime.mbta.com/developer/api/v2.1/traveltimes&quot;</code></pre>
 </div>
