@@ -32,6 +32,7 @@ library(lubridate)
 library(readr)
 library(tidyr)
 library(leaflet)
+library(ggplot2)
 ```
 
 Some things we hard code:
@@ -100,16 +101,16 @@ distinct_stop_pairs_full <- distinct_stop_pairs
 
 
 # The following can be skipped if "train_travel_times.csv" is present in the working directory
-if(length(ls(pattern="finished_dataset")) > 0) {
+if(length(ls(pattern="travel_times")) > 0) {
     # do nothing - we already have the data in the environment
 } else if (file.exists("train_travel_times.csv.gz")) {
     print("Loading previously generated data.")
-    finished_dataset <- read_csv("train_travel_times.csv.gz") # can skip MBTA queries and load this instead
-    names(finished_dataset)[1] <- "index" # adding a name to our unnamed first column -- this column gets added by read_csv
+    travel_times <- read_csv("train_travel_times.csv.gz") # can skip MBTA queries and load this instead
+    names(travel_times)[1] <- "index" # adding a name to our unnamed first column -- this column gets added by read_csv
 } else {
     print("Requesting data from realtime.mbta.com...")
     # create a holding frame for the data; we do this outside the loops so that it will persist.
-    finished_dataset <- data.frame(direction=as.numeric(character()),
+    travel_times <- data.frame(direction=as.numeric(character()),
                         dep_dt=as.POSIXct(character()), 
                         arr_dt=as.POSIXct(character()), 
                         travel_time_sec=as.numeric(character()),
@@ -137,7 +138,7 @@ if(length(ls(pattern="finished_dataset")) > 0) {
         
         # Assuming we get a result back, we process it within the
         # inner loop, reformatting columns and dropping any we don't
-        # plan to use. We then append it to finished_dataset.
+        # plan to use. We then append it to travel_times.
         if (length(foo) > 0) {
           bar <- foo %>%
             mutate(from_stop = from_j,
@@ -147,8 +148,7 @@ if(length(ls(pattern="finished_dataset")) > 0) {
               travel_time_sec = as.numeric(travel_time_sec),
               benchmark_travel_time_sec = as.numeric(benchmark_travel_time_sec)) %>%
             select(-route_id, -contains("threshold"))
-          #finished_dataset <- union(finished_dataset, bar) # this results in a long list of lists
-          finished_dataset <- rbind(finished_dataset, bar)
+          travel_times <- rbind(travel_times, bar)
         } else {
           print(paste("Nothing returned for", fromStop, "to", toStop, "during period", fromTime, "-", toTime))
         }
@@ -157,29 +157,29 @@ if(length(ls(pattern="finished_dataset")) > 0) {
     }
     
     # splitting date & time
-    finished_dataset <- mutate(finished_dataset, dep_d=as.Date(dep_dt), 
+    travel_times <- mutate(travel_times, dep_d=as.Date(dep_dt), 
                                                  dep_t=format(as.POSIXct(dep_dt), format="%H:%M:%S"), 
                                                  arr_d=as.Date(arr_dt), 
                                                  arr_t=format(as.POSIXct(arr_dt), format="%H:%M:%S"))
     # adding parent_station_name, lat and lon
-    finished_dataset <- bind_rows(RedLineRoute$stop[1][[1]], RedLineRoute$stop[2][[1]]) %>% 
+    travel_times <- bind_rows(RedLineRoute$stop[1][[1]], RedLineRoute$stop[2][[1]]) %>% 
                         select(stop_id, parent_station_name, stop_lat, stop_lon) %>% 
                         mutate(stop_id=as.integer(stop_id)) %>% 
                         rename(to_stop = stop_id, to_name = parent_station_name, to_lat = stop_lat, to_lon = stop_lon) %>% 
-                        inner_join(finished_dataset, by="to_stop")
-    finished_dataset <- bind_rows(RedLineRoute$stop[1][[1]], RedLineRoute$stop[2][[1]]) %>% 
+                        inner_join(travel_times, by="to_stop")
+    travel_times <- bind_rows(RedLineRoute$stop[1][[1]], RedLineRoute$stop[2][[1]]) %>% 
                         select(stop_id, parent_station_name, stop_lat, stop_lon) %>% 
                         mutate(stop_id=as.integer(stop_id)) %>% 
                         rename(from_stop = stop_id, from_name = parent_station_name, from_lat = stop_lat, from_lon = stop_lon) %>% 
-                        inner_join(finished_dataset, by="from_stop")
-    finished_dataset <- arrange(finished_dataset, direction, dep_dt)
+                        inner_join(travel_times, by="from_stop")
+    travel_times <- arrange(travel_times, direction, dep_dt)
     
     z <- gzfile("train_travel_times.csv.gz")
-    write.csv(finished_dataset, z) #so others don't need to pull the data again
+    write.csv(travel_times, z) #so others don't need to pull the data again
 }
 ```
 
-asdf
+asdf This is the data we were going to orginally compare to Hubway, etc. but it's only _schedule_ data! blah blah
 
 ```{r Pull_Archive_Data, cache=TRUE, warning=FALSE}
 for(i in 1:length(TArchiveURLs)) {
@@ -297,7 +297,13 @@ for(i in 0:(as.integer(unclass(now() - startTime)))) {
 
 asdf
 
-```{r Calculate_Headways}
+```{r Headways}
+#TBD -- Shawn's looking into this
+```
+
+asdf Alerts come in from Twitter via CodeForBoston blah blah
+
+```{r Alerts}
 
 ```
 
