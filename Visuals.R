@@ -191,7 +191,7 @@ travel<-betweenstops %>%
   filter(start_stop==fromstation & end_stop==tostation) %>%
   group_by(time) %>% summarize(mean(residualtime))
 dygraph(travel) %>% 
-  dyAxis("y", label = "Delay in Seconds") %>% 
+  dyAxis("y", label = "Delay in Seconds") %>%
   dyAxis("x", label="Hour of Day") %>% dyRangeSelector()}
 
 #Example Between MGH and MIT
