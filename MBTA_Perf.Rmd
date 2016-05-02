@@ -489,7 +489,6 @@ red_line_alert <- red_line_alert %>%
 
 asdf
 
-<<<<<<< HEAD
 ```{r Visuals}
 #Get data
 allstops<-Tarchive_stops %>% select(stop_code, stop_name, stop_lat, stop_lon) %>% 
@@ -498,7 +497,7 @@ travel_times$from_stop <- as.integer(travel_times$from_stop)
 travel_times$to_stop <- as.integer(travel_times$to_stop)
 
 #Merge latitude and longitude values
-dataset<-finished_dataset %>% 
+dataset<-travel_times %>% 
   left_join(allstops,by="from_stop") %>% select(-stop_code,-to_stop.y) %>%
   rename(to_stop=to_stop.x, start_stop=stop_name, start_lat=stop_lat, start_long=stop_lon)
 
