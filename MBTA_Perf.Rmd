@@ -113,7 +113,7 @@ if(length(ls(pattern="travel_times")) > 0) {
     print("Loading previously generated data.")
     travel_times <- read_csv("train_travel_times.csv.gz") # can skip MBTA queries and load this instead
     if(names(travel_times[1])=="") {
-        names(select(travel_times, 2:ncol(travel_times))) # remove our nameless index column
+        travel_times <- select(travel_times, 2:ncol(travel_times)) # remove our nameless index column
     }
 } else {
     print("Requesting data from realtime.mbta.com...")
@@ -629,7 +629,7 @@ boston <- leaflet() %>%
 boston
 
 #Average travel times between stops
-traveltime<fulldata %>% group_by(start_stop,end_stop) %>%
+traveltime<-fulldata %>% group_by(start_stop,end_stop) %>%
   summarize(avg_traveltime=mean(travel_time_sec))
 
 betweenstops<-fulldata %>% left_join(traveltime,by=c("start_stop","end_stop")) %>%
