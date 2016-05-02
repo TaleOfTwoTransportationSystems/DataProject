@@ -23,6 +23,7 @@ require(mapproj)
 require(rworldmap)
 require(lubridate)
 library(ggmap)
+library(stringr)
 #http://yihui.name/en/2014/07/library-vs-require/
 
 #Get data
@@ -48,7 +49,7 @@ colnames(dataset)[15]<-"end_lat"
 colnames(dataset)[16]<-"end_long"
 colnames(dataset)[6]<-"from_stop"
 
-dataset<-dataset %>% mutate(date=strftime(dep_dt,format="%Y/%m/%d %H:%M:%S"))
+dataset<-dataset %>% mutate(hour=as.integer(strftime(dep_dt,format="%H")))
 
 #Weather data
 weather<-read.csv("weather.csv")
@@ -187,4 +188,26 @@ travel<-betweenstops %>%
 colnames(travel)[2]<-"ResidualTime"
 dygraph(travel$hour,travel$ResidualTime) #Having some trouble here...
 
+#Tweets
+train_travel_times<-read.csv("/Users/Admin/Documents/FinalProject/DataProject/train_travel_times.csv",stringsAsFactors = FALSE)
+rtweets<-read.csv("/Users/Admin/Documents/FinalProject/DataProject/red_line_tweets_enhanced.csv",stringsAsFactors = FALSE)
+train_travel_times$arr_dt<-ymd_hms(train_travel_times$arr_dt)
+train_travel_times$dep_dt<-ymd_hms(train_travel_times$dep_dt)
+rtweets$arr_dt<-ymd_hms(rtweets$arr_dt)
+train_travel_times <- train_travel_times %>% full_join(rtweets) %>% 
+  filter(is.na(severity)==FALSE)
+
+#Station of concern from alert
+regexp <- "[[:digit:]]+"
+train_travel_times$stop_code<-as.integer(str_extract(train_travel_times$alerts_at_station_code, regexp))
+
+#Get latitude and longitude values
+train_travel_times<-train_travel_times %>% left_join(allstops,by="stop_code") %>%
+  select(dep_dt,arr_dt,severity,stop_code,stop_lat,stop_lon) %>%
+  filter(is.na(stop_lat)==FALSE) %>% filter(is.na(stop_lon)==FALSE)
+
+#Severity of alerts
+leaflet(data = train_travel_times) %>% addTiles() %>% addProviderTiles("CartoDB.Positron") %>%
+  addPolylines(data=redline,~stop_lon,~stop_lat,color="red") %>%
+  addMarkers(~stop_lon, ~stop_lat, clusterOptions = markerClusterOptions())
 
