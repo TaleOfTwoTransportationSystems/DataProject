@@ -1,29 +1,18 @@
 <<<<<<< HEAD
-install.packages("rworldmap")
-install.packages(c("maps", "mapproj"))
-install.packages("leaflet")
-install.packages("dygraphs")
-require(ggmap)
 =======
-# install.packages("rworldmap")
-# install.packages(c("maps", "mapproj"))
-# install.packages("leaflet")
-# install.packages("dygraphs")
 >>>>>>> 4e18ed12f216adf1985cd9309d16b44f61f442f5
-require(dygraphs)
-require(leaflet)
-require(readr)
-require(ggplot2)
-require(tidyr)
-require(dplyr)
-require(pander)
-require(knitr)
-require(maps)
-require(mapproj)
-require(rworldmap)
+library(dygraphs)
+library(leaflet)
+library(readr)
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(maps)
+library(mapproj)
 require(lubridate)
 library(ggmap)
 library(stringr)
+library(ggmap)
 #http://yihui.name/en/2014/07/library-vs-require/
 
 #Get data
@@ -53,15 +42,14 @@ t.lub <- ymd_hms(dataset$dep_dt)
 dataset$time <- round((hour(t.lub) + minute(t.lub)/60), digits=2)
 fulldata<-dataset
 
-#Weather data
-weather<-read.csv("weather.csv")
+#Weather data (not using it but its here)
+weather<-read.csv("https://www.ncei.noaa.gov/orders/cdo/729412.csv")
 weather<-weather %>% 
   filter(DATE>20160124,STATION_NAME=="BOSTON LOGAN INTERNATIONAL AIRPORT MA US") %>%
-  select(DATE,precipitation,snowfall) 
-colnames(weather)[1]<-"date"
-dataset<-dataset %>% left_join(weather,by="date")
-write.csv(dataset,file="map_dataset.csv")
-fulldata<-dataset
+  select(DATE,PRCP,SNOW) 
+colnames(weather)[2]<-"precipitation"
+colnames(weather)[3]<-"snowfall"
+write.csv(weather,file="weather.csv")
 
 #RedLine
 Red <-  RedLineRoute$stop[[1]] %>%
@@ -190,16 +178,20 @@ traveltimes_day<-function(fromstation,tostation){
 travel<-betweenstops %>% 
   filter(start_stop==fromstation & end_stop==tostation) %>%
   group_by(time) %>% summarize(mean(residualtime))
-dygraph(travel) %>% 
+dygraph(travel,main=c(as.character(fromstation), as.character(tostation))) %>% 
   dyAxis("y", label = "Delay in Seconds") %>%
-  dyAxis("x", label="Hour of Day") %>% dyRangeSelector()}
+  dyAxis("x", label="Hour of Day") %>% dyRangeSelector() %>%
+  dyEvent("12.00", label="Noon", labelLoc = "bottom") %>%
+  dyShading(from = "7.00", to = "9.00",color="#FFE6E6") %>%
+  dyShading(from = "17.00", to = "19.00",color="#CCEBD6")}
 
-#Example Between MGH and MIT
+#Examples
+traveltimes_day("Park Street - to Alewife","Charles/MGH - Outbound")
 traveltimes_day("Charles/MGH - Outbound","Kendall/MIT - Outbound")
 
 #Tweets
-train_travel_times<-read.csv("/Users/Admin/Documents/FinalProject/DataProject/train_travel_times.csv",stringsAsFactors = FALSE)
-rtweets<-read.csv("/Users/Admin/Documents/FinalProject/DataProject/red_line_tweets_enhanced.csv",stringsAsFactors = FALSE)
+train_travel_times<-read.csv("train_travel_times.csv",stringsAsFactors = FALSE)
+rtweets<-read.csv("red_line_tweets_enhanced.csv",stringsAsFactors = FALSE)
 train_travel_times$arr_dt<-ymd_hms(train_travel_times$arr_dt)
 train_travel_times$dep_dt<-ymd_hms(train_travel_times$dep_dt)
 rtweets$arr_dt<-ymd_hms(rtweets$arr_dt)
@@ -212,7 +204,7 @@ train_travel_times$stop_code<-as.integer(str_extract(train_travel_times$alerts_a
 
 #Get latitude and longitude values
 train_travel_times<-train_travel_times %>% left_join(allstops,by="stop_code") %>%
-  select(dep_dt,arr_dt,severity,stop_code,stop_lat,stop_lon) %>%
+  select(dep_dt,arr_dt,severity,stop_code,stop_name,stop_lat,stop_lon) %>%
   filter(is.na(stop_lat)==FALSE) %>% filter(is.na(stop_lon)==FALSE)
 
 #Red line severity of alerts
@@ -220,4 +212,6 @@ leaflet(data = train_travel_times) %>% addTiles() %>% addProviderTiles("CartoDB.
   addPolylines(data=redline,~stop_lon,~stop_lat,color="red") %>%
   addCircleMarkers(data=redline, ~stop_lon,~stop_lat,color="red",radius=1,popup=~stop_name) %>%
   addMarkers(~stop_lon, ~stop_lat, clusterOptions = markerClusterOptions())
+
+
 
