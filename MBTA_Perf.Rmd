@@ -39,6 +39,7 @@ library(ggmap)
 library(maps)
 library(mapproj)
 library(rworldmap)
+library(dygraphs)
 ```
 
 Some things we hard code:
@@ -55,6 +56,8 @@ startTime <- as.POSIXct("2016-01-25 04:00:00") # the start date of the class -- 
 
 TArchiveURLs <- c("http://www.mbta.com/uploadedfiles/MBTA_GTFS.zip",
                   "http://www.mbta.com/gtfs_archive/20151211.zip") # first is current archive; the rest are father back in time
+
+weather<-read.csv("https://www.ncei.noaa.gov/orders/cdo/729412.csv")
 ```
 
 asdf Google realtime performance blah blah
@@ -508,14 +511,11 @@ dataset<-dataset %>%
 
 t.lub <- ymd_hms(dataset$dep_dt)
 dataset$time <- round((hour(t.lub) + minute(t.lub)/60), digits=2)
-fulldata<-dataset
 
 #Weather data (not using it but its here)
-weather<-read.csv("https://www.ncei.noaa.gov/orders/cdo/729412.csv")
 weather<-weather %>% 
   filter(DATE>20160124,STATION_NAME=="BOSTON LOGAN INTERNATIONAL AIRPORT MA US") %>%
   select(DATE,PRCP,SNOW) %>% rename(precipitation=PRCP,snowfall=SNOW)
-write.csv(weather,file="weather.csv")
 
 #RedLine
 Red <-  RedLineRoute$stop[[1]] %>%
@@ -573,15 +573,13 @@ all_lines$stop_lon<-as.numeric(all_lines$stop_lon)
 all_lines <- all_lines %>% 
   separate(stop_name, into = c("stop_name", "extra"), sep="-", fill="right") %>%
   select(-extra)
-write.csv(all_lines,file="T_lines.csv")
 
 #Map of Boston
 lon_range <- extendrange(dataset$end_long)
 lat_range <- extendrange(dataset$end_lat)
-calc_zoom(lon_range, lat_range)
 
 gc <- geocode("boston massachusetts")
-map <- get_map(gc,maptype = "toner-lite",zoom=12)
+map <- get_map(gc,maptype = "toner-lite",calc_zoom(lon_range, lat_range))
 
 ggmap(map)+
   geom_path(data=Red,aes(x=stop_lon,y=stop_lat),color="red",size=1)+
@@ -629,10 +627,10 @@ boston <- leaflet() %>%
 boston
 
 #Average travel times between stops
-traveltime<fulldata %>% group_by(start_stop,end_stop) %>%
+traveltime<-dataset %>% group_by(start_stop,end_stop) %>%
   summarize(avg_traveltime=mean(travel_time_sec))
 
-betweenstops<-fulldata %>% left_join(traveltime,by=c("start_stop","end_stop")) %>%
+betweenstops<-dataset %>% left_join(traveltime,by=c("start_stop","end_stop")) %>%
   mutate(residualtime=avg_traveltime-travel_time_sec)
 
 #Delay vs. hour of day plot, input using start and stop_codes
@@ -653,25 +651,23 @@ traveltimes_day("Park Street - to Alewife","Charles/MGH - Outbound")
 traveltimes_day("Charles/MGH - Outbound","Kendall/MIT - Outbound")
 
 #Tweets
-train_travel_times<-read.csv("train_travel_times.csv",stringsAsFactors = FALSE)
-rtweets<-read.csv("red_line_tweets_enhanced.csv",stringsAsFactors = FALSE)
-train_travel_times$arr_dt<-ymd_hms(train_travel_times$arr_dt)
-train_travel_times$dep_dt<-ymd_hms(train_travel_times$dep_dt)
-rtweets$arr_dt<-ymd_hms(rtweets$arr_dt)
-train_travel_times <- train_travel_times %>% full_join(rtweets) %>% 
+travel_times$arr_dt<-ymd_hms(travel_times$arr_dt)
+travel_times$dep_dt<-ymd_hms(travel_times$dep_dt)
+red_line_alert$arr_dt<-ymd_hms(red_line_alert$arr_dt)
+travel_times <- travel_times %>% full_join(red_line_alert) %>% 
   filter(is.na(severity)==FALSE)
 
 #Station of concern from alert
 regexp <- "[[:digit:]]+"
-train_travel_times$stop_code<-as.integer(str_extract(train_travel_times$alerts_at_station_code, regexp))
+travel_times$stop_code<-as.integer(str_extract(travel_times$alerts_at_station_code, regexp))
 
 #Get latitude and longitude values
-train_travel_times<-train_travel_times %>% left_join(allstops,by="stop_code") %>%
+travel_times<-travel_times %>% left_join(allstops,by="stop_code") %>%
   select(dep_dt,arr_dt,severity,stop_code,stop_name,stop_lat,stop_lon) %>%
   filter(is.na(stop_lat)==FALSE) %>% filter(is.na(stop_lon)==FALSE)
 
 #Red line severity of alerts
-leaflet(data = train_travel_times) %>% addTiles() %>% addProviderTiles("CartoDB.Positron") %>%
+leaflet(data = travel_times) %>% addTiles() %>% addProviderTiles("CartoDB.Positron") %>%
   addPolylines(data=redline,~stop_lon,~stop_lat,color="red") %>%
   addCircleMarkers(data=redline, ~stop_lon,~stop_lat,color="red",radius=1,popup=~stop_name) %>%
   addMarkers(~stop_lon, ~stop_lat, clusterOptions = markerClusterOptions())
