@@ -510,7 +510,7 @@ t.lub <- ymd_hms(dataset$dep_dt)
 dataset$time <- round((hour(t.lub) + minute(t.lub)/60), digits=2)
 fulldata<-dataset
 
-#Weather data
+#Weather data (not using it but its here)
 weather<-read.csv("https://www.ncei.noaa.gov/orders/cdo/729412.csv")
 weather<-weather %>% 
   filter(DATE>20160124,STATION_NAME=="BOSTON LOGAN INTERNATIONAL AIRPORT MA US") %>%
@@ -599,7 +599,7 @@ ggmap(map)+
   geom_point(data=Orange,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
   geom_point(data=Blue,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
   theme(axis.ticks = element_blank(), axis.text = element_blank(),axis.title=element_blank())
-     
+
 #Using Leaflet
 redline<-all_lines %>% filter(line=="Red")
 greenBline<-all_lines %>% filter(line=="GreenB")
@@ -629,46 +629,49 @@ boston <- leaflet() %>%
 boston
 
 #Average travel times between stops
-traveltime<-fulldata %>% group_by(start_stop,end_stop) %>%
+traveltime<fulldata %>% group_by(start_stop,end_stop) %>%
   summarize(avg_traveltime=mean(travel_time_sec))
 
 betweenstops<-fulldata %>% left_join(traveltime,by=c("start_stop","end_stop")) %>%
   mutate(residualtime=avg_traveltime-travel_time_sec)
-  
-travel<-betweenstops %>% 
-  group_by(c(start_stop,end_stop),time) %>%
-  summarize(avgresid=mean(residualtime))
 
 #Delay vs. hour of day plot, input using start and stop_codes
 traveltimes_day<-function(fromstation,tostation){
-travel<-betweenstops %>% 
-  filter(start_stop==fromstation & end_stop==tostation) %>%
-  group_by(time) %>% summarize(mean(residualtime))
-dygraph(travel) %>% 
-  dyAxis("y", label = "Delay in Seconds") %>%
-  dyAxis("x", label="Hour of Day") %>% dyRangeSelector()}
+  travel<-betweenstops %>% 
+    filter(start_stop==fromstation & end_stop==tostation) %>%
+    group_by(time) %>% summarize(mean(residualtime))
+  
+  dygraph(travel,main=c(as.character(fromstation), as.character(tostation))) %>% 
+    dyAxis("y", label = "Delay in Seconds") %>%
+    dyAxis("x", label="Hour of Day") %>% dyRangeSelector() %>%
+    dyEvent("12.00", label="Noon", labelLoc = "bottom") %>%
+    dyShading(from = "7.00", to = "9.00",color="#FFE6E6") %>%
+    dyShading(from = "17.00", to = "19.00",color="#CCEBD6") }
 
-#Example Between MGH and MIT
+#Examples
+traveltimes_day("Park Street - to Alewife","Charles/MGH - Outbound")
 traveltimes_day("Charles/MGH - Outbound","Kendall/MIT - Outbound")
 
 #Tweets
-travel_times$arr_dt<-ymd_hms(travel_times$arr_dt)
-travel_times$dep_dt<-ymd_hms(travel_times$dep_dt)
-red_line_alert$arr_dt<-ymd_hms(red_line_alert$arr_dt)
-travel_times <- travel_times %>% full_join(red_line_alert) %>% 
+train_travel_times<-read.csv("train_travel_times.csv",stringsAsFactors = FALSE)
+rtweets<-read.csv("red_line_tweets_enhanced.csv",stringsAsFactors = FALSE)
+train_travel_times$arr_dt<-ymd_hms(train_travel_times$arr_dt)
+train_travel_times$dep_dt<-ymd_hms(train_travel_times$dep_dt)
+rtweets$arr_dt<-ymd_hms(rtweets$arr_dt)
+train_travel_times <- train_travel_times %>% full_join(rtweets) %>% 
   filter(is.na(severity)==FALSE)
 
 #Station of concern from alert
 regexp <- "[[:digit:]]+"
-travel_times$stop_code<-as.integer(str_extract(travel_times$alerts_at_station_code, regexp))
+train_travel_times$stop_code<-as.integer(str_extract(train_travel_times$alerts_at_station_code, regexp))
 
 #Get latitude and longitude values
-travel_times<-travel_times %>% left_join(allstops,by="stop_code") %>%
-  select(dep_dt,arr_dt,severity,stop_code,stop_lat,stop_lon) %>%
+train_travel_times<-train_travel_times %>% left_join(allstops,by="stop_code") %>%
+  select(dep_dt,arr_dt,severity,stop_code,stop_name,stop_lat,stop_lon) %>%
   filter(is.na(stop_lat)==FALSE) %>% filter(is.na(stop_lon)==FALSE)
 
 #Red line severity of alerts
-leaflet(data = travel_times) %>% addTiles() %>% addProviderTiles("CartoDB.Positron") %>%
+leaflet(data = train_travel_times) %>% addTiles() %>% addProviderTiles("CartoDB.Positron") %>%
   addPolylines(data=redline,~stop_lon,~stop_lat,color="red") %>%
   addCircleMarkers(data=redline, ~stop_lon,~stop_lat,color="red",radius=1,popup=~stop_name) %>%
   addMarkers(~stop_lon, ~stop_lat, clusterOptions = markerClusterOptions())
