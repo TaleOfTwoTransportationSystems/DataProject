@@ -152,7 +152,9 @@ library(lubridate)
 library(readr)
 library(tidyr)
 library(leaflet)
-library(ggplot2)</code></pre>
+library(ggplot2)
+library(twitteR) #masks id, location from dplyr
+library(stringr)</code></pre>
 <p>Some things we hard code:</p>
 <pre class="r"><code># API information for the real-time feed
 TKeyJeff &lt;- &quot;?api_key=tNprgYF1K027zEIVluAkCw&quot;
@@ -218,7 +220,7 @@ if(length(ls(pattern=&quot;travel_times&quot;)) &gt; 0) {
 } else if (file.exists(&quot;train_travel_times.csv.gz&quot;)) {
     print(&quot;Loading previously generated data.&quot;)
     travel_times &lt;- read_csv(&quot;train_travel_times.csv.gz&quot;) # can skip MBTA queries and load this instead
-    names(travel_times)[1] &lt;- &quot;index&quot; # adding a name to our unnamed first column -- this column gets added by read_csv
+    names(travel_times)[1] &lt;- &quot;index&quot; # adding a name to our unnamed first column
 } else {
     print(&quot;Requesting data from realtime.mbta.com...&quot;)
     # create a holding frame for the data; we do this outside the loops so that it will persist.
@@ -415,6 +417,74 @@ for(i in 0:(as.integer(unclass(now() - startTime)))) {
 <p>asdf</p>
 <pre class="r"><code>#TBD -- Shawn's looking into this</code></pre>
 <p>asdf Alerts come in from Twitter via CodeForBoston blah blah</p>
+<pre class="r"><code># The following can be skipped if &quot;red_line_tweets.csv&quot; is present in the working directory
+if (file.exists(&quot;red_line_tweets.csv.gz&quot;)) {
+    print(&quot;Loading previously generated data.&quot;)
+    red_line_alert&lt;- read_csv(&quot;red_line_tweets.csv.gz&quot;) # can skip Twitter queries and load this instead
+} else {
+    # generated from twitter's website
+    consumer_key &lt;- 'bpCAcAY27kfpSyOAOFXNP2PsO'
+    consumer_secret &lt;- '5skjmU5FgWUA77PI4OwuBLcmv3Rr03xEKZQoG0FJJbI0wt3oMa'
+    access_token &lt;- '111824999-KVpkYnMt3MZU2Bfxl9lcHZfMvdF5pYZiHQqSonE6'
+    access_secret &lt;- 'Ib5N3qKxZ7CT1TuQeznHv6XobdCmjZkSVTESkVj7TwVZm'
+    
+    # authorizing twitter 
+    setup_twitter_oauth(consumer_key = consumer_key, 
+                        consumer_secret =  consumer_secret, 
+                        access_token = access_token, 
+                        access_secret = access_secret)
+    
+    # makes dataframe for results and gets specific features
+    getSpecificTweetInformation &lt;- function(x) {
+        twListToDF(x) %&gt;% 
+            select(screenName, id, text, created, favoriteCount, retweetCount)
+    }
+    
+    # Red Line Alerts user time line only 3200 hard limit
+    Red_Line_Alerts_tweets &lt;- userTimeline('Red_Line_Alerts', n=3200, includeRts = FALSE, excludeReplies = TRUE)
+    
+    # MattaPan Line Alerts user time line only 3200 hard limit
+    highspeedalerts_tweets &lt;- userTimeline('highspeedalerts', n=3200, includeRts = FALSE, excludeReplies = TRUE)
+    
+    # For other twitter alerts: 
+    # # MBTA user time line only 3200 hard limit
+    # mbta_tweets &lt;- userTimeline('MBTA', n=3200, includeRts = FALSE, excludeReplies = TRUE)
+    # 
+    # # MBTA Alerts user time line only 3200 hard limit
+    # mbta_alerts_tweets &lt;- userTimeline('mbta_alerts', n=3200, includeRts = FALSE, excludeReplies = TRUE)
+    # 
+    # # Green Line Alerts user time line only 3200 hard limit
+    # GreenLineAlerts_tweets &lt;- userTimeline('GreenLineAlerts', n=3200, includeRts = FALSE, excludeReplies = TRUE)
+    # 
+    # # Orange Line Alerts user time line only 3200 hard limit
+    # OrangeLineAlert_tweets &lt;- userTimeline('OrangeLineAlert', n=3200, includeRts = FALSE, excludeReplies = TRUE)
+    # 
+    # # Blue Line Alerts user time line only 3200 hard limit
+    # BlueLineAlerts_tweets &lt;- userTimeline('BlueLineAlerts', n=3200, includeRts = FALSE, excludeReplies = TRUE)
+    
+
+    # Combining tweets from different twitter handles
+    mbta_tweets_combined &lt;- getSpecificTweetInformation(Red_Line_Alerts_tweets) %&gt;% 
+        union(getSpecificTweetInformation(highspeedalerts_tweets)) 
+    
+    # write all to a csv
+    z &lt;- gzfile(&quot;red_line_tweets.csv.gz&quot;)
+    write.csv(mbta_tweets_combined, z) 
+}</code></pre>
+<pre><code>## [1] &quot;Loading previously generated data.&quot;</code></pre>
+<pre class="r"><code># tweet count and oldest and most recent tweet dates
+red_line_alert %&gt;% 
+    group_by(screenName) %&gt;% 
+    summarise(num_of_tweets=n(), 
+              oldest_date=min(as.Date.POSIXct(created)), 
+              most_recent_date=max(as.Date.POSIXct(created)))</code></pre>
+<pre><code>## Source: local data frame [2 x 4]
+## 
+##        screenName num_of_tweets oldest_date most_recent_date
+##             (chr)         (int)      (date)           (date)
+## 1 highspeedalerts           127  2014-06-11       2016-04-28
+## 2 Red_Line_Alerts          1010  2014-06-01       2016-05-01</code></pre>
+<p>asdf</p>
 <pre class="r"><code>#remove this when we're done
 ls.str()</code></pre>
 <pre><code>## distinct_stop_pairs : 'data.frame':  58 obs. of  2 variables:
@@ -429,6 +499,13 @@ ls.str()</code></pre>
 ##  $ direction_id  : chr  &quot;0&quot; &quot;1&quot;
 ##  $ direction_name: chr  &quot;Outbound&quot; &quot;Inbound&quot;
 ##  $ stop          :List of 2
+## red_line_alert : Classes 'tbl_df', 'tbl' and 'data.frame':   1137 obs. of  6 variables:
+##  $ screenName   : chr  &quot;highspeedalerts&quot; &quot;highspeedalerts&quot; &quot;highspeedalerts&quot; &quot;highspeedalerts&quot; ...
+##  $ id           : num  4.88e+17 4.89e+17 4.97e+17 4.97e+17 4.99e+17 ...
+##  $ text         : chr  &quot;Mattapan Trolley experiencing minor delays due to disabled train #mbta&quot; &quot;Mattapan Trolley experiencing minor delays due to a disabled train at Butler Station. #mbta&quot; &quot;Mattapan Trolley experiencing moderate delays due to a disabled train at Capen Street Station. #mbta&quot; &quot;Mattapan Trolley experiencing moderate delays due to a disabled train at Central Avenue Station #mbta&quot; ...
+##  $ created      : POSIXct, format: &quot;2014-07-11 20:41:25&quot; &quot;2014-07-15 12:51:38&quot; ...
+##  $ favoriteCount: int  0 0 0 0 0 0 0 0 0 0 ...
+##  $ retweetCount : int  0 0 0 0 0 0 0 0 0 0 ...
 ## RedLineRoute : 'data.frame': 2 obs. of  3 variables:
 ##  $ direction_id  : chr  &quot;0&quot; &quot;1&quot;
 ##  $ direction_name: chr  &quot;Southbound&quot; &quot;Northbound&quot;
