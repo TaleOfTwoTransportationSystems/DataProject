@@ -152,7 +152,9 @@ library(lubridate)
 library(readr)
 library(tidyr)
 library(leaflet)
-library(ggplot2)</code></pre>
+library(ggplot2)
+library(twitteR) #masks id, location from dplyr
+library(stringr)</code></pre>
 <p>Some things we hard code:</p>
 <pre class="r"><code># API information for the real-time feed
 TKeyJeff &lt;- &quot;?api_key=tNprgYF1K027zEIVluAkCw&quot;
@@ -218,7 +220,7 @@ if(length(ls(pattern=&quot;travel_times&quot;)) &gt; 0) {
 } else if (file.exists(&quot;train_travel_times.csv.gz&quot;)) {
     print(&quot;Loading previously generated data.&quot;)
     travel_times &lt;- read_csv(&quot;train_travel_times.csv.gz&quot;) # can skip MBTA queries and load this instead
-    names(travel_times)[1] &lt;- &quot;index&quot; # adding a name to our unnamed first column -- this column gets added by read_csv
+    names(travel_times)[1] &lt;- &quot;index&quot; # adding a name to our unnamed first column
 } else {
     print(&quot;Requesting data from realtime.mbta.com...&quot;)
     # create a holding frame for the data; we do this outside the loops so that it will persist.
@@ -302,14 +304,14 @@ if(length(ls(pattern=&quot;travel_times&quot;)) &gt; 0) {
 <p>asdf This is the data we were going to orginally compare to Hubway, etc. but it’s only <em>schedule</em> data! blah blah</p>
 <pre class="r"><code>for(i in 1:length(TArchiveURLs)) {
     if(file.exists(basename(TArchiveURLs[i]))) {
-        print(paste(&quot;Using existing&quot;, TArchiveURLs[i]))
+        print(paste(&quot;Using existing&quot;, basename(TArchiveURLs[i])))
     } else {
         download.file(TArchiveURLs[i], destfile=basename(TArchiveURLs[i]))
     }
     unzip(basename(TArchiveURLs[i]), exdir=strsplit(basename(TArchiveURLs[i]), &quot;\\.&quot;)[[1]][1], overwrite=FALSE)
 }</code></pre>
-<pre><code>## [1] &quot;Using existing http://www.mbta.com/uploadedfiles/MBTA_GTFS.zip&quot;
-## [1] &quot;Using existing http://www.mbta.com/gtfs_archive/20151211.zip&quot;</code></pre>
+<pre><code>## [1] &quot;Using existing MBTA_GTFS.zip&quot;
+## [1] &quot;Using existing 20151211.zip&quot;</code></pre>
 <pre class="r"><code># The following is fixed for two archives; should be loop based on length of TArchivesURLs
 setwd(strsplit(basename(TArchiveURLs[1]), &quot;\\.&quot;)[[1]][1])
 
@@ -318,6 +320,7 @@ Tarchive_cal &lt;- read_csv(&quot;calendar.txt&quot;) %&gt;% mutate(zip_file=bas
 Tarchive_calDates &lt;- read_csv(&quot;calendar_dates.txt&quot;)
 Tarchive_trips &lt;- read.csv(&quot;trips.txt&quot;)
 Tarchive_stopTimes &lt;- read.csv(&quot;stop_times.txt&quot;)
+Tarchive_stops &lt;- read.csv(&quot;stops.txt&quot;)
 
 # OK, as a first step, let's trim back the Tarchive tables to just the subway (RTL) data:
 Tarchive_cal &lt;- filter(Tarchive_cal, grepl(&quot;RTL&quot;, service_id))
@@ -415,7 +418,189 @@ for(i in 0:(as.integer(unclass(now() - startTime)))) {
 <p>asdf</p>
 <pre class="r"><code>#TBD -- Shawn's looking into this</code></pre>
 <p>asdf Alerts come in from Twitter via CodeForBoston blah blah</p>
-<pre class="r"><code>#remove this when we're done
+<pre class="r"><code># The following can be skipped if &quot;red_line_tweets.csv&quot; is present in the working directory
+if (file.exists(&quot;red_line_tweets.csv.gz&quot;)) {
+    print(&quot;Loading previously generated data.&quot;)
+    red_line_alert&lt;- read_csv(&quot;red_line_tweets.csv.gz&quot;) # can skip Twitter queries and load this instead
+} else {
+    # generated from twitter's website
+    consumer_key &lt;- 'bpCAcAY27kfpSyOAOFXNP2PsO'
+    consumer_secret &lt;- '5skjmU5FgWUA77PI4OwuBLcmv3Rr03xEKZQoG0FJJbI0wt3oMa'
+    access_token &lt;- '111824999-KVpkYnMt3MZU2Bfxl9lcHZfMvdF5pYZiHQqSonE6'
+    access_secret &lt;- 'Ib5N3qKxZ7CT1TuQeznHv6XobdCmjZkSVTESkVj7TwVZm'
+    
+    # authorizing twitter 
+    setup_twitter_oauth(consumer_key = consumer_key, 
+                        consumer_secret =  consumer_secret, 
+                        access_token = access_token, 
+                        access_secret = access_secret)
+    
+    # makes dataframe for results and gets specific features
+    getSpecificTweetInformation &lt;- function(x) {
+        twListToDF(x) %&gt;% 
+            select(screenName, id, text, created, favoriteCount, retweetCount)
+    }
+    
+    # Red Line Alerts user time line only 3200 hard limit
+    Red_Line_Alerts_tweets &lt;- userTimeline('Red_Line_Alerts', n=3200, includeRts = FALSE, excludeReplies = TRUE)
+    
+    # MattaPan Line Alerts user time line only 3200 hard limit
+    highspeedalerts_tweets &lt;- userTimeline('highspeedalerts', n=3200, includeRts = FALSE, excludeReplies = TRUE)
+    
+    # For other twitter alerts: 
+    # # MBTA user time line only 3200 hard limit
+    # mbta_tweets &lt;- userTimeline('MBTA', n=3200, includeRts = FALSE, excludeReplies = TRUE)
+    # 
+    # # MBTA Alerts user time line only 3200 hard limit
+    # mbta_alerts_tweets &lt;- userTimeline('mbta_alerts', n=3200, includeRts = FALSE, excludeReplies = TRUE)
+    # 
+    # # Green Line Alerts user time line only 3200 hard limit
+    # GreenLineAlerts_tweets &lt;- userTimeline('GreenLineAlerts', n=3200, includeRts = FALSE, excludeReplies = TRUE)
+    # 
+    # # Orange Line Alerts user time line only 3200 hard limit
+    # OrangeLineAlert_tweets &lt;- userTimeline('OrangeLineAlert', n=3200, includeRts = FALSE, excludeReplies = TRUE)
+    # 
+    # # Blue Line Alerts user time line only 3200 hard limit
+    # BlueLineAlerts_tweets &lt;- userTimeline('BlueLineAlerts', n=3200, includeRts = FALSE, excludeReplies = TRUE)
+    
+
+    # Combining tweets from different twitter handles
+    red_line_alert &lt;- getSpecificTweetInformation(Red_Line_Alerts_tweets) %&gt;% 
+        union(getSpecificTweetInformation(highspeedalerts_tweets)) 
+    
+    # write all to a csv
+    z &lt;- gzfile(&quot;red_line_tweets.csv.gz&quot;)
+    write.csv(mbta_tweets_combined, z) 
+}</code></pre>
+<pre><code>## [1] &quot;Loading previously generated data.&quot;</code></pre>
+<pre class="r"><code># tweet count and oldest and most recent tweet dates
+red_line_alert %&gt;% 
+    group_by(screenName) %&gt;% 
+    summarise(num_of_tweets=n(), 
+              oldest_date=min(as.Date.POSIXct(created)), 
+              most_recent_date=max(as.Date.POSIXct(created)))</code></pre>
+<pre><code>## Source: local data frame [2 x 4]
+## 
+##        screenName num_of_tweets oldest_date most_recent_date
+##             (chr)         (int)      (date)           (date)
+## 1 highspeedalerts           127  2014-06-11       2016-04-28
+## 2 Red_Line_Alerts          1010  2014-06-01       2016-05-01</code></pre>
+<p>asdf</p>
+<pre class="r"><code># To relate to a data we already have is to add 
+# these tweets as &quot;arrival date&quot; ~ &quot;created&quot; and then join them.
+red_line_alert &lt;- red_line_alert %&gt;% 
+    filter(created &gt; startTime) %&gt;%
+    arrange(created) %&gt;% 
+    select(text, created, favoriteCount, retweetCount) %&gt;% 
+    mutate(arr_dt = created)
+
+travel_times &lt;- travel_times %&gt;% 
+    full_join(red_line_alert)</code></pre>
+<pre><code>## Joining by: &quot;arr_dt&quot;</code></pre>
+<pre class="r"><code># To add tweets as a parameter for stops is by 
+# pulling in stop names from the tweets and then mapping them to stop ids.
+
+# First step is to pull in all the relevant stop ids from our full dataset
+stop_ids &lt;- c(travel_times$from_stop, travel_times$to_stop) %&gt;% unique()
+
+# Second step is get the actaul stop names for these stops
+stop_names_codes &lt;- Tarchive_stops %&gt;% 
+    filter(stop_id %in% stop_ids) %&gt;% 
+    select(stop_code, stop_name) %&gt;% 
+    unite(stop_code_name, stop_code, stop_name)
+
+# Steps that I am taking to get the tweet-station pair
+# 1. Pull in if the delay or issue is from a north_bound or south_bound or both trips
+red_line_alert &lt;- red_line_alert %&gt;% 
+    mutate(bounded = ifelse(grepl(&quot;northbound&quot;, text, ignore.case = TRUE), &quot;northbound&quot;,
+                            ifelse(grepl(&quot;southbound&quot;, text, ignore.case = TRUE), &quot;southbound&quot;,
+                                   ifelse(grepl(&quot;both ways|both direction&quot;, text, ignore.case = TRUE), &quot;northbound_and_southbound&quot;, &quot;&quot;))))
+
+# (side-step) level of severity ~ would be cool to draw a graph to see
+# if severity increases with delay time or
+# time series of severity increasing in the north/south bound trains
+red_line_alert &lt;- red_line_alert %&gt;% 
+    mutate(severity = ifelse(grepl(&quot;minor delay&quot;,text, ignore.case = TRUE), 1, 
+                             ifelse(grepl(&quot;moderate delay&quot;,text, ignore.case = TRUE), 2, 
+                                    ifelse(grepl(&quot;severe delay&quot;,text, ignore.case = TRUE), 3, 0))))
+
+# Things are a bit tricky here, because red line has very different 
+# different meaning of southbound/northbound ~ inbound/putbound trains
+# From the information online 
+# Red Line:  Toward Park Street (Green Line intersection) is Inbound; away is Outbound
+# http://www.boston-discovery-guide.com/boston-subway.html
+# 
+# Alewife -- inbound/southbound---&gt; Park street  &lt;--- inbound/northbound---- Braintree/Ashmont
+# Alewife &lt;--outbound/northbound--- Park street  ---outbound/southbound----&gt; Braintree/Ashmont
+# Lets make a map of stops that are northbound and southbound
+
+# stations with inbound/outbounds, northbound/southbound
+northbound_inbound &lt;- c(&quot;Braintree&quot;, 
+                        &quot;Quincy Adams&quot;,
+                        &quot;Quincy Center&quot;,
+                        &quot;Wollaston&quot;,
+                        &quot;North Quincy&quot;,
+                        &quot;JFK/UMASS Braintree&quot;,
+                        &quot;Broadway&quot;,
+                        &quot;South Station&quot;,
+                        &quot;Downtown Crossing - to Alewife&quot;,
+                        &quot;Savin&quot;,
+                        &quot;Fields&quot;,
+                        &quot;Shawmut&quot;,
+                        &quot;Ashmont&quot;,
+                        &quot;Park&quot;)
+
+northbound_outbound &lt;- c(&quot;Charles&quot;,
+                         &quot;Kendal&quot;,
+                         &quot;Central&quot;,
+                         &quot;Harvard&quot;,
+                         &quot;Porter&quot;,
+                         &quot;Davis&quot;,
+                         &quot;Alewife&quot;)
+
+# southbound_outbound &lt;- northbound_inbound # contains same stations
+# southbound_inbound &lt;- northbound_outbound # contains same stations
+
+# One way of thinking about it in terms of getting to features are:
+# A) creating common for recognizing train station where delay is been tweeted
+red_line_alert &lt;- red_line_alert %&gt;% 
+    mutate(text_clone = text) %&gt;% 
+    separate(text_clone, into = c(&quot;before_at&quot;, &quot;after_at&quot;), sep=&quot; at &quot;) %&gt;% 
+    mutate(after_at = str_trim(gsub(&quot;#mbta|Station|Ave|Street|[.]&quot;, &quot;&quot;, after_at, ignore.case = TRUE))) %&gt;% 
+    rowwise() %&gt;% 
+    mutate( after_at = ifelse(!is.na(after_at),
+                              ifelse(bounded != &quot;&quot;, 
+                                     ifelse(length(agrep(after_at, northbound_inbound, ignore.case = TRUE, value = TRUE,max =6))&gt;0 &amp; bounded == &quot;northbound&quot;,
+                                            paste(after_at, &quot;inbound&quot;),
+                                            ifelse(length(agrep(after_at, northbound_inbound, ignore.case = TRUE,max =6))&gt;0 &amp; bounded == &quot;southbound&quot;,
+                                                   paste(after_at, &quot;outbound&quot;),
+                                                   after_at
+                                            )
+                                     )
+                                     , 
+                                     ifelse(length(agrep(after_at, northbound_outbound, ignore.case = TRUE, value = TRUE,max =6))&gt;0 &amp; bounded == &quot;northbound&quot;,
+                                            paste(after_at, &quot;outbound&quot;),
+                                            ifelse(length(agrep(after_at, northbound_outbound, ignore.case = TRUE, value = TRUE, max =6))&gt;0 &amp; bounded == &quot;southbound&quot;,
+                                                   paste(after_at, &quot;inbound&quot;),
+                                                   after_at
+                                            )
+                                     ))
+                              , after_at),
+            after_at_name_code = 
+                ifelse(!is.na(after_at),
+                       toString(agrep(after_at, stop_names_codes$stop_code_name, value = TRUE, ignore.case = TRUE)), '')) %&gt;%
+    ungroup() %&gt;%
+    select(-after_at, -before_at) %&gt;% 
+    rename(alerts_at_station_code = after_at_name_code) </code></pre>
+<pre><code>## Warning: Too many values at 1 locations: 76</code></pre>
+<pre><code>## Warning: Too few values at 73 locations: 2, 3, 4, 18, 20, 25, 26, 27, 30,
+## 31, 32, 34, 36, 37, 38, 41, 43, 44, 45, 48, ...</code></pre>
+<p>asdf</p>
+</div>
+<div id="final-analysis" class="section level3">
+<h3>Final Analysis</h3>
+<p>asdf</p>
+<pre class="r"><code>#remove this when we're done asdf
 ls.str()</code></pre>
 <pre><code>## distinct_stop_pairs : 'data.frame':  58 obs. of  2 variables:
 ##  $ stop_id  : chr  &quot;70105&quot; &quot;70104&quot; &quot;70096&quot; &quot;70084&quot; ...
@@ -429,6 +614,17 @@ ls.str()</code></pre>
 ##  $ direction_id  : chr  &quot;0&quot; &quot;1&quot;
 ##  $ direction_name: chr  &quot;Outbound&quot; &quot;Inbound&quot;
 ##  $ stop          :List of 2
+## northbound_inbound :  chr [1:14] &quot;Braintree&quot; &quot;Quincy Adams&quot; &quot;Quincy Center&quot; ...
+## northbound_outbound :  chr [1:7] &quot;Charles&quot; &quot;Kendal&quot; &quot;Central&quot; &quot;Harvard&quot; &quot;Porter&quot; ...
+## red_line_alert : Classes 'tbl_df' and 'data.frame':  176 obs. of  8 variables:
+##  $ text                  : chr  &quot;Mattapan Trolley experiencing moderate delays due to a disabled train at Central Ave #mbta&quot; &quot;#RedLine experiencing minor northbound delays between North Quincy and JFK/UMass due to a signal problem. #mbta&quot; &quot;Shuttle buses replacing #RedLine service North Quincy to JFK due to disabled work equipment. Customers may utilize the Commuter&quot;| __truncated__ &quot;#RedLine experiencing moderate residual delays due to earlier disabled work equipment. #mbta&quot; ...
+##  $ created               : POSIXct, format: &quot;2016-01-25 23:36:17&quot; &quot;2016-01-26 11:46:33&quot; ...
+##  $ favoriteCount         : int  0 0 1 0 0 0 0 1 0 0 ...
+##  $ retweetCount          : int  0 0 2 0 0 0 0 0 0 0 ...
+##  $ arr_dt                : POSIXct, format: &quot;2016-01-25 23:36:17&quot; &quot;2016-01-26 11:46:33&quot; ...
+##  $ bounded               : chr  &quot;&quot; &quot;northbound&quot; &quot;&quot; &quot;&quot; ...
+##  $ severity              : num  2 0 0 0 2 2 1 2 0 2 ...
+##  $ alerts_at_station_code: chr  &quot;70069_Central - Inbound, 70070_Central - Outbound&quot; &quot;&quot; &quot;&quot; &quot;&quot; ...
 ## RedLineRoute : 'data.frame': 2 obs. of  3 variables:
 ##  $ direction_id  : chr  &quot;0&quot; &quot;1&quot;
 ##  $ direction_name: chr  &quot;Southbound&quot; &quot;Northbound&quot;
@@ -448,6 +644,9 @@ ls.str()</code></pre>
 ##  $ service_id: chr 
 ## servicesRemoved :  chr [1:3] &quot;RTL22016-hmb26011-Weekday-01&quot; ...
 ## startTime :  POSIXct[1:1], format: &quot;2016-01-25 04:00:00&quot;
+## stop_ids :  int [1:41] 70067 70069 70063 70071 70065 70073 70085 70087 70077 70089 ...
+## stop_names_codes : 'data.frame': 40 obs. of  1 variable:
+##  $ stop_code_name: chr  &quot;70063_Davis - Inbound&quot; &quot;70064_Davis - Outbound&quot; &quot;70065_Porter - Inbound&quot; &quot;70066_Porter - Outbound&quot; ...
 ## Tarchive_cal : Classes 'tbl_df', 'tbl' and 'data.frame': 73 obs. of  11 variables:
 ##  $ service_id: chr  &quot;RTL12016-hmb16wa6-Saturday-01&quot; &quot;RTL12016-hmb16011-Weekday-01&quot; &quot;RTL12016-hmb16no1-Weekday-01&quot; &quot;RTL12016-hmb16no6-Saturday-01&quot; ...
 ##  $ monday    : int  0 1 1 0 0 1 0 0 1 1 ...
@@ -464,6 +663,18 @@ ls.str()</code></pre>
 ##  $ service_id    : chr  &quot;RTL12016-hmb16wa6-Saturday-01&quot; &quot;RTL12016-hmb16011-Weekday-01&quot; &quot;RTL12016-hmb16011-Weekday-01&quot; &quot;RTL12016-hmb16011-Weekday-01&quot; ...
 ##  $ date          : Date, format: &quot;2016-02-15&quot; &quot;2016-02-19&quot; ...
 ##  $ exception_type: int  1 2 2 2 2 2 2 2 2 2 ...
+## Tarchive_stops : 'data.frame':   8379 obs. of  11 variables:
+##  $ stop_id            : Factor w/ 8379 levels &quot;1&quot;,&quot;10&quot;,&quot;10000&quot;,..: 8204 8205 8206 8207 8208 8209 8210 8211 8212 8213 ...
+##  $ stop_code          : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ stop_name          : Factor w/ 7470 levels &quot; Franklin St @ Washington St&quot;,..: 761 768 803 745 817 822 848 854 883 886 ...
+##  $ stop_desc          : logi  NA NA NA NA NA NA ...
+##  $ stop_lat           : num  42.4 42.3 42.3 42.4 42.4 ...
+##  $ stop_lon           : num  -71.1 -71.1 -71.1 -71 -71.1 ...
+##  $ zone_id            : logi  NA NA NA NA NA NA ...
+##  $ stop_url           : logi  NA NA NA NA NA NA ...
+##  $ location_type      : int  1 1 1 1 1 1 1 1 1 1 ...
+##  $ parent_station     : Factor w/ 124 levels &quot;&quot;,&quot;place-alfcl&quot;,..: 1 1 1 1 1 1 1 1 1 1 ...
+##  $ wheelchair_boarding: int  1 2 1 1 1 1 1 1 2 1 ...
 ## Tarchive_stopTimes : Classes 'tbl_df', 'tbl' and 'data.frame':   244499 obs. of  8 variables:
 ##  $ trip_id       : chr  &quot;29176129&quot; &quot;29176129&quot; &quot;29176129&quot; &quot;29176129&quot; ...
 ##  $ arrival_time  : chr  &quot;19:25:00&quot; &quot;19:26:00&quot; &quot;19:28:00&quot; &quot;19:30:00&quot; ...
@@ -509,7 +720,7 @@ ls.str()</code></pre>
 ##  $ block_id             : chr  &quot;S931_-6&quot; &quot;S931_-7&quot; &quot;S931_-10&quot; &quot;S931_-9&quot; ...
 ##  $ shape_id             : chr  &quot;931_0011&quot; &quot;931_0011&quot; &quot;931_0011&quot; &quot;931_0011&quot; ...
 ##  $ wheelchair_accessible: int  1 1 1 1 1 1 1 1 1 1 ...
-## travel_times : Classes 'tbl_df', 'tbl' and 'data.frame': 356300 obs. of  19 variables:
+## travel_times : Classes 'tbl_df', 'tbl' and 'data.frame': 356472 obs. of  23 variables:
 ##  $ index                    : int  1 2 3 4 5 6 7 8 9 10 ...
 ##  $ from_stop                : int  70067 70069 70063 70071 70065 70063 70067 70073 70069 70067 ...
 ##  $ from_name                : chr  &quot;Harvard&quot; &quot;Central&quot; &quot;Davis&quot; &quot;Kendall/MIT&quot; ...
@@ -519,7 +730,7 @@ ls.str()</code></pre>
 ##  $ to_name                  : chr  &quot;Central&quot; &quot;Kendall/MIT&quot; &quot;Broadway&quot; &quot;Charles/MGH&quot; ...
 ##  $ to_lat                   : num  42.4 42.4 42.3 42.4 42.3 ...
 ##  $ to_lon                   : num  -71.1 -71.1 -71.1 -71.1 -71 ...
-##  $ index                    : int  264366 280388 181143 296859 249027 181144 264367 313333 280389 264368 ...
+##  $ index                    : int  1 2 3 4 5 6 7 8 9 10 ...
 ##  $ direction                : int  0 0 0 0 0 0 0 0 0 0 ...
 ##  $ dep_dt                   : POSIXct, format: &quot;2016-01-25 05:24:54&quot; &quot;2016-01-25 05:28:11&quot; ...
 ##  $ arr_dt                   : POSIXct, format: &quot;2016-01-25 05:27:21&quot; &quot;2016-01-25 05:29:53&quot; ...
@@ -529,6 +740,10 @@ ls.str()</code></pre>
 ##  $ dep_t                    : Date, format: NA NA ...
 ##  $ arr_d                    : Date, format: &quot;2016-01-25&quot; &quot;2016-01-25&quot; ...
 ##  $ arr_t                    : Date, format: NA NA ...
+##  $ text                     : chr  NA NA NA NA ...
+##  $ created                  : POSIXct, format: NA NA ...
+##  $ favoriteCount            : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ retweetCount             : int  NA NA NA NA NA NA NA NA NA NA ...
 ## TRouteURL :  chr &quot;http://realtime.mbta.com/developer/api/v2/stopsbyroute&quot;
 ## TTravelURL :  chr &quot;http://realtime.mbta.com/developer/api/v2.1/traveltimes&quot;</code></pre>
 </div>

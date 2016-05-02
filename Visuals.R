@@ -42,7 +42,7 @@ t.lub <- ymd_hms(dataset$dep_dt)
 dataset$time <- round((hour(t.lub) + minute(t.lub)/60), digits=2)
 fulldata<-dataset
 
-#Weather data
+#Weather data (not using it but its here)
 weather<-read.csv("https://www.ncei.noaa.gov/orders/cdo/729412.csv")
 weather<-weather %>% 
   filter(DATE>20160124,STATION_NAME=="BOSTON LOGAN INTERNATIONAL AIRPORT MA US") %>%
@@ -213,6 +213,5 @@ leaflet(data = train_travel_times) %>% addTiles() %>% addProviderTiles("CartoDB.
   addCircleMarkers(data=redline, ~stop_lon,~stop_lat,color="red",radius=1,popup=~stop_name) %>%
   addMarkers(~stop_lon, ~stop_lat, clusterOptions = markerClusterOptions())
 
-plot(train_travel_times$stop_name,train_travel_times$arr_dt)
 
 
