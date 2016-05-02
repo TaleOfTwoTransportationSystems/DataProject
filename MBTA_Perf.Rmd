@@ -35,6 +35,10 @@ library(leaflet)
 library(ggplot2)
 library(twitteR) #masks id, location from dplyr
 library(stringr)
+library(ggmap)
+library(maps)
+library(mapproj)
+library(rworldmap)
 ```
 
 Some things we hard code:
@@ -60,12 +64,12 @@ RedLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Red", sep="
 MattapanLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Mattapan", sep=""))[[1]]
 
 # Routes we're not using yet
-#GreenBLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-B", sep=""))[[1]]
-#GreenCLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-C", sep=""))[[1]]
-#GreenDLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-D", sep=""))[[1]]
-#GreenELineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-E", sep=""))[[1]]
-#BlueLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Blue", sep=""))[[1]]
-#OrangeLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Orange", sep=""))[[1]]
+GreenBLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-B", sep=""))[[1]]
+GreenCLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-C", sep=""))[[1]]
+GreenDLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-D", sep=""))[[1]]
+GreenELineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-E", sep=""))[[1]]
+BlueLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Blue", sep=""))[[1]]
+OrangeLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Orange", sep=""))[[1]]
 
 # Build a list of all stop pairs of interest.
 red_south <-  RedLineRoute$stop[[1]] %>%
@@ -108,7 +112,9 @@ if(length(ls(pattern="travel_times")) > 0) {
 } else if (file.exists("train_travel_times.csv.gz")) {
     print("Loading previously generated data.")
     travel_times <- read_csv("train_travel_times.csv.gz") # can skip MBTA queries and load this instead
-    names(travel_times)[1] <- "index" # adding a name to our unnamed first column
+    if(names(travel_times[1])=="") {
+        names(select(travel_times, 2:ncol(travel_times))) # remove our nameless index column
+    }
 } else {
     print("Requesting data from realtime.mbta.com...")
     # create a holding frame for the data; we do this outside the loops so that it will persist.
@@ -483,26 +489,13 @@ red_line_alert <- red_line_alert %>%
 
 asdf
 
+<<<<<<< HEAD
 ```{r Visuals}
-library(dygraphs)
-library(leaflet)
-library(readr)
-library(ggplot2)
-library(tidyr)
-library(dplyr)
-library(maps)
-library(mapproj)
-library(lubridate)
-library(ggmap)
-library(stringr)
-library(ggmap)
-
 #Get data
-load("fetchMbtaData.RData")
-allstops<-stops %>% select(stop_code, stop_name, stop_lat, stop_lon) %>% 
+allstops<-Tarchive_stops %>% select(stop_code, stop_name, stop_lat, stop_lon) %>% 
   filter(is.na(stop_code)==FALSE) %>% mutate(from_stop=stop_code,to_stop=stop_code)
-finished_dataset$from_stop <- as.integer(finished_dataset$from_stop)
-finished_dataset$to_stop <- as.integer(finished_dataset$to_stop)
+travel_times$from_stop <- as.integer(travel_times$from_stop)
+travel_times$to_stop <- as.integer(travel_times$to_stop)
 
 #Merge latitude and longitude values
 dataset<-finished_dataset %>% 
@@ -518,7 +511,7 @@ t.lub <- ymd_hms(dataset$dep_dt)
 dataset$time <- round((hour(t.lub) + minute(t.lub)/60), digits=2)
 fulldata<-dataset
 
-#Weather data (not using it but its here)
+#Weather data
 weather<-read.csv("https://www.ncei.noaa.gov/orders/cdo/729412.csv")
 weather<-weather %>% 
   filter(DATE>20160124,STATION_NAME=="BOSTON LOGAN INTERNATIONAL AIRPORT MA US") %>%
@@ -652,37 +645,31 @@ traveltimes_day<-function(fromstation,tostation){
 travel<-betweenstops %>% 
   filter(start_stop==fromstation & end_stop==tostation) %>%
   group_by(time) %>% summarize(mean(residualtime))
-dygraph(travel,main=c(as.character(fromstation), as.character(tostation))) %>% 
+dygraph(travel) %>% 
   dyAxis("y", label = "Delay in Seconds") %>%
-  dyAxis("x", label="Hour of Day") %>% dyRangeSelector() %>%
-  dyEvent("12.00", label="Noon", labelLoc = "bottom") %>%
-  dyShading(from = "7.00", to = "9.00",color="#FFE6E6") %>%
-  dyShading(from = "17.00", to = "19.00",color="#CCEBD6")}
+  dyAxis("x", label="Hour of Day") %>% dyRangeSelector()}
 
-#Examples
-traveltimes_day("Park Street - to Alewife","Charles/MGH - Outbound")
+#Example Between MGH and MIT
 traveltimes_day("Charles/MGH - Outbound","Kendall/MIT - Outbound")
 
 #Tweets
-train_travel_times<-read.csv("train_travel_times.csv",stringsAsFactors = FALSE)
-rtweets<-read.csv("red_line_tweets_enhanced.csv",stringsAsFactors = FALSE)
-train_travel_times$arr_dt<-ymd_hms(train_travel_times$arr_dt)
-train_travel_times$dep_dt<-ymd_hms(train_travel_times$dep_dt)
-rtweets$arr_dt<-ymd_hms(rtweets$arr_dt)
-train_travel_times <- train_travel_times %>% full_join(rtweets) %>% 
+travel_times$arr_dt<-ymd_hms(travel_times$arr_dt)
+travel_times$dep_dt<-ymd_hms(travel_times$dep_dt)
+red_line_alert$arr_dt<-ymd_hms(red_line_alert$arr_dt)
+travel_times <- travel_times %>% full_join(red_line_alert) %>% 
   filter(is.na(severity)==FALSE)
 
 #Station of concern from alert
 regexp <- "[[:digit:]]+"
-train_travel_times$stop_code<-as.integer(str_extract(train_travel_times$alerts_at_station_code, regexp))
+travel_times$stop_code<-as.integer(str_extract(travel_times$alerts_at_station_code, regexp))
 
 #Get latitude and longitude values
-train_travel_times<-train_travel_times %>% left_join(allstops,by="stop_code") %>%
-  select(dep_dt,arr_dt,severity,stop_code,stop_name,stop_lat,stop_lon) %>%
+travel_times<-travel_times %>% left_join(allstops,by="stop_code") %>%
+  select(dep_dt,arr_dt,severity,stop_code,stop_lat,stop_lon) %>%
   filter(is.na(stop_lat)==FALSE) %>% filter(is.na(stop_lon)==FALSE)
 
 #Red line severity of alerts
-leaflet(data = train_travel_times) %>% addTiles() %>% addProviderTiles("CartoDB.Positron") %>%
+leaflet(data = travel_times) %>% addTiles() %>% addProviderTiles("CartoDB.Positron") %>%
   addPolylines(data=redline,~stop_lon,~stop_lat,color="red") %>%
   addCircleMarkers(data=redline, ~stop_lon,~stop_lat,color="red",radius=1,popup=~stop_name) %>%
   addMarkers(~stop_lon, ~stop_lat, clusterOptions = markerClusterOptions())

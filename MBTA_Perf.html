@@ -154,7 +154,11 @@ library(tidyr)
 library(leaflet)
 library(ggplot2)
 library(twitteR) #masks id, location from dplyr
-library(stringr)</code></pre>
+library(stringr)
+library(ggmap)
+library(maps)
+library(mapproj)
+library(rworldmap)</code></pre>
 <p>Some things we hard code:</p>
 <pre class="r"><code># API information for the real-time feed
 TKeyJeff &lt;- &quot;?api_key=tNprgYF1K027zEIVluAkCw&quot;
@@ -172,12 +176,12 @@ TArchiveURLs &lt;- c(&quot;http://www.mbta.com/uploadedfiles/MBTA_GTFS.zip&quot;
 MattapanLineRoute &lt;- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, &quot;&amp;route=Mattapan&quot;, sep=&quot;&quot;))[[1]]
 
 # Routes we're not using yet
-#GreenBLineRoute &lt;- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, &quot;&amp;route=Green-B&quot;, sep=&quot;&quot;))[[1]]
-#GreenCLineRoute &lt;- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, &quot;&amp;route=Green-C&quot;, sep=&quot;&quot;))[[1]]
-#GreenDLineRoute &lt;- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, &quot;&amp;route=Green-D&quot;, sep=&quot;&quot;))[[1]]
-#GreenELineRoute &lt;- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, &quot;&amp;route=Green-E&quot;, sep=&quot;&quot;))[[1]]
-#BlueLineRoute &lt;- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, &quot;&amp;route=Blue&quot;, sep=&quot;&quot;))[[1]]
-#OrangeLineRoute &lt;- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, &quot;&amp;route=Orange&quot;, sep=&quot;&quot;))[[1]]
+GreenBLineRoute &lt;- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, &quot;&amp;route=Green-B&quot;, sep=&quot;&quot;))[[1]]
+GreenCLineRoute &lt;- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, &quot;&amp;route=Green-C&quot;, sep=&quot;&quot;))[[1]]
+GreenDLineRoute &lt;- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, &quot;&amp;route=Green-D&quot;, sep=&quot;&quot;))[[1]]
+GreenELineRoute &lt;- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, &quot;&amp;route=Green-E&quot;, sep=&quot;&quot;))[[1]]
+BlueLineRoute &lt;- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, &quot;&amp;route=Blue&quot;, sep=&quot;&quot;))[[1]]
+OrangeLineRoute &lt;- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, &quot;&amp;route=Orange&quot;, sep=&quot;&quot;))[[1]]
 
 # Build a list of all stop pairs of interest.
 red_south &lt;-  RedLineRoute$stop[[1]] %&gt;%
@@ -220,7 +224,9 @@ if(length(ls(pattern=&quot;travel_times&quot;)) &gt; 0) {
 } else if (file.exists(&quot;train_travel_times.csv.gz&quot;)) {
     print(&quot;Loading previously generated data.&quot;)
     travel_times &lt;- read_csv(&quot;train_travel_times.csv.gz&quot;) # can skip MBTA queries and load this instead
-    names(travel_times)[1] &lt;- &quot;index&quot; # adding a name to our unnamed first column
+    if(names(travel_times[1])==&quot;&quot;) {
+        names(select(travel_times, 2:ncol(travel_times))) # remove our nameless index column
+    }
 } else {
     print(&quot;Requesting data from realtime.mbta.com...&quot;)
     # create a holding frame for the data; we do this outside the loops so that it will persist.
@@ -301,6 +307,15 @@ if(length(ls(pattern=&quot;travel_times&quot;)) &gt; 0) {
 ##   3 dep_t valid date 05:29:48
 ## ... ..... .......... ........
 ## .See problems(...) for more details.</code></pre>
+<pre><code>##  [1] &quot;from_stop&quot;                 &quot;from_name&quot;                
+##  [3] &quot;from_lat&quot;                  &quot;from_lon&quot;                 
+##  [5] &quot;to_stop&quot;                   &quot;to_name&quot;                  
+##  [7] &quot;to_lat&quot;                    &quot;to_lon&quot;                   
+##  [9] &quot;index&quot;                     &quot;direction&quot;                
+## [11] &quot;dep_dt&quot;                    &quot;arr_dt&quot;                   
+## [13] &quot;travel_time_sec&quot;           &quot;benchmark_travel_time_sec&quot;
+## [15] &quot;dep_d&quot;                     &quot;dep_t&quot;                    
+## [17] &quot;arr_d&quot;                     &quot;arr_t&quot;</code></pre>
 <p>asdf This is the data we were going to orginally compare to Hubway, etc. but it’s only <em>schedule</em> data! blah blah</p>
 <pre class="r"><code>for(i in 1:length(TArchiveURLs)) {
     if(file.exists(basename(TArchiveURLs[i]))) {
@@ -596,18 +611,229 @@ red_line_alert &lt;- red_line_alert %&gt;%
 <pre><code>## Warning: Too few values at 73 locations: 2, 3, 4, 18, 20, 25, 26, 27, 30,
 ## 31, 32, 34, 36, 37, 38, 41, 43, 44, 45, 48, ...</code></pre>
 <p>asdf</p>
+<pre class="r"><code>#Get data
+allstops&lt;-Tarchive_stops %&gt;% select(stop_code, stop_name, stop_lat, stop_lon) %&gt;% 
+  filter(is.na(stop_code)==FALSE) %&gt;% mutate(from_stop=stop_code,to_stop=stop_code)
+travel_times$from_stop &lt;- as.integer(travel_times$from_stop)
+travel_times$to_stop &lt;- as.integer(travel_times$to_stop)
+
+#Merge latitude and longitude values
+dataset&lt;-travel_times %&gt;% 
+  left_join(allstops,by=&quot;from_stop&quot;) %&gt;% select(-stop_code,-to_stop.y)
+colnames(dataset)[7]&lt;-&quot;to_stop&quot;
+colnames(dataset)[11]&lt;-&quot;start_stop&quot;
+colnames(dataset)[12]&lt;-&quot;start_lat&quot;
+colnames(dataset)[13]&lt;-&quot;start_long&quot;
+
+dataset&lt;-dataset %&gt;% 
+  left_join(allstops,by=&quot;to_stop&quot;) 
+dataset&lt;-dataset %&gt;% select(-stop_code,-from_stop.y)
+colnames(dataset)[14]&lt;-&quot;end_stop&quot;
+colnames(dataset)[15]&lt;-&quot;end_lat&quot;
+colnames(dataset)[16]&lt;-&quot;end_long&quot;
+colnames(dataset)[6]&lt;-&quot;from_stop&quot;
+
+t.lub &lt;- ymd_hms(dataset$dep_dt)
+dataset$time &lt;- round((hour(t.lub) + minute(t.lub)/60), digits=2)
+fulldata&lt;-dataset
+
+# #Weather data
+# weather&lt;-read.csv(&quot;weather.csv&quot;)
+# weather&lt;-weather %&gt;% 
+#   filter(DATE&gt;20160124,STATION_NAME==&quot;BOSTON LOGAN INTERNATIONAL AIRPORT MA US&quot;) %&gt;%
+#   select(DATE,precipitation,snowfall) 
+# colnames(weather)[1]&lt;-&quot;date&quot;
+# dataset&lt;-dataset %&gt;% left_join(weather,by=&quot;date&quot;)
+# write.csv(dataset,file=&quot;map_dataset.csv&quot;)
+# fulldata&lt;-dataset
+
+#RedLine
+Red &lt;-  RedLineRoute$stop[[1]] %&gt;%
+  select(stop_order, stop_id, stop_name, stop_lat, stop_lon)
+Red$stop_lat&lt;-as.numeric(Red$stop_lat)
+Red$stop_lon&lt;-as.numeric(Red$stop_lon)
+Red&lt;-Red %&gt;% mutate(line=&quot;Red&quot;)
+
+#GreenBLine
+GreenB &lt;-  GreenBLineRoute$stop[[1]] %&gt;%
+  select(stop_order, stop_id, stop_name, stop_lat, stop_lon)
+GreenB$stop_lat&lt;-as.numeric(GreenB$stop_lat)
+GreenB$stop_lon&lt;-as.numeric(GreenB$stop_lon)
+GreenB&lt;-GreenB %&gt;% mutate(line=&quot;GreenB&quot;)
+
+#GreenCLine
+GreenC &lt;-  GreenCLineRoute$stop[[1]] %&gt;%
+  select(stop_order, stop_id, stop_name, stop_lat, stop_lon)
+GreenC$stop_lat&lt;-as.numeric(GreenC$stop_lat)
+GreenC$stop_lon&lt;-as.numeric(GreenC$stop_lon)
+GreenC&lt;-GreenC %&gt;% mutate(line=&quot;GreenC&quot;)
+
+#GreenDLine
+GreenD &lt;-  GreenDLineRoute$stop[[1]] %&gt;%
+  select(stop_order, stop_id, stop_name, stop_lat, stop_lon)
+GreenD$stop_lat&lt;-as.numeric(GreenD$stop_lat)
+GreenD$stop_lon&lt;-as.numeric(GreenD$stop_lon)
+GreenD&lt;-GreenD %&gt;% mutate(line=&quot;GreenD&quot;)
+
+#GreenELine
+GreenE &lt;-  GreenELineRoute$stop[[1]] %&gt;%
+  select(stop_order, stop_id, stop_name, stop_lat, stop_lon)
+GreenE$stop_lat&lt;-as.numeric(GreenE$stop_lat)
+GreenE$stop_lon&lt;-as.numeric(GreenE$stop_lon)
+GreenE&lt;-GreenE %&gt;% mutate(line=&quot;GreenE&quot;)
+
+#OrangeLine
+Orange &lt;-  OrangeLineRoute$stop[[1]] %&gt;%
+  select(stop_order, stop_id, stop_name, stop_lat, stop_lon)
+Orange$stop_lat&lt;-as.numeric(Orange$stop_lat)
+Orange$stop_lon&lt;-as.numeric(Orange$stop_lon)
+Orange&lt;-Orange %&gt;% mutate(line=&quot;Orange&quot;)
+
+#BlueLine
+Blue &lt;-  BlueLineRoute$stop[[1]] %&gt;%
+  select(stop_order, stop_id, stop_name, stop_lat, stop_lon)
+Blue$stop_lat&lt;-as.numeric(Blue$stop_lat)
+Blue$stop_lon&lt;-as.numeric(Blue$stop_lon)
+Blue&lt;-Blue %&gt;% mutate(line=&quot;Blue&quot;)
+
+all_lines&lt;-rbind(Red,GreenB,GreenC,GreenD,GreenE,Orange,Blue)
+all_lines$stop_lat&lt;-as.numeric(all_lines$stop_lat)
+all_lines$stop_lon&lt;-as.numeric(all_lines$stop_lon)
+
+all_lines &lt;- all_lines %&gt;% 
+  separate(stop_name, into = c(&quot;stop_name&quot;, &quot;extra&quot;), sep=&quot;-&quot;, fill=&quot;right&quot;) %&gt;%
+  select(-extra)
+write.csv(all_lines,file=&quot;T_lines.csv&quot;)
+
+#Map of Boston
+lon_range &lt;- extendrange(dataset$end_long)
+lat_range &lt;- extendrange(dataset$end_lat)
+calc_zoom(lon_range, lat_range)
+
+gc &lt;- geocode(&quot;boston massachusetts&quot;)
+map &lt;- get_map(gc,maptype = &quot;toner-lite&quot;,zoom=12)
+
+ggmap(map)+
+  geom_path(data=Red,aes(x=stop_lon,y=stop_lat),color=&quot;red&quot;,size=1)+
+  geom_path(data=GreenB,aes(x=stop_lon,y=stop_lat),color=&quot;green&quot;,size=1)+
+  geom_path(data=GreenC,aes(x=stop_lon,y=stop_lat),color=&quot;green&quot;,size=1)+
+  geom_path(data=GreenD,aes(x=stop_lon,y=stop_lat),color=&quot;green&quot;,size=1)+
+  geom_path(data=GreenE,aes(x=stop_lon,y=stop_lat),color=&quot;green&quot;,size=1)+
+  geom_path(data=Orange,aes(x=stop_lon,y=stop_lat),color=&quot;orange&quot;,size=1)+
+  geom_path(data=Blue,aes(x=stop_lon,y=stop_lat),color=&quot;blue&quot;,size=1)+
+  geom_point(data=Red,aes(x=stop_lon,y=stop_lat),color=&quot;black&quot;,size=0.5)+
+  geom_point(data=GreenB,aes(x=stop_lon,y=stop_lat),color=&quot;black&quot;,size=0.5)+
+  geom_point(data=GreenC,aes(x=stop_lon,y=stop_lat),color=&quot;black&quot;,size=0.5)+
+  geom_point(data=GreenD,aes(x=stop_lon,y=stop_lat),color=&quot;black&quot;,size=0.5)+
+  geom_point(data=GreenE,aes(x=stop_lon,y=stop_lat),color=&quot;black&quot;,size=0.5)+
+  geom_point(data=Orange,aes(x=stop_lon,y=stop_lat),color=&quot;black&quot;,size=0.5)+
+  geom_point(data=Blue,aes(x=stop_lon,y=stop_lat),color=&quot;black&quot;,size=0.5)+
+  theme(axis.ticks = element_blank(), axis.text = element_blank(),axis.title=element_blank())
+     
+#Using Leaflet
+redline&lt;-all_lines %&gt;% filter(line==&quot;Red&quot;)
+greenBline&lt;-all_lines %&gt;% filter(line==&quot;GreenB&quot;)
+greenCline&lt;-all_lines %&gt;% filter(line==&quot;GreenC&quot;)
+greenDline&lt;-all_lines %&gt;% filter(line==&quot;GreenD&quot;)
+greenEline&lt;-all_lines %&gt;% filter(line==&quot;GreenE&quot;)
+orangeline&lt;-all_lines %&gt;% filter(line==&quot;Orange&quot;)
+blueline&lt;-all_lines %&gt;% filter(line==&quot;Blue&quot;)
+
+boston &lt;- leaflet() %&gt;% 
+  setView(lng = -71.0589, lat = 42.3601, zoom = 12) %&gt;% 
+  addProviderTiles(&quot;CartoDB.Positron&quot;) %&gt;%
+  addPolylines(data=redline,~stop_lon,~stop_lat,color=&quot;red&quot;) %&gt;%
+  addPolylines(data=greenBline,~stop_lon,~stop_lat,color=&quot;springgreen&quot;) %&gt;%
+  addPolylines(data=greenCline,~stop_lon,~stop_lat,color=&quot;palegreen&quot;) %&gt;%
+  addPolylines(data=greenDline,~stop_lon,~stop_lat,color=&quot;limegreen&quot;) %&gt;%
+  addPolylines(data=greenEline,~stop_lon,~stop_lat,color=&quot;green&quot;) %&gt;%
+  addPolylines(data=orangeline,~stop_lon,~stop_lat,color=&quot;orange&quot;) %&gt;%
+  addPolylines(data=blueline,~stop_lon,~stop_lat,color=&quot;blue&quot;) %&gt;%
+  addCircleMarkers(data=redline, ~stop_lon,~stop_lat,color=&quot;red&quot;,radius=1,popup=~stop_name) %&gt;%
+  addCircleMarkers(data=greenBline,~stop_lon,~stop_lat,color=&quot;springgreen&quot;,radius=1,popup=~stop_name) %&gt;%
+  addCircleMarkers(data=greenCline,~stop_lon,~stop_lat,color=&quot;palegreen&quot;,radius=1,popup=~stop_name) %&gt;%
+  addCircleMarkers(data=greenDline,~stop_lon,~stop_lat,color=&quot;limegreen&quot;,radius=1,popup=~stop_name) %&gt;%
+  addCircleMarkers(data=greenEline,~stop_lon,~stop_lat,color=&quot;green&quot;,radius=1,popup=~stop_name) %&gt;%
+  addCircleMarkers(data=orangeline,~stop_lon,~stop_lat,color=&quot;orange&quot;,radius=1,popup=~stop_name) %&gt;%
+  addCircleMarkers(data=blueline,~stop_lon,~stop_lat,color=&quot;blue&quot;,radius=1,popup=~stop_name)
+boston
+
+#Average travel times between stops
+traveltime&lt;fulldata %&gt;% group_by(start_stop,end_stop) %&gt;%
+  summarize(avg_traveltime=mean(travel_time_sec))
+
+betweenstops&lt;-fulldata %&gt;% left_join(traveltime,by=c(&quot;start_stop&quot;,&quot;end_stop&quot;)) %&gt;%
+  mutate(residualtime=avg_traveltime-travel_time_sec)
+  
+travel&lt;-betweenstops %&gt;% 
+  group_by(c(start_stop,end_stop),time) %&gt;%
+  summarize(avgresid=mean(residualtime))
+
+#Delay vs. hour of day plot, input using start and stop_codes
+traveltimes_day&lt;-function(fromstation,tostation){
+travel&lt;-betweenstops %&gt;% 
+  filter(start_stop==fromstation &amp; end_stop==tostation) %&gt;%
+  group_by(time) %&gt;% summarize(mean(residualtime))
+dygraph(travel) %&gt;% 
+  dyAxis(&quot;y&quot;, label = &quot;Delay in Seconds&quot;) %&gt;%
+  dyAxis(&quot;x&quot;, label=&quot;Hour of Day&quot;) %&gt;% dyRangeSelector()}
+
+#Example Between MGH and MIT
+traveltimes_day(&quot;Charles/MGH - Outbound&quot;,&quot;Kendall/MIT - Outbound&quot;)
+
+#Tweets
+travel_times$arr_dt&lt;-ymd_hms(travel_times$arr_dt)
+travel_times$dep_dt&lt;-ymd_hms(travel_times$dep_dt)
+red_line_alert$arr_dt&lt;-ymd_hms(red_line_alert$arr_dt)
+travel_times &lt;- travel_times %&gt;% full_join(red_line_alert) %&gt;% 
+  filter(is.na(severity)==FALSE)
+
+#Station of concern from alert
+regexp &lt;- &quot;[[:digit:]]+&quot;
+travel_times$stop_code&lt;-as.integer(str_extract(travel_times$alerts_at_station_code, regexp))
+
+#Get latitude and longitude values
+travel_times&lt;-travel_times %&gt;% left_join(allstops,by=&quot;stop_code&quot;) %&gt;%
+  select(dep_dt,arr_dt,severity,stop_code,stop_lat,stop_lon) %&gt;%
+  filter(is.na(stop_lat)==FALSE) %&gt;% filter(is.na(stop_lon)==FALSE)
+
+#Red line severity of alerts
+leaflet(data = travel_times) %&gt;% addTiles() %&gt;% addProviderTiles(&quot;CartoDB.Positron&quot;) %&gt;%
+  addPolylines(data=redline,~stop_lon,~stop_lat,color=&quot;red&quot;) %&gt;%
+  addCircleMarkers(data=redline, ~stop_lon,~stop_lat,color=&quot;red&quot;,radius=1,popup=~stop_name) %&gt;%
+  addMarkers(~stop_lon, ~stop_lat, clusterOptions = markerClusterOptions())</code></pre>
 </div>
 <div id="final-analysis" class="section level3">
 <h3>Final Analysis</h3>
 <p>asdf</p>
 <pre class="r"><code>#remove this when we're done asdf
 ls.str()</code></pre>
-<pre><code>## distinct_stop_pairs : 'data.frame':  58 obs. of  2 variables:
+<pre><code>## BlueLineRoute : 'data.frame':    2 obs. of  3 variables:
+##  $ direction_id  : chr  &quot;0&quot; &quot;1&quot;
+##  $ direction_name: chr  &quot;Westbound&quot; &quot;Eastbound&quot;
+##  $ stop          :List of 2
+## distinct_stop_pairs : 'data.frame':  58 obs. of  2 variables:
 ##  $ stop_id  : chr  &quot;70105&quot; &quot;70104&quot; &quot;70096&quot; &quot;70084&quot; ...
 ##  $ next_stop: chr  &quot;70104&quot; &quot;70096&quot; &quot;70084&quot; &quot;70082&quot; ...
 ## distinct_stop_pairs_full : 'data.frame': 58 obs. of  2 variables:
 ##  $ stop_id  : chr  &quot;70105&quot; &quot;70104&quot; &quot;70096&quot; &quot;70084&quot; ...
 ##  $ next_stop: chr  &quot;70104&quot; &quot;70096&quot; &quot;70084&quot; &quot;70082&quot; ...
+## GreenBLineRoute : 'data.frame':  2 obs. of  3 variables:
+##  $ direction_id  : chr  &quot;0&quot; &quot;1&quot;
+##  $ direction_name: chr  &quot;Westbound&quot; &quot;Eastbound&quot;
+##  $ stop          :List of 2
+## GreenCLineRoute : 'data.frame':  2 obs. of  3 variables:
+##  $ direction_id  : chr  &quot;0&quot; &quot;1&quot;
+##  $ direction_name: chr  &quot;Westbound&quot; &quot;Eastbound&quot;
+##  $ stop          :List of 2
+## GreenDLineRoute : 'data.frame':  2 obs. of  3 variables:
+##  $ direction_id  : chr  &quot;0&quot; &quot;1&quot;
+##  $ direction_name: chr  &quot;Westbound&quot; &quot;Eastbound&quot;
+##  $ stop          :List of 2
+## GreenELineRoute : 'data.frame':  2 obs. of  3 variables:
+##  $ direction_id  : chr  &quot;0&quot; &quot;1&quot;
+##  $ direction_name: chr  &quot;Westbound&quot; &quot;Eastbound&quot;
+##  $ stop          :List of 2
 ## i :  int 97
 ## iDate :  Date[1:1], format: &quot;2016-05-01&quot;
 ## MattapanLineRoute : 'data.frame':    2 obs. of  3 variables:
@@ -616,6 +842,10 @@ ls.str()</code></pre>
 ##  $ stop          :List of 2
 ## northbound_inbound :  chr [1:14] &quot;Braintree&quot; &quot;Quincy Adams&quot; &quot;Quincy Center&quot; ...
 ## northbound_outbound :  chr [1:7] &quot;Charles&quot; &quot;Kendal&quot; &quot;Central&quot; &quot;Harvard&quot; &quot;Porter&quot; ...
+## OrangeLineRoute : 'data.frame':  2 obs. of  3 variables:
+##  $ direction_id  : chr  &quot;0&quot; &quot;1&quot;
+##  $ direction_name: chr  &quot;Southbound&quot; &quot;Northbound&quot;
+##  $ stop          :List of 2
 ## red_line_alert : Classes 'tbl_df' and 'data.frame':  176 obs. of  8 variables:
 ##  $ text                  : chr  &quot;Mattapan Trolley experiencing moderate delays due to a disabled train at Central Ave #mbta&quot; &quot;#RedLine experiencing minor northbound delays between North Quincy and JFK/UMass due to a signal problem. #mbta&quot; &quot;Shuttle buses replacing #RedLine service North Quincy to JFK due to disabled work equipment. Customers may utilize the Commuter&quot;| __truncated__ &quot;#RedLine experiencing moderate residual delays due to earlier disabled work equipment. #mbta&quot; ...
 ##  $ created               : POSIXct, format: &quot;2016-01-25 23:36:17&quot; &quot;2016-01-26 11:46:33&quot; ...
@@ -721,7 +951,7 @@ ls.str()</code></pre>
 ##  $ shape_id             : chr  &quot;931_0011&quot; &quot;931_0011&quot; &quot;931_0011&quot; &quot;931_0011&quot; ...
 ##  $ wheelchair_accessible: int  1 1 1 1 1 1 1 1 1 1 ...
 ## travel_times : Classes 'tbl_df', 'tbl' and 'data.frame': 356472 obs. of  23 variables:
-##  $ index                    : int  1 2 3 4 5 6 7 8 9 10 ...
+##  $                          : int  1 2 3 4 5 6 7 8 9 10 ...
 ##  $ from_stop                : int  70067 70069 70063 70071 70065 70063 70067 70073 70069 70067 ...
 ##  $ from_name                : chr  &quot;Harvard&quot; &quot;Central&quot; &quot;Davis&quot; &quot;Kendall/MIT&quot; ...
 ##  $ from_lat                 : num  42.4 42.4 42.4 42.4 42.4 ...
@@ -730,7 +960,7 @@ ls.str()</code></pre>
 ##  $ to_name                  : chr  &quot;Central&quot; &quot;Kendall/MIT&quot; &quot;Broadway&quot; &quot;Charles/MGH&quot; ...
 ##  $ to_lat                   : num  42.4 42.4 42.3 42.4 42.3 ...
 ##  $ to_lon                   : num  -71.1 -71.1 -71.1 -71.1 -71 ...
-##  $ index                    : int  1 2 3 4 5 6 7 8 9 10 ...
+##  $ index                    : int  264366 280388 181143 296859 249027 181144 264367 313333 280389 264368 ...
 ##  $ direction                : int  0 0 0 0 0 0 0 0 0 0 ...
 ##  $ dep_dt                   : POSIXct, format: &quot;2016-01-25 05:24:54&quot; &quot;2016-01-25 05:28:11&quot; ...
 ##  $ arr_dt                   : POSIXct, format: &quot;2016-01-25 05:27:21&quot; &quot;2016-01-25 05:29:53&quot; ...
