@@ -23,6 +23,8 @@ asdf
 ### Data
 asdf
 
+Load Libraries:
+
 ```{r Load_Libraries, warning=FALSE, message=FALSE}
 library(dplyr)
 library(jsonlite)
@@ -31,6 +33,8 @@ library(readr)
 library(tidyr)
 library(leaflet)
 ```
+
+Some things we hard code:
 
 ```{r Hardcoded_Stuff}
 # API information for the real-time feed
@@ -41,7 +45,12 @@ TTravelURL <- "http://realtime.mbta.com/developer/api/v2.1/traveltimes"
 TFormat <- "&format=json"
 
 startTime <- as.POSIXct("2016-01-25 04:00:00") # the start date of the class -- does affect how many archives are needed
+
+TArchiveURLs <- c("http://www.mbta.com/uploadedfiles/MBTA_GTFS.zip",
+                  "http://www.mbta.com/gtfs_archive/20151211.zip") # first is current archive; the rest are father back in time
 ```
+
+asdf Google realtime performance blah blah
 
 ```{r Pull_Performance_Data}
 RedLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Red", sep=""))[[1]]
@@ -94,9 +103,11 @@ distinct_stop_pairs_full <- distinct_stop_pairs
 if(length(ls(pattern="finished_dataset")) > 0) {
     # do nothing - we already have the data in the environment
 } else if (file.exists("train_travel_times.csv")) {
+    print("Loading previously generated data.")
     finished_dataset <- read_csv("train_travel_times.csv") # can skip MBTA queries and load this instead
     names(finished_dataset)[1] <- "index" # adding a name to our unnamed first column -- this column gets added by read_csv
 } else {
+    print("Requesting data from realtime.mbta.com...")
     # create a holding frame for the data; we do this outside the loops so that it will persist.
     finished_dataset <- data.frame(direction=as.numeric(character()),
                         dep_dt=as.POSIXct(character()), 
@@ -148,4 +159,144 @@ if(length(ls(pattern="finished_dataset")) > 0) {
 }
 ```
 
+asdf
+
+```{r Pull_Archive_Data, cache=TRUE}
+# splitting date & time
+finished_dataset <- mutate(finished_dataset, dep_d=as.Date(dep_dt), 
+                                             dep_t=format(as.POSIXct(dep_dt), format="%H:%M:%S"), 
+                                             arr_d=as.Date(arr_dt), 
+                                             arr_t=format(as.POSIXct(arr_dt), format="%H:%M:%S"))
+# adding parent_station_name, lat and lon
+finished_dataset <- bind_rows(RedLineRoute$stop[1][[1]], RedLineRoute$stop[2][[1]]) %>% 
+                    select(stop_id, parent_station_name, stop_lat, stop_lon) %>% 
+                    mutate(stop_id=as.integer(stop_id)) %>% 
+                    rename(to_stop = stop_id, to_name = parent_station_name, to_lat = stop_lat, to_lon = stop_lon) %>% 
+                    inner_join(finished_dataset, by="to_stop")
+finished_dataset <- bind_rows(RedLineRoute$stop[1][[1]], RedLineRoute$stop[2][[1]]) %>% 
+                    select(stop_id, parent_station_name, stop_lat, stop_lon) %>% 
+                    mutate(stop_id=as.integer(stop_id)) %>% 
+                    rename(from_stop = stop_id, from_name = parent_station_name, from_lat = stop_lat, from_lon = stop_lon) %>% 
+                    inner_join(finished_dataset, by="from_stop")
+finished_dataset <- arrange(finished_dataset, direction, dep_dt)
+
+for(i in 1:length(TArchiveURLs)) {
+    if(file.exists(basename(TArchiveURLs[i]))) {
+        print(paste("Using existing", TArchiveURLs[i]))
+    } else {
+        download.file(TArchiveURLs[i], destfile=basename(TArchiveURLs[i]))
+    }
+    unzip(basename(TArchiveURLs[i]), exdir=strsplit(basename(TArchiveURLs[i]), "\\.")[[1]][1], overwrite=FALSE)
+}
+
+# The following is fixed for two archives; should be loop based on length of TArchivesURLs
+setwd(strsplit(basename(TArchiveURLs[1]), "\\.")[[1]][1])
+
+# Get schedule data:
+Tarchive_cal <- read_csv("calendar.txt") %>% mutate(zip_file=basename(getwd()))
+Tarchive_calDates <- read_csv("calendar_dates.txt")
+Tarchive_trips <- read.csv("trips.txt")
+Tarchive_stopTimes <- read.csv("stop_times.txt")
+
+# OK, as a first step, let's trim back the Tarchive tables to just the subway (RTL) data:
+Tarchive_cal <- filter(Tarchive_cal, grepl("RTL", service_id))
+Tarchive_calDates <- filter(Tarchive_calDates, grepl("RTL", service_id)) # exception_type; 1=added; 2=removed
+Tarchive_trips <- filter(Tarchive_trips, grepl("RTL", service_id))
+Tarchive_stopTimes <- filter(Tarchive_stopTimes, trip_id %in% Tarchive_trips$trip_id)
+
+setwd("..")
+
+# Loop, please:
+setwd(strsplit(basename(TArchiveURLs[2]), "\\.")[[1]][1])
+
+Tarchive_cal2 <- read_csv("calendar.txt") %>% mutate(zip_file=basename(getwd()))
+Tarchive_calDates2 <- read_csv("calendar_dates.txt")
+Tarchive_trips2 <- read.csv("trips.txt")
+Tarchive_stopTimes2 <- read.csv("stop_times.txt")
+
+# trim2 -- dealing with multiple archive files really cries out for a function here, doesn't it
+Tarchive_cal2 <- filter(Tarchive_cal2, grepl("RTL", service_id))
+Tarchive_calDates2 <- filter(Tarchive_calDates2, grepl("RTL", service_id)) # exception_type; 1=added; 2=removed
+Tarchive_trips2 <- filter(Tarchive_trips2, grepl("RTL", service_id))
+Tarchive_stopTimes2 <- filter(Tarchive_stopTimes2, trip_id %in% Tarchive_trips$trip_id)
+
+# combine our archives
+Tarchive_cal <- bind_rows(Tarchive_cal, Tarchive_cal2)
+Tarchive_calDates <- bind_rows(Tarchive_calDates, Tarchive_calDates2)
+Tarchive_trips <- bind_rows(Tarchive_trips, Tarchive_trips2)
+Tarchive_stopTimes <- bind_rows(Tarchive_stopTimes, Tarchive_stopTimes2)
+
+setwd("..")
+
+rm(Tarchive_cal2)
+rm(Tarchive_calDates2)
+rm(Tarchive_trips2)
+rm(Tarchive_stopTimes2)
+
+# Convert the dates:
+Tarchive_cal <- mutate(Tarchive_cal, start_date=as.Date(as.character(start_date), format="%Y%m%d", origin="1970-01-01"), 
+                                     end_date=as.Date(as.character(end_date), format="%Y%m%d", origin="1970-01-01"))
+Tarchive_calDates <- mutate(Tarchive_calDates, date=as.Date(as.character(date), format="%Y%m%d", origin="1970-01-01"))
+
+# Now, loop through each day between the start date and today,
+# for each day, get the relevant service_ids and,
+# find the corresponding trip_ids, then
+# pull all the corresponding train arrival and departure times
+schedule_dataset <- data.frame()
+for(i in 0:(as.integer(unclass(now() - startTime)))) {
+    iDate <- as.Date(startTime+days(i))
+    
+    #service_ids
+    todaysServices <- filter(Tarchive_cal, start_date<=iDate & end_date>=iDate) %>%
+        select(service_id) %>%
+        distinct()
+
+    #remove exceptions
+    if(iDate %in% Tarchive_calDates$date) {
+        servicesRemoved <- unique(filter(Tarchive_calDates, date==iDate & exception_type==2)[[1]])
+        if(length(servicesRemoved)>1) {
+            todaysServices <- filter(todaysServices, !service_id %in% servicesRemoved)
+        }
+    }
+    
+    #remove remaining regularly scheduled services that don't match this day of the week
+    if(wday(iDate)==1) {
+        todaysServices <- filter(todaysServices, grepl("Sunday", service_id))
+    } else if(wday(iDate)==7) {
+        todaysServices <- filter(todaysServices, grepl("Saturday", service_id))
+    } else {
+        todaysServices <- filter(todaysServices, grepl("Weekday", service_id))
+    }
+        
+    #add exceptions
+    if(iDate %in% Tarchive_calDates$date) {
+        servicesAdded <- filter(Tarchive_calDates, date==iDate & exception_type==1) %>% 
+                         select(service_id) %>% 
+                         distinct()
+        if(nrow(servicesAdded)>1) {
+            todaysServices <- bind_rows(todaysServices, servicesAdded)
+        }
+    }
+        
+    #trip_ids
+    todaysTrips <- filter(Tarchive_trips, service_id %in% todaysServices$service_id) %>% 
+                  filter(route_id=="Red") %>% 
+                  distinct()
+#     print(paste(i, "; Date: ", iDate, "; # Services: ", nrow(todaysServices), "; # Trips: ", nrow(todayTrips), 
+#                 "; Exception = ", (iDate %in% Tarchive_calDates$date), sep=""))
+
+    #stop_times
+    todaysStops <- filter(Tarchive_stopTimes, trip_id %in% todaysTrips$trip_id) %>% 
+                   mutate(arrival_date=iDate, departure_date=iDate)
+    
+    schedule_dataset <- bind_rows(schedule_dataset, todaysStops)
+}
+```
+
+
+
+```{r Debug}
+#remove this when we're done
+ls.str()
+```
 
