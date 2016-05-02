@@ -180,18 +180,22 @@ traveltime<fulldata %>% group_by(start_stop,end_stop) %>%
 
 betweenstops<-fulldata %>% left_join(traveltime,by=c("start_stop","end_stop")) %>%
   mutate(residualtime=avg_traveltime-travel_time_sec)
-
+  
 travel<-betweenstops %>% 
   group_by(c(start_stop,end_stop),time) %>%
   summarize(avgresid=mean(residualtime))
 
+#Delay vs. hour of day plot, input using start and stop_codes
+traveltimes_day<-function(fromstation,tostation){
 travel<-betweenstops %>% 
-  filter(from_stop==70074 & to_stop==70072) %>%
+  filter(start_stop==fromstation & end_stop==tostation) %>%
   group_by(time) %>% summarize(mean(residualtime))
-colnames(travel)[2]<-"Residual Time"
+dygraph(travel) %>% 
+  dyAxis("y", label = "Delay in Seconds") %>% 
+  dyAxis("x", label="Hour of Day") %>% dyRangeSelector()}
 
-dygraph(travel, main= "Charles/MGH and Kendall/MIT") %>% dyAxis("y", label = "Residual Time in Seconds") %>% 
-  dyAxis("x", label="Hour of Day") %>% dyRangeSelector()
+#Example Between MGH and MIT
+traveltimes_day("Charles/MGH - Outbound","Kendall/MIT - Outbound")
 
 #Tweets
 train_travel_times<-read.csv("/Users/Admin/Documents/FinalProject/DataProject/train_travel_times.csv",stringsAsFactors = FALSE)
@@ -211,7 +215,7 @@ train_travel_times<-train_travel_times %>% left_join(allstops,by="stop_code") %>
   select(dep_dt,arr_dt,severity,stop_code,stop_lat,stop_lon) %>%
   filter(is.na(stop_lat)==FALSE) %>% filter(is.na(stop_lon)==FALSE)
 
-#Severity of alerts
+#Red line severity of alerts
 leaflet(data = train_travel_times) %>% addTiles() %>% addProviderTiles("CartoDB.Positron") %>%
   addPolylines(data=redline,~stop_lon,~stop_lat,color="red") %>%
   addCircleMarkers(data=redline, ~stop_lon,~stop_lat,color="red",radius=1,popup=~stop_name) %>%
