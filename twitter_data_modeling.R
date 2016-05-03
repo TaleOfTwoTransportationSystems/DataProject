@@ -206,3 +206,158 @@ red_line_alert <- red_line_alert %>%
   rename(alerts_at_station_code = after_at_name_code) 
 
 red_line_alert %>% write_csv("red_line_tweets_enhanced.csv")
+
+## for green line:
+
+# Green Line Alerts user time line only 3200 hard limit
+GreenLineAlerts_tweets <- userTimeline('GreenLineAlerts', n=3200, includeRts = FALSE, excludeReplies = TRUE)
+
+green_line_alert <- getSpecificTweetInformation(GreenLineAlerts_tweets)
+
+# Which green line is the alert from?
+green_line_alert$greenLine <- str_extract(green_line_alert$text, "#GreenLine [A-z] ") %>% 
+  substr(12,12)
+
+
+# To relate to a data we already have is to add 
+# these tweets as "arrival date" ~ "created" and then join them.
+green_line_alert <- green_line_alert %>% 
+  filter(created > startTime) %>%
+  arrange(created) %>% 
+  select(text, created, favoriteCount, retweetCount) %>% 
+  mutate(arr_dt = created)
+green_line_alert
+
+
+# if severity increases with delay time or
+# time series of severity increasing in the north/south bound trains
+green_line_alert <- green_line_alert %>% 
+  mutate(severity = ifelse(grepl("minor",text, ignore.case = TRUE), 1, 
+                           ifelse(grepl("moderate",text, ignore.case = TRUE), 2, 
+                                  ifelse(grepl("severe",text, ignore.case = TRUE), 3, 0))))
+
+# ### reading each stop info from a code from boston file
+# report <- read_csv("https://raw.githubusercontent.com/codeforboston/need-now/master/reports.csv")
+# location_line_mapped <- report %>% 
+#   select(location, line) %>% 
+#   arrange(location) %>% 
+#   unique()
+# 
+# # location_line_mapped %>% 
+# #   arrange(line) %>% 
+# #   filter(grepl(" B ", line)) %>% View()
+# 
+# # mapping station names with ids
+# location_line_mapped <- inner_join(location_line_mapped, stop_names_codes) 
+# stop_names_codes <- location_line_mapped %>%
+#   filter(!is.na(stop_id)) %>% 
+#   select(stop_id, stop_name, line) %>% 
+#   unite(stop_code_name, stop_id, stop_name)
+
+# API information for the real-time feed
+TKeyJeff <- "?api_key=tNprgYF1K027zEIVluAkCw"
+#TKeyAPIDoc <- "?api_key=wX9NwuHnZU2ToO7GmGR9uw"
+TRouteURL <- "http://realtime.mbta.com/developer/api/v2/stopsbyroute"
+TTravelURL <- "http://realtime.mbta.com/developer/api/v2.1/traveltimes"
+TFormat <- "&format=json"
+
+# Routes we're not using yet
+GreenBLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-B", sep=""))[[1]]
+GreenCLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-C", sep=""))[[1]]
+GreenDLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-D", sep=""))[[1]]
+GreenELineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-E", sep=""))[[1]]
+BlueLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Blue", sep=""))[[1]]
+OrangeLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Orange", sep=""))[[1]]
+
+#RedLine
+Red <-  RedLineRoute$stop[[1]] %>%
+  select(stop_order, stop_id, stop_name, stop_lat, stop_lon)
+Red$stop_lat<-as.numeric(Red$stop_lat)
+Red$stop_lon<-as.numeric(Red$stop_lon)
+Red<-Red %>% mutate(line="Red")
+
+#GreenBLine
+GreenB <-  GreenBLineRoute$stop[[1]] %>%
+  select(stop_order, stop_id, stop_name, stop_lat, stop_lon)
+GreenB$stop_lat<-as.numeric(GreenB$stop_lat)
+GreenB$stop_lon<-as.numeric(GreenB$stop_lon)
+GreenB<-GreenB %>% mutate(line="GreenB")
+
+#GreenCLine
+GreenC <-  GreenCLineRoute$stop[[1]] %>%
+  select(stop_order, stop_id, stop_name, stop_lat, stop_lon)
+GreenC$stop_lat<-as.numeric(GreenC$stop_lat)
+GreenC$stop_lon<-as.numeric(GreenC$stop_lon)
+GreenC<-GreenC %>% mutate(line="GreenC")
+
+#GreenDLine
+GreenD <-  GreenDLineRoute$stop[[1]] %>%
+  select(stop_order, stop_id, stop_name, stop_lat, stop_lon)
+GreenD$stop_lat<-as.numeric(GreenD$stop_lat)
+GreenD$stop_lon<-as.numeric(GreenD$stop_lon)
+GreenD<-GreenD %>% mutate(line="GreenD")
+
+#GreenELine
+GreenE <-  GreenELineRoute$stop[[1]] %>%
+  select(stop_order, stop_id, stop_name, stop_lat, stop_lon)
+GreenE$stop_lat<-as.numeric(GreenE$stop_lat)
+GreenE$stop_lon<-as.numeric(GreenE$stop_lon)
+GreenE<-GreenE %>% mutate(line="GreenE")
+
+#OrangeLine
+Orange <-  OrangeLineRoute$stop[[1]] %>%
+  select(stop_order, stop_id, stop_name, stop_lat, stop_lon)
+Orange$stop_lat<-as.numeric(Orange$stop_lat)
+Orange$stop_lon<-as.numeric(Orange$stop_lon)
+Orange<-Orange %>% mutate(line="Orange")
+
+#BlueLine
+Blue <-  BlueLineRoute$stop[[1]] %>%
+  select(stop_order, stop_id, stop_name, stop_lat, stop_lon)
+Blue$stop_lat<-as.numeric(Blue$stop_lat)
+Blue$stop_lon<-as.numeric(Blue$stop_lon)
+Blue<-Blue %>% mutate(line="Blue")
+
+# Second step is get the actaul stop names for these stops
+greenB_stop_names_codes <- GreenB %>% 
+  select(stop_id, stop_name) %>% 
+  unite(stop_code_name, stop_id, stop_name)
+
+greenC_stop_names_codes <- GreenC %>% 
+  select(stop_id, stop_name) %>% 
+  unite(stop_code_name, stop_id, stop_name)
+
+greenD_stop_names_codes <- GreenD %>% 
+  select(stop_id, stop_name) %>% 
+  unite(stop_code_name, stop_id, stop_name)
+
+greenE_stop_names_codes <- GreenE %>% 
+  select(stop_id, stop_name) %>% 
+  unite(stop_code_name, stop_id, stop_name)
+
+green_line_alert %>% 
+  mutate(text_clone = text) %>% 
+  separate(text_clone, into = c("before_at", "after_at"), sep=" at ") %>% 
+  mutate(after_at = str_trim(gsub("#mbta|Station|Ave|Street|[.]", "", after_at, ignore.case = TRUE))) %>% 
+  rowwise() %>% 
+  mutate(after_at_name_code = 
+           ifelse(!is.na(after_at) & !is.na(greenLine) & greenLine == "B",
+                  toString(agrep(after_at, greenB_stop_names_codes$stop_code_name, value = TRUE, ignore.case = TRUE)), 
+                  ifelse(!is.na(after_at) & !is.na(greenLine) & greenLine == 'C',
+                         toString(agrep(after_at, greenC_stop_names_codes$stop_code_name, value = TRUE, ignore.case = TRUE)),
+                         ifelse(!is.na(after_at) & !is.na(greenLine) & greenLine == 'D',
+                                toString(agrep(after_at, greenD_stop_names_codes$stop_code_name, value = TRUE, ignore.case = TRUE)),
+                                ifelse(!is.na(after_at) & !is.na(greenLine) & greenLine == 'E',
+                                       toString(agrep(after_at, greenD_stop_names_codes$stop_code_name, value = TRUE, ignore.case = TRUE)),
+                                       ''
+                                       )
+                         )
+                  )
+           )
+  )
+  ungroup() %>% 
+  select(-after_at, -before_at) %>% 
+  rename(alerts_at_station_code = after_at_name_code) %>% write_csv("temptest.csv")
+  
+  
+  

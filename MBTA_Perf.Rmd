@@ -317,9 +317,10 @@ asdf Alerts come in from Twitter via CodeForBoston blah blah
 
 ```{r Pull_Alerts}
 # The following can be skipped if "red_line_tweets.csv" is present in the working directory
-if (file.exists("red_line_tweets.csv.gz")) {
+if (file.exists("red_line_tweets.csv") & file.exists("green_line_alert.csv")) {
     print("Loading previously generated data.")
-    red_line_alert<- read_csv("red_line_tweets.csv.gz") # can skip Twitter queries and load this instead
+    red_line_alert<- read_csv("red_line_tweets.csv") # can skip Twitter queries and load this instead
+    green_line_alert <- read_csv("green_line_alert.csv")
 } else {
     # generated from twitter's website
     consumer_key <- 'bpCAcAY27kfpSyOAOFXNP2PsO'
@@ -345,15 +346,15 @@ if (file.exists("red_line_tweets.csv.gz")) {
     # MattaPan Line Alerts user time line only 3200 hard limit
     highspeedalerts_tweets <- userTimeline('highspeedalerts', n=3200, includeRts = FALSE, excludeReplies = TRUE)
     
+    # Green Line Alerts user time line only 3200 hard limit
+    GreenLineAlerts_tweets <- userTimeline('GreenLineAlerts', n=3200, includeRts = FALSE, excludeReplies = TRUE)
+    
     # For other twitter alerts: 
     # # MBTA user time line only 3200 hard limit
     # mbta_tweets <- userTimeline('MBTA', n=3200, includeRts = FALSE, excludeReplies = TRUE)
     # 
     # # MBTA Alerts user time line only 3200 hard limit
     # mbta_alerts_tweets <- userTimeline('mbta_alerts', n=3200, includeRts = FALSE, excludeReplies = TRUE)
-    # 
-    # # Green Line Alerts user time line only 3200 hard limit
-    # GreenLineAlerts_tweets <- userTimeline('GreenLineAlerts', n=3200, includeRts = FALSE, excludeReplies = TRUE)
     # 
     # # Orange Line Alerts user time line only 3200 hard limit
     # OrangeLineAlert_tweets <- userTimeline('OrangeLineAlert', n=3200, includeRts = FALSE, excludeReplies = TRUE)
@@ -366,9 +367,12 @@ if (file.exists("red_line_tweets.csv.gz")) {
     red_line_alert <- getSpecificTweetInformation(Red_Line_Alerts_tweets) %>% 
         union(getSpecificTweetInformation(highspeedalerts_tweets)) 
     
+    # for green line alerts
+    green_line_alert <- getSpecificTweetInformation(GreenLineAlerts_tweets)
+    
     # write all to a csv
-    z <- gzfile("red_line_tweets.csv.gz")
-    write.csv(mbta_tweets_combined, z) 
+    write_csv(red_line_alert, "red_line_alert.csv") 
+    write_csv(green_line_alert, "green_line_alert.csv") 
 }
 
 # tweet count and oldest and most recent tweet dates
@@ -458,7 +462,7 @@ northbound_outbound <- c("Charles",
 # southbound_inbound <- northbound_outbound # contains same stations
 
 # One way of thinking about it in terms of getting to features are:
-# A) creating common for recognizing train station where delay is been tweeted
+# creating column for recognizing train station where delay is been tweeted
 red_line_alert <- red_line_alert %>% 
     mutate(text_clone = text) %>% 
     separate(text_clone, into = c("before_at", "after_at"), sep=" at ") %>% 
@@ -488,6 +492,33 @@ red_line_alert <- red_line_alert %>%
     ungroup() %>%
     select(-after_at, -before_at) %>% 
     rename(alerts_at_station_code = after_at_name_code) 
+
+#################################
+# Green line 
+#################################
+
+# To relate to a data we already have is to add 
+# these tweets as "arrival date" ~ "created" and then join them.
+green_line_alert <- green_line_alert %>% 
+  filter(created > startTime) %>%
+  arrange(created) %>% 
+  select(text, created, favoriteCount, retweetCount) %>% 
+  mutate(arr_dt = created)
+green_line_alert
+
+
+# if severity increases with delay time or
+# time series of severity increasing in the north/south bound trains
+green_line_alert <- green_line_alert %>% 
+  mutate(severity = ifelse(grepl("minor",text, ignore.case = TRUE), 1, 
+                           ifelse(grepl("moderate",text, ignore.case = TRUE), 2, 
+                                  ifelse(grepl("severe",text, ignore.case = TRUE), 3, 0))))
+
+# Which green line is the alert from?
+green_line_alert$greenLine <- str_extract(green_line_alert$text, "#GreenLine [A-z] ") %>% 
+  substr(12,12)
+
+
 ```
 
 asdf
@@ -573,6 +604,50 @@ all_lines$stop_lon<-as.numeric(all_lines$stop_lon)
 all_lines <- all_lines %>% 
   separate(stop_name, into = c("stop_name", "extra"), sep="-", fill="right") %>%
   select(-extra)
+
+
+## Twitter analysis ~ for green line
+## Getting actaul stop names for Greenline stops
+greenB_stop_names_codes <- GreenB %>% 
+  select(stop_id, stop_name) %>% 
+  unite(stop_code_name, stop_id, stop_name)
+
+greenC_stop_names_codes <- GreenC %>% 
+  select(stop_id, stop_name) %>% 
+  unite(stop_code_name, stop_id, stop_name)
+
+greenD_stop_names_codes <- GreenD %>% 
+  select(stop_id, stop_name) %>% 
+  unite(stop_code_name, stop_id, stop_name)
+
+greenE_stop_names_codes <- GreenE %>% 
+  select(stop_id, stop_name) %>% 
+  unite(stop_code_name, stop_id, stop_name)
+
+### creating column for recognizing train station where delay is been tweeted ~ green line
+green_line_alert <- green_line_alert %>% 
+  mutate(text_clone = text) %>% 
+  separate(text_clone, into = c("before_at", "after_at"), sep=" at ") %>% 
+  mutate(after_at = str_trim(gsub("#mbta|Station|Ave|Street|[.]", "", after_at, ignore.case = TRUE))) %>% 
+  rowwise() %>% 
+  mutate(after_at_name_code = 
+           ifelse(!is.na(after_at) & !is.na(greenLine) & greenLine == "B",
+                  toString(agrep(after_at, greenB_stop_names_codes$stop_code_name, value = TRUE, ignore.case = TRUE)), 
+                  ifelse(!is.na(after_at) & !is.na(greenLine) & greenLine == 'C',
+                         toString(agrep(after_at, greenC_stop_names_codes$stop_code_name, value = TRUE, ignore.case = TRUE)),
+                         ifelse(!is.na(after_at) & !is.na(greenLine) & greenLine == 'D',
+                                toString(agrep(after_at, greenD_stop_names_codes$stop_code_name, value = TRUE, ignore.case = TRUE)),
+                                ifelse(!is.na(after_at) & !is.na(greenLine) & greenLine == 'E',
+                                       toString(agrep(after_at, greenD_stop_names_codes$stop_code_name, value = TRUE, ignore.case = TRUE)),
+                                       ''
+                                       )
+                         )
+                  )
+           )
+  ) %>% 
+  ungroup() %>% 
+  select(-after_at, -before_at) %>% 
+  rename(alerts_at_station_code = after_at_name_code)
 
 #Map of Boston
 lon_range <- extendrange(dataset$end_long)
