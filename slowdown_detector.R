@@ -105,7 +105,7 @@ boxplot(time_delta~stop_seq,
 headway_plots <- list()
 headway_plots[[1]] <- ggplot(headway_times %>% filter(direction == "0", is_weekend == FALSE), aes(x=time_delta)) +
   geom_density(aes(group = parent_station_name, colour= parent_station_name, fill= parent_station_name), alpha=0.2) +
-  title("Southbound") + xlab("Weekday") +
+  ggtitle("Weekday, Southbound") +
   theme(legend.position = "bottom",
         legend.direction = "horizontal",
         legend.title=element_blank(),
@@ -119,7 +119,7 @@ headway_plots[[1]] <- ggplot(headway_times %>% filter(direction == "0", is_weeke
 
 headway_plots[[2]] <- ggplot(headway_times %>% filter(direction == "1", is_weekend == FALSE), aes(x=time_delta)) +
   geom_density(aes(group = parent_station_name, colour= parent_station_name, fill= parent_station_name), alpha=0.2) +
-  title("Northbound") + 
+  ggtitle("Weekday, Northbound") + 
   theme(legend.position = "bottom",
         legend.direction = "horizontal",
         legend.title=element_blank(),
@@ -133,7 +133,7 @@ headway_plots[[2]] <- ggplot(headway_times %>% filter(direction == "1", is_weeke
 
 headway_plots[[3]] <- ggplot(headway_times %>% filter(direction == "0", is_weekend == TRUE), aes(x=time_delta)) +
   geom_density(aes(group = parent_station_name, colour= parent_station_name, fill= parent_station_name), alpha=0.2) +
-  xlab("Weekend") +
+  ggtitle("Weekend, Southbound") +
   theme(legend.position = "bottom",
         legend.direction = "horizontal",
         legend.title=element_blank(),
@@ -147,6 +147,7 @@ headway_plots[[3]] <- ggplot(headway_times %>% filter(direction == "0", is_weeke
 
 headway_plots[[4]] <- ggplot(headway_times %>% filter(direction == "1", is_weekend == TRUE), aes(x=time_delta)) +
   geom_density(aes(group = parent_station_name, colour= parent_station_name, fill= parent_station_name), alpha=0.2) +
+  ggtitle("Weekend, Northbound") +
   theme(legend.position = "bottom",
         legend.direction = "horizontal",
         legend.title=element_blank(),
@@ -157,12 +158,12 @@ headway_plots[[4]] <- ggplot(headway_times %>% filter(direction == "1", is_weeke
         axis.title.y=element_blank(),
         axis.title.x=element_blank(),
         plot.title = element_text(size = 10))
-
+  
 grid.arrange(headway_plots[[1]], headway_plots[[2]],headway_plots[[3]],headway_plots[[4]], ncol=2, left="Type of Day", top="Heading")
 grid.rect(gp=gpar(fill=NA, col="gray"))
 
 # And a simple plot of the densities of travel times for Northbound trains of weekdays, all times of day.
-ggplot((train_travels %>% filter(direction == 1, is_weekend == FALSE)), aes(x=travel_time_sec)) +
-  geom_density(aes(group=departing, colour=departing, fill=departing), alpha=0.3) +
-  ggtitle("plot of the densities of travel times for Northbound trains of weekdays") +
+ggplot((travel_times %>% filter(direction == 1, is_weekend == FALSE)), aes(x=travel_time_sec)) +
+  geom_density(aes(group = parent_station_name, colour= parent_station_name, fill= parent_station_name), alpha=0.2) +
+  ggtitle("Travel times for Northbound trains of weekdays, by departing station") +
   xlim(0, 200) + ylim(0, .25)

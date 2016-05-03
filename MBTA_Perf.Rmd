@@ -64,9 +64,9 @@ asdf Google realtime performance blah blah
 
 ```{r Pull_Performance_Data}
 RedLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Red", sep=""))[[1]]
-MattapanLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Mattapan", sep=""))[[1]]
 
 # Routes we're not using yet
+MattapanLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Mattapan", sep=""))[[1]]
 GreenBLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-B", sep=""))[[1]]
 GreenCLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-C", sep=""))[[1]]
 GreenDLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-D", sep=""))[[1]]
@@ -74,38 +74,31 @@ GreenELineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-E"
 BlueLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Blue", sep=""))[[1]]
 OrangeLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Orange", sep=""))[[1]]
 
-# Build a list of all stop pairs of interest.
-red_south <-  RedLineRoute$stop[[1]] %>%
-  select(stop_order, stop_id) %>%
-  arrange(stop_order) %>%
-  mutate(next_stop = lead(stop_id)) %>%
-  select(stop_id, next_stop) %>%
-  filter(!is.na(next_stop))
+# Create a list of all stop pairs; the Route info does not cotain sufficient information separate the Ashmont (a) and
+# Braintree (b) lines. Digging this out of the schedule archive is possible but would have taken longer. Start with Southbound...
+south_main <- data.frame(
+  stop_id = c("70061","70063","70065","70067","70069","70071","70073","70075","70077","70079","70081"),
+  next_stop = c("70063","70065","70067","70069","70071","70073","70075","70077","70079","70081","70083"))
+south_a <- data.frame(
+  stop_id = c("70083","70085","70087","70089","70091"),
+  next_stop = c("70085","70087","70089","70091","70093"))
+south_b <- data.frame(
+  stop_id = c("70083","70095","70097","70099","70101","70103"),
+  next_stop = c("70095","70097","70099","70101","70103","70105"))
 
-red_north <-  RedLineRoute$stop[[2]] %>%
-  select(stop_order, stop_id) %>%
-  arrange(stop_order) %>%
-  mutate(next_stop = lead(stop_id)) %>%
-  select(stop_id, next_stop) %>%
-  filter(!is.na(next_stop))
+# Repeat for Northbound...
+north_main <- data.frame(
+  stop_id = c("70084","70082","70080","70078","70076","70074","70072","70070","70068","70066","70064"),
+  next_stop = c("70082","70080","70078","70076","70074","70072","70070","70068","70066","70064","70061"))
+north_a <- data.frame(
+  stop_id = c("70094","70092","70090","70088","70086"),
+  next_stop = c("70092","70090","70088","70086","70084"))
+north_b <- data.frame(
+  stop_id = c("70105","70104","70102","70100","70098","70096"),
+  next_stop = c("70104","70102","70100","70098","70096","70084"))
 
-matt_out <-  MattapanLineRoute$stop[[1]] %>%
-  select(stop_order, stop_id) %>%
-  arrange(stop_order) %>%
-  mutate(next_stop = lead(stop_id)) %>%
-  select(stop_id, next_stop) %>%
-  filter(!is.na(next_stop))
-
-matt_in <-  MattapanLineRoute$stop[[2]] %>%
-  select(stop_order, stop_id) %>%
-  arrange(stop_order) %>%
-  mutate(next_stop = lead(stop_id)) %>%
-  select(stop_id, next_stop) %>%
-  filter(!is.na(next_stop))
-
-distinct_stop_pairs <- rbind(red_north, red_south, matt_out, matt_in)
-rm(matt_in, matt_out, red_north, red_south)
-
+# Then rbind everything together.
+distinct_stop_pairs <- rbind(south_main, south_a, south_b, north_main, north_a, north_b)
 distinct_stop_pairs_full <- distinct_stop_pairs
 
 
