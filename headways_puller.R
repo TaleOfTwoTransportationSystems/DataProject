@@ -15,9 +15,8 @@ TArchiveURLs <- c("http://www.mbta.com/uploadedfiles/MBTA_GTFS.zip",
 
 
 #### THIS WAS THE FIRST WAY TO GET ALL STOP PAIRS; DIDN'T WORK!!!!
-# RedLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Red", sep=""))[[1]]
-# MattapanLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Mattapan", sep=""))[[1]]
-# 
+RedLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Red", sep=""))[[1]]
+
 # red_south <-  RedLineRoute$stop[[1]] %>%
 #   select(stop_order, stop_id) %>%
 #   arrange(stop_order) %>%

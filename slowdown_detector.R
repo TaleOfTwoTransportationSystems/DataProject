@@ -27,32 +27,6 @@ headway_times$previous_dep_dt <- as.POSIXct(headway_times$previous_dep_dt, tz="E
 headway_times$current_dep_d <- as.POSIXct(headway_times$current_dep_d, tz="EST")
 headway_times$previous_dep_d <- as.POSIXct(headway_times$previous_dep_d, tz="EST")
 
-# Create a list of all stop pairs; the Route info does not cotain sufficient information separate the Ashmont (a) and
-# Braintree (b) lines. Digging this out of the schedule archive is possible but would have taken longer. Start with Southbound...
-south_main <- data.frame(
-  stop_id = c("70061","70063","70065","70067","70069","70071","70073","70075","70077","70079","70081"),
-  next_stop = c("70063","70065","70067","70069","70071","70073","70075","70077","70079","70081","70083"))
-south_a <- data.frame(
-  stop_id = c("70083","70085","70087","70089","70091"),
-  next_stop = c("70085","70087","70089","70091","70093"))
-south_b <- data.frame(
-  stop_id = c("70083","70095","70097","70099","70101","70103"),
-  next_stop = c("70095","70097","70099","70101","70103","70105"))
-
-# Repeat for Northbound...
-north_main <- data.frame(
-  stop_id = c("70084","70082","70080","70078","70076","70074","70072","70070","70068","70066","70064"),
-  next_stop = c("70082","70080","70078","70076","70074","70072","70070","70068","70066","70064","70061"))
-north_a <- data.frame(
-  stop_id = c("70094","70092","70090","70088","70086"),
-  next_stop = c("70092","70090","70088","70086","70084"))
-north_b <- data.frame(
-  stop_id = c("70105","70104","70102","70100","70098","70096"),
-  next_stop = c("70104","70102","70100","70098","70096","70084"))
-
-# Then rbind everything together.
-distinct_stop_pairs <- rbind(south_main, south_a, south_b, north_main, north_a, north_b)
-
 # Add a column for the "effective service date", so that late-night trains can be easily
 # counted as part of the previous day.
 travel_times$dt <- as.POSIXct(trunc(travel_times$dep_dt - seconds(14400), units = "days"))
@@ -84,20 +58,21 @@ plot(as.numeric(travel_times[travel_times$from_stop == "70065",]$dep_dt - travel
 # who has ever taken a train knows the world isn't clockwork, so let's see what kind
 # interesting patterns emerge.
 
-stop_sequence_0 <- RedLineRoute$stop[[1]] %>%
-  filter(stop_id %in% unique(travel_times$from_stop)) %>%
+# Create a simple ordered list of stops so simple charts can have a sense of order will
+# still have odd behavior around the Red Line's fork, but more advanced visualizations
+# will take this into account.
+
+stop_sequence <- rbind(
+# Southbound
+  RedLineRoute$stop[[1]] %>%
   arrange(as.integer(stop_order)) %>%
   mutate(stop_seq = row_number(), heading = "Southbound") %>%
-  select (stop_id, stop_name, parent_station_name, heading, stop_seq)
-
-stop_sequence_1 <- RedLineRoute$stop[[2]] %>%
-  filter(stop_id %in% unique(travel_times$from_stop)) %>%
+  select (stop_id, stop_name, parent_station_name, heading, stop_seq),
+# Northbound
+  RedLineRoute$stop[[2]] %>%
   arrange(as.integer(stop_order)) %>%
   mutate(stop_seq = row_number(), heading = "Northbound") %>%
-  select (stop_id, stop_name, parent_station_name, heading, stop_seq)
-
-stop_sequence <- rbind(stop_sequence_0, stop_sequence_1)
-rm(stop_sequence_0, stop_sequence_1)
+  select (stop_id, stop_name, parent_station_name, heading, stop_seq))
 
 headway_times <- headway_times %>%
   mutate(dep_time = current_dep_dt - dt) %>%
@@ -110,32 +85,80 @@ travel_times <- travel_times %>%
 # Plot of times between trains by time of day, weekday Southbound
 ggplot(headway_times %>% filter(is_weekend == FALSE, direction == "0"), aes(x = as.numeric(dep_time, units="hours"), y = time_delta)) +
   geom_point(alpha=0.1) +
-  geom_density2d() +
   xlab("Hours (24+ is past midnight)") +
   ylab("Seconds from Benchmark") +
   ggtitle("Times between trains by time of day, weekday Southbound")
 
 # Boxplot of times between trains by station, weekday Southbound.
-boxplot(time_delta~stop_seq,
-     data = headway_times %>% filter(direction == "0"),
+boxplot(time_delta~parent_station_name,
+     data = headway_times %>% filter(is_weekend == FALSE, direction == "0"),
      main="times between trains by station, weekday Southbound",
      xlab="Stop Sequence", ylab = "wait time (seconds)", pch=".", ylim=c(-800, 1600))
+
+# Boxplot of times between trains by station, weekday Northbound.
+boxplot(time_delta~stop_seq,
+        data = headway_times %>% filter(is_weekend == FALSE, direction == "1"),
+        main="times between trains by station, weekday Southbound",
+        xlab="Stop Sequence", ylab = "wait time (seconds)", pch=".", ylim=c(-800, 1600))
 
 # density plot of times between trains by station.
 headway_plots <- list()
 headway_plots[[1]] <- ggplot(headway_times %>% filter(direction == "0", is_weekend == FALSE), aes(x=time_delta)) +
-  geom_density(aes(group = stop_name, colour= stop_name, fill= stop_name), alpha=0.3)
+  geom_density(aes(group = parent_station_name, colour= parent_station_name, fill= parent_station_name), alpha=0.2) +
+  title("Southbound") + xlab("Weekday") +
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.title=element_blank(),
+        legend.key.size=unit(0.3, "cm"),
+        legend.text=element_text(size=6),
+        axis.ticks.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.title.y=element_blank(),
+        axis.title.x=element_blank(),
+        plot.title = element_text(size = 10))
 
 headway_plots[[2]] <- ggplot(headway_times %>% filter(direction == "1", is_weekend == FALSE), aes(x=time_delta)) +
-  geom_density(aes(group = stop_name, colour= stop_name, fill= stop_name), alpha=0.3)
+  geom_density(aes(group = parent_station_name, colour= parent_station_name, fill= parent_station_name), alpha=0.2) +
+  title("Northbound") + 
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.title=element_blank(),
+        legend.key.size=unit(0.3, "cm"),
+        legend.text=element_text(size=6),
+        axis.ticks.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.title.y=element_blank(),
+        axis.title.x=element_blank(),
+        plot.title = element_text(size = 10))
 
-headway_plots[[3]] <- ggplot(headway_times %>% filter(direction == "0", is_weekend == FALSE), aes(x=time_delta)) +
-  geom_density(aes(group = stop_name, colour= stop_name, fill= stop_name), alpha=0.3)
+headway_plots[[3]] <- ggplot(headway_times %>% filter(direction == "0", is_weekend == TRUE), aes(x=time_delta)) +
+  geom_density(aes(group = parent_station_name, colour= parent_station_name, fill= parent_station_name), alpha=0.2) +
+  xlab("Weekend") +
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.title=element_blank(),
+        legend.key.size=unit(0.3, "cm"),
+        legend.text=element_text(size=6),
+        axis.ticks.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.title.y=element_blank(),
+        axis.title.x=element_blank(),
+        plot.title = element_text(size = 10))
 
-headway_plots[[4]] <- ggplot(headway_times %>% filter(direction == "1", is_weekend == FALSE), aes(x=time_delta)) +
-  geom_density(aes(group = stop_name, colour= stop_name, fill= stop_name), alpha=0.3)
+headway_plots[[4]] <- ggplot(headway_times %>% filter(direction == "1", is_weekend == TRUE), aes(x=time_delta)) +
+  geom_density(aes(group = parent_station_name, colour= parent_station_name, fill= parent_station_name), alpha=0.2) +
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.title=element_blank(),
+        legend.key.size=unit(0.3, "cm"),
+        legend.text=element_text(size=6),
+        axis.ticks.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.title.y=element_blank(),
+        axis.title.x=element_blank(),
+        plot.title = element_text(size = 10))
 
-grid.arrange(headway_plots[[1]], headway_plots[[2]],headway_plots[[3]],headway_plots[[4]], ncol=2, left="Type of Day")
+grid.arrange(headway_plots[[1]], headway_plots[[2]],headway_plots[[3]],headway_plots[[4]], ncol=2, left="Type of Day", top="Heading")
 grid.rect(gp=gpar(fill=NA, col="gray"))
 
 # And a simple plot of the densities of travel times for Northbound trains of weekdays, all times of day.
