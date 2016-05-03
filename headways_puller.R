@@ -13,41 +13,66 @@ startTime <- as.POSIXct("2016-01-25 04:00:00") # the start date of the class -- 
 TArchiveURLs <- c("http://www.mbta.com/uploadedfiles/MBTA_GTFS.zip",
                   "http://www.mbta.com/gtfs_archive/20151211.zip") # first is current archive; the rest are father back in time
 
-RedLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Red", sep=""))[[1]]
-MattapanLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Mattapan", sep=""))[[1]]
 
-red_south <-  RedLineRoute$stop[[1]] %>%
-  select(stop_order, stop_id) %>%
-  arrange(stop_order) %>%
-  mutate(next_stop = lead(stop_id)) %>%
-  select(stop_id, next_stop) %>%
-  filter(!is.na(next_stop))
+#### THIS WAS THE FIRST WAY TO GET ALL STOP PAIRS; DIDN'T WORK!!!!
+# RedLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Red", sep=""))[[1]]
+# MattapanLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Mattapan", sep=""))[[1]]
+# 
+# red_south <-  RedLineRoute$stop[[1]] %>%
+#   select(stop_order, stop_id) %>%
+#   arrange(stop_order) %>%
+#   mutate(next_stop = lead(stop_id)) %>%
+#   select(stop_id, next_stop) %>%
+#   filter(!is.na(next_stop))
+# 
+# red_north <-  RedLineRoute$stop[[2]] %>%
+#   select(stop_order, stop_id) %>%
+#   arrange(stop_order) %>%
+#   mutate(next_stop = lead(stop_id)) %>%
+#   select(stop_id, next_stop) %>%
+#   filter(!is.na(next_stop))
+# 
+# matt_out <-  MattapanLineRoute$stop[[1]] %>%
+#   select(stop_order, stop_id) %>%
+#   arrange(stop_order) %>%
+#   mutate(next_stop = lead(stop_id)) %>%
+#   select(stop_id, next_stop) %>%
+#   filter(!is.na(next_stop))
+# 
+# matt_in <-  MattapanLineRoute$stop[[2]] %>%
+#   select(stop_order, stop_id) %>%
+#   arrange(stop_order) %>%
+#   mutate(next_stop = lead(stop_id)) %>%
+#   select(stop_id, next_stop) %>%
+#   filter(!is.na(next_stop))
+# 
+# distinct_stop_pairs <- rbind(red_north, red_south, matt_out, matt_in)
 
-red_north <-  RedLineRoute$stop[[2]] %>%
-  select(stop_order, stop_id) %>%
-  arrange(stop_order) %>%
-  mutate(next_stop = lead(stop_id)) %>%
-  select(stop_id, next_stop) %>%
-  filter(!is.na(next_stop))
+# Create a list of all stop pairs; the Route info does not cotain sufficient information separate the Ashmont (a) and
+# Braintree (b) lines. Digging this out of the schedule archive is possible but would have taken longer. Start with Southbound...
+south_main <- data.frame(
+  stop_id = c("70061","70063","70065","70067","70069","70071","70073","70075","70077","70079","70081"),
+  next_stop = c("70063","70065","70067","70069","70071","70073","70075","70077","70079","70081","70083"))
+south_a <- data.frame(
+  stop_id = c("70083","70085","70087","70089","70091"),
+  next_stop = c("70085","70087","70089","70091","70093"))
+south_b <- data.frame(
+  stop_id = c("70083","70095","70097","70099","70101","70103"),
+  next_stop = c("70095","70097","70099","70101","70103","70105"))
 
-matt_out <-  MattapanLineRoute$stop[[1]] %>%
-  select(stop_order, stop_id) %>%
-  arrange(stop_order) %>%
-  mutate(next_stop = lead(stop_id)) %>%
-  select(stop_id, next_stop) %>%
-  filter(!is.na(next_stop))
+# Repeat for Northbound...
+north_main <- data.frame(
+  stop_id = c("70084","70082","70080","70078","70076","70074","70072","70070","70068","70066","70064"),
+  next_stop = c("70082","70080","70078","70076","70074","70072","70070","70068","70066","70064","70061"))
+north_a <- data.frame(
+  stop_id = c("70094","70092","70090","70088","70086"),
+  next_stop = c("70092","70090","70088","70086","70084"))
+north_b <- data.frame(
+  stop_id = c("70105","70104","70102","70100","70098","70096"),
+  next_stop = c("70104","70102","70100","70098","70096","70084"))
 
-matt_in <-  MattapanLineRoute$stop[[2]] %>%
-  select(stop_order, stop_id) %>%
-  arrange(stop_order) %>%
-  mutate(next_stop = lead(stop_id)) %>%
-  select(stop_id, next_stop) %>%
-  filter(!is.na(next_stop))
-
-distinct_stop_pairs <- rbind(red_north, red_south, matt_out, matt_in)
-rm(matt_in, matt_out, red_north, red_south)
-
-#distinct_stop_pairs_full <- distinct_stop_pairs
+# Then rbind everything together.
+distinct_stop_pairs <- rbind(south_main, south_a, south_b, north_main, north_a, north_b)
 
 # The following can be skipped if "train_travel_times.csv" is present in the working directory
 if(length(ls(pattern="headway_times")) > 0) {
@@ -56,7 +81,8 @@ if(length(ls(pattern="headway_times")) > 0) {
   print("Loading previously generated data.")
   headway_times <- read_csv("train_headway_times.csv.gz") # can skip MBTA queries and load this instead
   names(headway_times)[1] <- "index" # adding a name to our unnamed first column -- this column gets added by read_csv
-} else {
+}
+else {
   print("Requesting data from realtime.mbta.com...")
   # create a holding frame for the data; we do this outside the loops so that it will persist.
   headway_times <- data.frame(direction=as.numeric(character()),
