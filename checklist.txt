@@ -35,7 +35,7 @@ May 4
 [S] Self & peer assesments - Shawn
 [ ] Self & peer assesments - Jeff
 [ ] Self & peer assesments - Danielle
-[ ] Self & peer assesments - Varuni
+[V] Self & peer assesments - Varuni
 
 May 6
 ===============================================
