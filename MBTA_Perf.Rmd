@@ -121,19 +121,12 @@ weather<-read.csv("https://www.ncei.noaa.gov/orders/cdo/729412.csv")
 In order to associate human-readable names, geographical data, and such with MBTA stops, we pull down sets of data regarding the routes.
 ```{r Pull_Performance_Data}
 RedLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Red", sep=""))[[1]]
-
 MattapanLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Mattapan", sep=""))[[1]]
-
 GreenBLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-B", sep=""))[[1]]
-
 GreenCLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-C", sep=""))[[1]]
-
 GreenDLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-D", sep=""))[[1]]
-
 GreenELineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-E", sep=""))[[1]]
-
 BlueLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Blue", sep=""))[[1]]
-
 OrangeLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Orange", sep=""))[[1]]
 ```
 
@@ -256,6 +249,7 @@ if(length(ls(pattern="travel_times")) > 0) {
 ```
 
 We also want to pull what the MBTA calls "headways"; these track the time between departures at a given station. When trains are running late, headways exceed their benchmark targets. The root causes of slow service can probably be better picked apart from travel times and dwell times, but the eventual impact to riders is most cleanly seen in headways. In structure and access, this data is very similar to the travel times data, with each record representing one train leaving a station.
+
 ```{r Fetch_Headways}
 # The following can be skipped if "train_headway_times.csv" is present in the working directory
 
@@ -344,6 +338,7 @@ if (length(ls(pattern="headway_times")) > 0) {
 ```
 
 Now we have two large, related data sets. Before we can work with the travel time or headways data, we need to clean up some data types. Almost all of the data is initially stored as text.
+
 ```{r Times_Cleanup}
 # We should probably move this above the saving of the CSV so we don't need to do it every run
 travel_times$X <- NULL
@@ -540,7 +535,7 @@ plot(as.numeric(travel_times[travel_times$from_stop == "70065",]$dep_dt - travel
 
 Here's one using headways, color-coding lateness (more on this later!); blue is "cool", with low lateness:
 
-```{r vis_headway_lateness}
+```{r vis_headway_lateness, eval=FALSE}
 plot(as.numeric(headway_times[headway_times$from_stop == "70065",]$current_dep_dt - headway_times[headway_times$from_stop == "70065",]$dt,unit = 'mins'),
      headway_times[headway_times$from_stop == "70065",]$dt,
      main="Departures from Porter Square heading inbound\n color-coded by headway lateness",
@@ -560,7 +555,7 @@ ggplot(headway_times %>% filter(is_weekend == FALSE, direction == "0"), aes(x = 
 
 Another way to visualize these time-deltas is a boxplot.
 
-```{r vis_time_delta_boxplot} 
+```{r vis_time_delta_boxplot, eval=FALSE} 
 boxplot(time_delta~parent_station_name,
      data = headway_times %>% filter(is_weekend == FALSE, direction == "0"),
      main="Times between trains by station, weekday Southbound",
@@ -657,7 +652,7 @@ Lets take a look at service quality. One sensible metric would be how long pasen
 
 Here's a simple density plot of ALL observed lateness (on-time or early headways removed) to give an idea of what is typical.
 
-```{r lateness_dens}
+```{r lateness_dens, eval=FALSE}
 ggplot(headway_times %>% filter(lateness > 0), aes(x=lateness)) +
   geom_density(aes(colour="All Trains", fill="All Trains"), alpha=0.5) +
   ggtitle("Total distribution of Lateness (seconds)") +
@@ -955,7 +950,7 @@ red_line_alert <- red_line_alert %>%
     ungroup() %>%
     select(-after_at, -before_at) %>% 
     rename(alerts_at_station_code = after_at_name_code) 
-red_line_alert
+#red_line_alert
 
 #################################
 # Green line 
@@ -968,7 +963,7 @@ green_line_alert <- green_line_alert %>%
   arrange(created) %>% 
   select(text, created, favoriteCount, retweetCount) %>% 
   mutate(arr_dt = created)
-green_line_alert
+#green_line_alert
 
 
 # if severity increases with delay time or
@@ -993,7 +988,7 @@ blue_line_alert <- blue_line_alert %>%
   arrange(created) %>% 
   select(text, created, favoriteCount, retweetCount) %>% 
   mutate(arr_dt = created)
-blue_line_alert
+#blue_line_alert
 
 
 # if severity increases with delay time or
@@ -1015,7 +1010,7 @@ orange_line_alert <- orange_line_alert %>%
   arrange(created) %>% 
   select(text, created, favoriteCount, retweetCount) %>% 
   mutate(arr_dt = created)
-orange_line_alert
+#orange_line_alert
 
 
 # if severity increases with delay time or
@@ -1036,15 +1031,9 @@ allstops <- Tarchive_stops %>%
   filter(is.na(stop_code)==FALSE) %>%
   mutate(from_stop=stop_code,to_stop=stop_code)
 
-#>>>>>>> 269ba259f0fd3dfc0650cbb155566db34954c164
-
 travel_times_alerts$from_stop <- as.integer(travel_times_alerts$from_stop)
 travel_times_alerts$to_stop <- as.integer(travel_times_alerts$to_stop)
-```
 
-asdf
-
-```{r merge_latlng}
 #Merge latitude and longitude values
 dataset<-travel_times_alerts %>%
   left_join(allstops,by="from_stop") %>%
@@ -1058,17 +1047,13 @@ dataset<-dataset %>%
 
 t.lub <- ymd_hms(dataset$dep_dt)
 dataset$time <- round((hour(t.lub) + minute(t.lub)/60), digits=2)
-```
 
-```{r weather, eval=FALSE}
-#Weather data; we're not currently using it this is where it would be pulled
-weather<-weather %>% 
-  filter(DATE>20160124,STATION_NAME=="BOSTON LOGAN INTERNATIONAL AIRPORT MA US") %>%
-  select(DATE,PRCP,SNOW) %>%
-  rename(precipitation=PRCP,snowfall=SNOW)
-```
+# #Weather data; we're not currently using it this is where it would be pulled
+# weather<-weather %>% 
+#   filter(DATE>20160124,STATION_NAME=="BOSTON LOGAN INTERNATIONAL AIRPORT MA US") %>%
+#   select(DATE,PRCP,SNOW) %>%
+#   rename(precipitation=PRCP,snowfall=SNOW)
 
-```{r lines}
 #RedLine
 Red <-  RedLineRoute$stop[[1]] %>%
   select(stop_order, stop_id, stop_name, stop_lat, stop_lon)
@@ -1371,16 +1356,14 @@ boston <- leaflet() %>%
 boston
 ```
 
-```{r avg_travel_times}
+```{r plot_alerts}
 #Average travel times between stops
 traveltime<-dataset %>% group_by(start_stop,end_stop) %>%
   summarize(avg_traveltime=mean(travel_time_sec))
 
 betweenstops<-dataset %>% left_join(traveltime,by=c("start_stop","end_stop")) %>%
   mutate(residualtime=avg_traveltime-travel_time_sec)
-```
 
-```{r delay_v_timeofday}
 #Delay vs. hour of day plot, input using start and stop_codes
 traveltimes_day<-function(fromstation,tostation){
   travel<-betweenstops %>% 
@@ -1397,9 +1380,7 @@ traveltimes_day<-function(fromstation,tostation){
 #Examples
 traveltimes_day("Park Street - to Alewife","Charles/MGH - Outbound")
 traveltimes_day("Charles/MGH - Outbound","Kendall/MIT - Outbound")
-```
 
-```{r plot_alerts}
 #Tweets
 travel_times_alerts$arr_dt<-ymd_hms(travel_times_alerts$arr_dt)
 travel_times_alerts$dep_dt<-ymd_hms(travel_times_alerts$dep_dt)
