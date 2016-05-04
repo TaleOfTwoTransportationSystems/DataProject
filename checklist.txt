@@ -12,14 +12,14 @@ May 4
 	[ ] Words - Overview & Motivation
 	[j] Words - Related Work
 	[ ] Words - Initial Questions
-	[j] Words - Data
+	[/] Words - Data
 	[ ] Words - Revised Questions 
 	[ ] Code - Finalize chunks
 		[s] MBTA Performance - travel times
 		[s] MBTA Performance - headways
 		[ ] MBTA Schedule
 		[v] Twitter Alerts
-		[j,d] Visualizations
+		[d] Visualizations
 	[ ] Words - Description of each major chunk:
 		[ ] MBTA Performance - travel times
 		[ ] MBTA Performance - headways
