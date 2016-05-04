@@ -12,7 +12,7 @@ May 4
 	[ ] Words - Overview & Motivation
 	[j] Words - Related Work
 	[ ] Words - Initial Questions
-	[j] Words - Data
+	[/] Words - Data
 	[ ] Words - Revised Questions 
 	[ ] Code - Finalize chunks
 		[s] MBTA Performance - travel times

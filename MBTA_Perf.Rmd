@@ -367,6 +367,7 @@ for(i in 0:(as.integer(unclass(now() - startTime)))) {
 ```
 
 We also want to pull what the MBTA calls "headways"; these track the time between departures at a given station. When trains are running late, headways exceed their benchmark targets. The root causes of slow service can probably be better picked apart from travel times and dwell times, but the eventual impact to riders is most cleanly seen in headways.
+
 ```{r Fetch_Headways}
 # The following can be skipped if "train_headway_times.csv" is present in the working directory
 if(length(ls(pattern="headway_times")) > 0) {
@@ -555,7 +556,7 @@ boxplot(time_delta~stop_seq,
         main="Times between trains by station, Weekend Northbound",
         xlab="Stop Sequence", ylab = "wait time (seconds)", pch=".", ylim=c(-800, 1600))
 ```
-
+```{r }
 The boxplots makes clear that though much of the data is very close to the benchmark, there are certainly instances where gaps are greater or less than their benchmark times. In fact, in order to clearly see the boxes we had to artificially restrict the range of the y axis. 
 
 # Boxplot of times between trains by station, weekday Northbound.
