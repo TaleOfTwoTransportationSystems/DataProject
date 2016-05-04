@@ -5,13 +5,13 @@ Key:
 [ ] Not done; not in progress
 [J] In progress by [S]hawn, [J]eff, [V]aruni or [D]anielle
 [/] Complete
-[P] Provisionally complete (more work possible but probably good enough unless we find ourselves with extra time?)
+[P] Provisionally complete (more work possible but probably good enough unless we find ourselves with extra time?) <-- I think this will aplly to anything we mark complete ;) Jeff
 
 May 4
 ===============================================
 [ ].Rmd
 	[S] Words - Overview & Motivation
-	[j] Words - Related Work
+	[ ] Words - Related Work
 	[ ] Words - Initial Questions
 	[/] Words - Data
 	[ ] Words - Revised Questions 
@@ -24,12 +24,12 @@ May 4
 	[ ] Words - Description of each major chunk:
 		[P] MBTA Performance - travel times
 		[P] MBTA Performance - headways
-		[ ] MBTA Schedule
+		[P] MBTA Schedule
 		[ ] Twitter Alerts
 		[ ] Visualizations
 	[ ] Words - Final Analysis
 	[ ] Code - Remove debugging chunk
-	[ ] Code - Make sure it knits as a stand-alone .Rmd (WARNING - completely from scratch, this takes upwards of an hour!)
+	[ ] Code - Make sure it knits as a stand-alone .Rmd (WARNING - completely from scratch, this takes upwards of an hour!  Try by copying .Rmd outside of Git folder -- don't accidently break the repository by deleting supporting files.)
 	[ ] Submit .Rmd and HTML
 
 [S] Self & peer assesments - Shawn
