@@ -4,12 +4,7 @@ author: "Shawn Connor, Jeff Cunningham, Danielle Feng and Varuni Gang"
 date: "May 1, 2016"
 output: html_document
 ---
-
-## MBTA Performance Data
-
-#### CSCI E-107 Final Project
-
-#### Shawn Connor, Jeff Cunningham, Danille Feng and Varuni Gang
+#### _CSCI E-107 Final Project_
 
 ### Overview and Motivation
 asdf
