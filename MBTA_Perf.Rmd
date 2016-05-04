@@ -372,6 +372,9 @@ headway_times$time_delta <- headway_times$headway_time_sec - headway_times$bench
 
 # While we're at it, we'll also calculate "lateness" for headways; how many seconds (if any)
 # the departure exceeded it's benchmark headway time.
+travel_times$lateness <- travel_times$travel_time_sec - travel_times$benchmark_travel_time_sec
+travel_times[travel_times$lateness < 0,]$lateness <- 0
+
 headway_times$lateness <- headway_times$headway_time_sec - headway_times$benchmark_headway_time_sec
 headway_times[headway_times$lateness < 0,]$lateness <- 0
 
