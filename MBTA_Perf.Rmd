@@ -850,7 +850,10 @@ red_line_alert %>%
               most_recent_date=max(as.Date.POSIXct(created)))
 ```
 
-asdf
+For each of these twitter information we have extracted additional informations:
+A) If the alerts is from a T whoch is running southbound, northbound or both. 
+B) Severity of the alert. Is the alert indicating a minor, moderate or a mojor delay.
+C) Which sepecific T station is the alerts being caused. We have also gone into specific to understand if its for an inbound train or an outbound train. 
 
 ```{r Compare_Alerts_To_Performance}
 # To relate to a data we already have is to add 
