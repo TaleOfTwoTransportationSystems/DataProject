@@ -1016,10 +1016,7 @@ RedBraintree <- Red %>%
     filter(stop_order %in% c(1, seq(10, 110, 10), 120, seq(180, 220, 10))) %>% 
     mutate(line="RedBraintree")
 
-# Red <- RedLineRoute$stop[1][[1]] %>% mutate(stop_lat=as.numeric(stop_lat), stop_lon=as.numeric(stop_lon))
-# Red <- filter(Red, !duplicated(Red$parent_station_name)) %>%
-#     select(parent_station_name, stop_lat, stop_lon) %>%
-#     rename(lat=stop_lat, lng=stop_lon)
+Red <- Red %>% mutate(line="Red")
 
 #GreenBLine
 GreenB <-  GreenBLineRoute$stop[[1]] %>%
@@ -1063,7 +1060,7 @@ Blue$stop_lat<-as.numeric(Blue$stop_lat)
 Blue$stop_lon<-as.numeric(Blue$stop_lon)
 Blue<-Blue %>% mutate(line="Blue")
 
-all_lines<-rbind(Red,GreenB,GreenC,GreenD,GreenE,Orange,Blue)
+all_lines<-rbind(Red,RedAshmont,RedBraintree,GreenB,GreenC,GreenD,GreenE,Orange,Blue)
 all_lines$stop_lat<-as.numeric(all_lines$stop_lat)
 all_lines$stop_lon<-as.numeric(all_lines$stop_lon)
 
@@ -1163,32 +1160,34 @@ orange_line_alert <- orange_line_alert %>%
   select(-after_at, -before_at) %>% 
   rename(alerts_at_station_code = after_at_name_code)
 
-#Map of Boston
-lon_range <- extendrange(dataset$end_long)
-lat_range <- extendrange(dataset$end_lat)
-
-gc <- geocode("boston massachusetts")
-map <- get_map(gc,maptype = "toner-lite",calc_zoom(lon_range, lat_range))
-
-ggmap(map)+
-  geom_path(data=Red,aes(x=stop_lon,y=stop_lat),color="red",size=1)+
-  geom_path(data=GreenB,aes(x=stop_lon,y=stop_lat),color="green",size=1)+
-  geom_path(data=GreenC,aes(x=stop_lon,y=stop_lat),color="green",size=1)+
-  geom_path(data=GreenD,aes(x=stop_lon,y=stop_lat),color="green",size=1)+
-  geom_path(data=GreenE,aes(x=stop_lon,y=stop_lat),color="green",size=1)+
-  geom_path(data=Orange,aes(x=stop_lon,y=stop_lat),color="orange",size=1)+
-  geom_path(data=Blue,aes(x=stop_lon,y=stop_lat),color="blue",size=1)+
-  geom_point(data=Red,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
-  geom_point(data=GreenB,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
-  geom_point(data=GreenC,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
-  geom_point(data=GreenD,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
-  geom_point(data=GreenE,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
-  geom_point(data=Orange,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
-  geom_point(data=Blue,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
-  theme(axis.ticks = element_blank(), axis.text = element_blank(),axis.title=element_blank())
+# #Map of Boston
+# lon_range <- extendrange(dataset$end_long)
+# lat_range <- extendrange(dataset$end_lat)
+# 
+# gc <- geocode("boston massachusetts")
+# map <- get_map(gc,maptype = "toner-lite",calc_zoom(lon_range, lat_range))
+# 
+# ggmap(map)+
+#   geom_path(data=Red,aes(x=stop_lon,y=stop_lat),color="red",size=1)+
+#   geom_path(data=GreenB,aes(x=stop_lon,y=stop_lat),color="green",size=1)+
+#   geom_path(data=GreenC,aes(x=stop_lon,y=stop_lat),color="green",size=1)+
+#   geom_path(data=GreenD,aes(x=stop_lon,y=stop_lat),color="green",size=1)+
+#   geom_path(data=GreenE,aes(x=stop_lon,y=stop_lat),color="green",size=1)+
+#   geom_path(data=Orange,aes(x=stop_lon,y=stop_lat),color="orange",size=1)+
+#   geom_path(data=Blue,aes(x=stop_lon,y=stop_lat),color="blue",size=1)+
+#   geom_point(data=Red,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
+#   geom_point(data=GreenB,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
+#   geom_point(data=GreenC,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
+#   geom_point(data=GreenD,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
+#   geom_point(data=GreenE,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
+#   geom_point(data=Orange,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
+#   geom_point(data=Blue,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
+#   theme(axis.ticks = element_blank(), axis.text = element_blank(),axis.title=element_blank())
 
 #Using Leaflet
 redline<-all_lines %>% filter(line=="Red")
+redAshmontline<-all_lines %>% filter(line=="RedAshmont")
+redBraintreeline<-all_lines %>% filter(line=="RedBraintree")
 greenBline<-all_lines %>% filter(line=="GreenB")
 greenCline<-all_lines %>% filter(line=="GreenC")
 greenDline<-all_lines %>% filter(line=="GreenD")
@@ -1197,9 +1196,11 @@ orangeline<-all_lines %>% filter(line=="Orange")
 blueline<-all_lines %>% filter(line=="Blue")
 
 boston <- leaflet() %>% 
-  setView(lng = -71.0589, lat = 42.3601, zoom = 12) %>% 
+#  setView(lng = -71.0589, lat = 42.3601, zoom = 12) %>% 
   addProviderTiles("CartoDB.Positron") %>%
-  addPolylines(data=redline,~stop_lon,~stop_lat,color="red") %>%
+#  addPolylines(data=redline,~stop_lon,~stop_lat,color="red") %>%
+  addPolylines(data=redAshmontline,~stop_lon,~stop_lat,color="red") %>%
+  addPolylines(data=redBraintreeline,~stop_lon,~stop_lat,color="red") %>%
   addPolylines(data=greenBline,~stop_lon,~stop_lat,color="springgreen") %>%
   addPolylines(data=greenCline,~stop_lon,~stop_lat,color="palegreen") %>%
   addPolylines(data=greenDline,~stop_lon,~stop_lat,color="limegreen") %>%
