@@ -934,7 +934,7 @@ red_line_alert <- red_line_alert %>%
     ungroup() %>%
     select(-after_at, -before_at) %>% 
     rename(alerts_at_station_code = after_at_name_code) 
-#red_line_alert
+red_line_alert
 
 #################################
 # Green line 
@@ -947,7 +947,7 @@ green_line_alert <- green_line_alert %>%
   arrange(created) %>% 
   select(text, created, favoriteCount, retweetCount) %>% 
   mutate(arr_dt = created)
-#green_line_alert
+green_line_alert
 
 
 # if severity increases with delay time or
@@ -972,7 +972,7 @@ blue_line_alert <- blue_line_alert %>%
   arrange(created) %>% 
   select(text, created, favoriteCount, retweetCount) %>% 
   mutate(arr_dt = created)
-#blue_line_alert
+blue_line_alert
 
 
 # if severity increases with delay time or
@@ -994,7 +994,7 @@ orange_line_alert <- orange_line_alert %>%
   arrange(created) %>% 
   select(text, created, favoriteCount, retweetCount) %>% 
   mutate(arr_dt = created)
-#orange_line_alert
+orange_line_alert
 
 
 # if severity increases with delay time or
@@ -1015,6 +1015,8 @@ allstops <- Tarchive_stops %>%
   filter(is.na(stop_code)==FALSE) %>%
   mutate(from_stop=stop_code,to_stop=stop_code)
 
+#>>>>>>> 269ba259f0fd3dfc0650cbb155566db34954c164
+
 travel_times_alerts$from_stop <- as.integer(travel_times_alerts$from_stop)
 travel_times_alerts$to_stop <- as.integer(travel_times_alerts$to_stop)
 ```
@@ -1026,6 +1028,7 @@ dataset<-travel_times_alerts %>%
   left_join(allstops,by="from_stop") %>%
   select(-stop_code,-to_stop.y) %>%
   rename(to_stop=to_stop.x, start_stop=stop_name.x, start_lat=stop_lat, start_long=stop_lon)
+#>>>>>>> 269ba259f0fd3dfc0650cbb155566db34954c164
 
 dataset<-dataset %>% 
   left_join(allstops,by="to_stop") %>% 
@@ -1042,13 +1045,8 @@ dataset$time <- round((hour(t.lub) + minute(t.lub)/60), digits=2)
 #  filter(DATE>20160124,STATION_NAME=="BOSTON LOGAN INTERNATIONAL AIRPORT MA US") %>%
 #  select(DATE,PRCP,SNOW) %>%
 #  rename(precipitation=PRCP,snowfall=SNOW)
-
-# #Weather data (not using it but its here)
-# weather<-weather %>% 
-#   filter(DATE>20160124,STATION_NAME=="BOSTON LOGAN INTERNATIONAL AIRPORT MA US") %>%
-#   select(DATE,PRCP,SNOW) %>% rename(precipitation=PRCP,snowfall=SNOW)
-# ba934a78877a16836195871e8225d1797fb95dc6
 ```
+#>>>>>>> 269ba259f0fd3dfc0650cbb155566db34954c164
 
 ```{r lines}
 #RedLine
@@ -1117,9 +1115,93 @@ all_lines <- all_lines %>%
   select(-extra)
 ```
 
+#<<<<<<< HEAD
 ```{r}
+#=======
+#Map of Boston
+lon_range <- extendrange(all_lines$stop_long)
+lat_range <- extendrange(all_lines$stop_lat)
+
+gc <- geocode("boston massachusetts")
+map <- get_map(gc,maptype = "toner-lite",calc_zoom(lon_range, lat_range))
+
+#Static Map
+ggmap(map)+
+  geom_path(data=Red,aes(x=stop_lon,y=stop_lat),color="red",size=1)+
+  geom_path(data=GreenB,aes(x=stop_lon,y=stop_lat),color="green",size=1)+
+  geom_path(data=GreenC,aes(x=stop_lon,y=stop_lat),color="green",size=1)+
+  geom_path(data=GreenD,aes(x=stop_lon,y=stop_lat),color="green",size=1)+
+  geom_path(data=GreenE,aes(x=stop_lon,y=stop_lat),color="green",size=1)+
+  geom_path(data=Orange,aes(x=stop_lon,y=stop_lat),color="orange",size=1)+
+  geom_path(data=Blue,aes(x=stop_lon,y=stop_lat),color="blue",size=1)+
+  geom_point(data=Red,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
+  geom_point(data=GreenB,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
+  geom_point(data=GreenC,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
+  geom_point(data=GreenD,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
+  geom_point(data=GreenE,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
+  geom_point(data=Orange,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
+  geom_point(data=Blue,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
+  theme(axis.ticks = element_blank(), axis.text = element_blank(),axis.title=element_blank())
+
+## The static map is somewhat boring, so we want to make an interactive one
+
+#Using Leaflet for interactive map
+redline<-all_lines %>% filter(line=="Red")
+greenBline<-all_lines %>% filter(line=="GreenB")
+greenCline<-all_lines %>% filter(line=="GreenC")
+greenDline<-all_lines %>% filter(line=="GreenD")
+greenEline<-all_lines %>% filter(line=="GreenE")
+orangeline<-all_lines %>% filter(line=="Orange")
+blueline<-all_lines %>% filter(line=="Blue")
+
+boston <- leaflet() %>% 
+  setView(lng = -71.0589, lat = 42.3601, zoom = 12) %>% 
+  addProviderTiles("CartoDB.Positron") %>%
+  addPolylines(data=redline,~stop_lon,~stop_lat,color="red") %>%
+  addPolylines(data=greenBline,~stop_lon,~stop_lat,color="springgreen") %>%
+  addPolylines(data=greenCline,~stop_lon,~stop_lat,color="palegreen") %>%
+  addPolylines(data=greenDline,~stop_lon,~stop_lat,color="limegreen") %>%
+  addPolylines(data=greenEline,~stop_lon,~stop_lat,color="green") %>%
+  addPolylines(data=orangeline,~stop_lon,~stop_lat,color="orange") %>%
+  addPolylines(data=blueline,~stop_lon,~stop_lat,color="blue") %>%
+  addCircleMarkers(data=redline, ~stop_lon,~stop_lat,color="red",radius=1,popup=~stop_name) %>%
+  addCircleMarkers(data=greenBline,~stop_lon,~stop_lat,color="springgreen",radius=1,popup=~stop_name) %>%
+  addCircleMarkers(data=greenCline,~stop_lon,~stop_lat,color="palegreen",radius=1,popup=~stop_name) %>%
+  addCircleMarkers(data=greenDline,~stop_lon,~stop_lat,color="limegreen",radius=1,popup=~stop_name) %>%
+  addCircleMarkers(data=greenEline,~stop_lon,~stop_lat,color="green",radius=1,popup=~stop_name) %>%
+  addCircleMarkers(data=orangeline,~stop_lon,~stop_lat,color="orange",radius=1,popup=~stop_name) %>%
+  addCircleMarkers(data=blueline,~stop_lon,~stop_lat,color="blue",radius=1,popup=~stop_name)
+boston
+
+#Average travel times between stops
+traveltime<-dataset %>% group_by(start_stop,end_stop) %>%
+  summarize(avg_traveltime=mean(travel_time_sec))
+
+betweenstops<-dataset %>% left_join(traveltime,by=c("start_stop","end_stop")) %>%
+  mutate(residualtime=benchmark_travel_time_sec-travel_time_sec)
+
+#Delay vs. hour of day plot, input using start and stop_codes
+#Rush hour highlighted at 7-9AM and 5-7PM
+traveltimes_day<-function(fromstation,tostation){
+  travel<-betweenstops %>% 
+    filter(start_stop==fromstation & end_stop==tostation) %>%
+    group_by(time) %>% summarize(mean(residualtime))
+  
+  dygraph(travel,main=c(as.character(fromstation), as.character(tostation))) %>% 
+    dyAxis("y", label = "Delay in Seconds") %>%
+    dyAxis("x", label="Hour of Day") %>% dyRangeSelector() %>%
+    dyEvent("12.00", label="Noon", labelLoc = "bottom") %>%
+    dyShading(from = "7.00", to = "9.00",color="#FFE6E6") %>%
+    dyShading(from = "17.00", to = "19.00",color="#CCEBD6") }
+
+#Examples
+traveltimes_day("Park Street - to Alewife","Charles/MGH - Outbound")
+traveltimes_day("Charles/MGH - Outbound","Kendall/MIT - Outbound")
+
+
+#>>>>>>> 269ba259f0fd3dfc0650cbb155566db34954c164
 ## Twitter analysis ~ for green line
-## Getting actaul stop names for Greenline stops
+## Getting actual stop names for Greenline stops
 greenB_stop_names_codes <- GreenB %>% 
   select(stop_id, stop_name) %>% 
   unite(stop_code_name, stop_id, stop_name)
@@ -1208,6 +1290,7 @@ orange_line_alert <- orange_line_alert %>%
   ungroup() %>% 
   select(-after_at, -before_at) %>% 
   rename(alerts_at_station_code = after_at_name_code)
+
 
 # #Map of Boston
 # lon_range <- extendrange(dataset$end_long)
@@ -1328,6 +1411,52 @@ leaflet(data = travel_times_alerts3) %>%
     addPolylines(data=redBraintreeline,~stop_lon,~stop_lat,color="red") %>%
     addCircleMarkers(data=redline, ~stop_lon,~stop_lat,color="red",radius=1,popup=~stop_name) %>%
     addMarkers(~stop_lon, ~stop_lat, clusterOptions = markerClusterOptions())
+#=======
+red_line_alert<-read.csv("https://raw.githubusercontent.com/TaleOfTwoTransportationSystems/DataProject/master/red_line_tweets_enhanced.csv")
+
+#copy of alerts data 
+redalerts<-red_line_alert
+greenalerts<-green_line_alert
+bluealerts<-blue_line_alert
+orangealerts<-orange_line_alert
+
+#Extract station codes
+regexp <- "[[:digit:]]+"
+redalerts$stop_code<-as.integer(str_extract(redalerts$alerts_at_station_code, regexp))
+greenalerts$stop_code<-as.integer(str_extract(greenalerts$alerts_at_station_code, regexp))
+orangealerts$stop_code<-as.integer(str_extract(orangealerts$alerts_at_station_code, regexp))
+bluealerts$stop_code<-as.integer(str_extract(bluealerts$alerts_at_station_code, regexp))
+
+greenalerts<-greenalerts %>% 
+  select(arr_dt,severity,greenLine,stop_code) %>% rename(line=greenLine)
+greenalerts$line[greenalerts$line=="B"]<-"GreenB"
+greenalerts$line[greenalerts$line=="C"]<-"GreenC"
+greenalerts$line[greenalerts$line=="D"]<-"GreenD"
+greenalerts$line[greenalerts$line=="E"]<-"GreenE"
+greenalerts<-greenalerts %>% filter(-is.na(stop_code)==FALSE)
+greenalerts$arr_dt<-ymd_hms(greenalerts$arr_dt)
+
+redalerts<-redalerts %>% mutate(line="Red") %>%
+  select(arr_dt,severity,line,stop_code) %>% filter(-is.na(stop_code)==FALSE)
+redalerts$arr_dt<-ymd_hms(redalerts$arr_dt)
+bluealerts<-bluealerts %>% mutate(line="Blue") %>%
+  select(arr_dt,severity,line,stop_code) %>% filter(-is.na(stop_code)==FALSE)
+bluealerts$arr_dt<-ymd_hms(bluealerts$arr_dt)
+orangealerts<-orangealerts %>% mutate(line="Orange") %>%
+  select(arr_dt,severity,line,stop_code) %>% filter(-is.na(stop_code)==FALSE)
+orangealerts$arr_dt<-ymd_hms(orangealerts$arr_dt)
+
+#Merge all alerts
+allalerts<-rbind(redalerts,greenalerts,bluealerts,orangealerts)
+
+#Get latitude and longitude values
+allstops<-allstops %>% rename(stop_code=from_stop) %>% select(-to_stop)
+allalerts<-allalerts %>% left_join(allstops,by="stop_code") %>% filter(severity!=0)
+  
+#All lines severity of alerts
+boston %>% 
+  addMarkers(data=allalerts,~stop_lon,~stop_lat,clusterOptions=markerClusterOptions())
+#>>>>>>> 269ba259f0fd3dfc0650cbb155566db34954c164
 ```
 
 ### Final Analysis
