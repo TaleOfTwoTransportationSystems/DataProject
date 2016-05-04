@@ -115,7 +115,6 @@ access_token <- '111824999-KVpkYnMt3MZU2Bfxl9lcHZfMvdF5pYZiHQqSonE6'
 access_secret <- 'Ib5N3qKxZ7CT1TuQeznHv6XobdCmjZkSVTESkVj7TwVZm'
 
 weather<-read.csv("https://www.ncei.noaa.gov/orders/cdo/729412.csv")
-
 ```
 
 asdf Google realtime performance blah blah
@@ -456,7 +455,6 @@ if (length(ls(pattern="headway_times")) > 0) {
 
 Before we can work with the travel time or headways data, we need to clean up some data types.
 ```{r}
-travel_times$X <- NULL
 travel_times$direction <- as.character(travel_times$direction)
 travel_times$from_stop <- as.character(travel_times$from_stop)
 travel_times$to_stop <- as.character(travel_times$to_stop)
@@ -560,7 +558,7 @@ boxplot(time_delta~stop_seq,
         main="Times between trains by station, Weekend Northbound",
         xlab="Stop Sequence", ylab = "wait time (seconds)", pch=".", ylim=c(-800, 1600))
 ```
-
+```{r }
 The boxplots makes clear that though much of the data is very close to the benchmark, there are certainly instances where gaps are greater or less than their benchmark times. In fact, in order to clearly see the boxes we had to artificially restrict the range of the y axis. 
 
 To get a better sense of the full ranges of the data, lets try a density plot. Here we're looking at time-deltas for headways by station; there is naturally significant overplotting, but this helps us spot very unusual stations.
@@ -836,14 +834,14 @@ red_line_alert <- red_line_alert %>%
     select(text, created, favoriteCount, retweetCount) %>% 
     mutate(arr_dt = created)
 
-travel_times_alerts <- travel_times %>% 
+travel_times <- travel_times %>% 
     full_join(red_line_alert)
 
 # To add tweets as a parameter for stops is by 
 # pulling in stop names from the tweets and then mapping them to stop ids.
 
 # First step is to pull in all the relevant stop ids from our full dataset
-stop_ids <- c(travel_times_alerts$from_stop, travel_times_alerts$to_stop) %>% unique()
+stop_ids <- c(travel_times$from_stop, travel_times$to_stop) %>% unique()
 
 # Second step is get the actaul stop names for these stops
 stop_names_codes <- Tarchive_stops %>% 
@@ -1010,22 +1008,18 @@ asdf
 
 ```{r Visuals}
 #Get data
-allstops <- Tarchive_stops %>% 
-  select(stop_code, stop_name, stop_lat, stop_lon) %>%
+allstops<-Tarchive_stops %>% 
+  select(stop_code, stop_name, stop_lat, stop_lon) %>% 
   filter(is.na(stop_code)==FALSE) %>%
   mutate(from_stop=stop_code,to_stop=stop_code)
+travel_times$from_stop <- as.integer(travel_times$from_stop)
+travel_times$to_stop <- as.integer(travel_times$to_stop)
 
-travel_times_alerts$from_stop <- as.integer(travel_times_alerts$from_stop)
-travel_times_alerts$to_stop <- as.integer(travel_times_alerts$to_stop)
-```
-
-
-```{r}
 #Merge latitude and longitude values
-dataset<-travel_times_alerts %>%
+dataset<-travel_times %>% 
   left_join(allstops,by="from_stop") %>%
   select(-stop_code,-to_stop.y) %>%
-  rename(to_stop=to_stop.x, start_stop=stop_name.x, start_lat=stop_lat, start_long=stop_lon)
+  rename(to_stop=to_stop.x, start_stop=stop_name, start_lat=stop_lat, start_long=stop_lon)
 
 dataset<-dataset %>% 
   left_join(allstops,by="to_stop") %>% 
@@ -1034,23 +1028,26 @@ dataset<-dataset %>%
 
 t.lub <- ymd_hms(dataset$dep_dt)
 dataset$time <- round((hour(t.lub) + minute(t.lub)/60), digits=2)
-```
 
-```{r weather}
+<<<<<<< HEAD
+<<<<<<< HEAD
 #Weather data (not using it but its here)
-#weather<-weather %>% 
-#  filter(DATE>20160124,STATION_NAME=="BOSTON LOGAN INTERNATIONAL AIRPORT MA US") %>%
-#  select(DATE,PRCP,SNOW) %>%
-#  rename(precipitation=PRCP,snowfall=SNOW)
-
+weather<-weather %>% 
+  filter(DATE>20160124,STATION_NAME=="BOSTON LOGAN INTERNATIONAL AIRPORT MA US") %>%
+  select(DATE,PRCP,SNOW) %>%
+  rename(precipitation=PRCP,snowfall=SNOW)
+=======
+=======
+>>>>>>> ba934a78877a16836195871e8225d1797fb95dc6
 # #Weather data (not using it but its here)
 # weather<-weather %>% 
 #   filter(DATE>20160124,STATION_NAME=="BOSTON LOGAN INTERNATIONAL AIRPORT MA US") %>%
 #   select(DATE,PRCP,SNOW) %>% rename(precipitation=PRCP,snowfall=SNOW)
-# ba934a78877a16836195871e8225d1797fb95dc6
-```
+<<<<<<< HEAD
+>>>>>>> ba934a78877a16836195871e8225d1797fb95dc6
+=======
+>>>>>>> ba934a78877a16836195871e8225d1797fb95dc6
 
-```{r lines}
 #RedLine
 Red <-  RedLineRoute$stop[[1]] %>%
   select(stop_order, stop_id, stop_name, stop_lat, stop_lon)
@@ -1115,9 +1112,8 @@ all_lines$stop_lon<-as.numeric(all_lines$stop_lon)
 all_lines <- all_lines %>% 
   separate(stop_name, into = c("stop_name", "extra"), sep="-", fill="right") %>%
   select(-extra)
-```
 
-```{r}
+
 ## Twitter analysis ~ for green line
 ## Getting actaul stop names for Greenline stops
 greenB_stop_names_codes <- GreenB %>% 
@@ -1232,9 +1228,7 @@ orange_line_alert <- orange_line_alert %>%
 #   geom_point(data=Orange,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
 #   geom_point(data=Blue,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
 #   theme(axis.ticks = element_blank(), axis.text = element_blank(),axis.title=element_blank())
-```
 
-```{r}
 #Using Leaflet
 redline<-all_lines %>% filter(line=="Red")
 redAshmontline<-all_lines %>% filter(line=="RedAshmont")
@@ -1266,18 +1260,14 @@ boston <- leaflet() %>%
   addCircleMarkers(data=orangeline,~stop_lon,~stop_lat,color="orange",radius=1,popup=~stop_name) %>%
   addCircleMarkers(data=blueline,~stop_lon,~stop_lat,color="blue",radius=1,popup=~stop_name)
 boston
-```
 
-```{r}
 #Average travel times between stops
 traveltime<-dataset %>% group_by(start_stop,end_stop) %>%
   summarize(avg_traveltime=mean(travel_time_sec))
 
 betweenstops<-dataset %>% left_join(traveltime,by=c("start_stop","end_stop")) %>%
   mutate(residualtime=avg_traveltime-travel_time_sec)
-```
 
-```{r}
 #Delay vs. hour of day plot, input using start and stop_codes
 traveltimes_day<-function(fromstation,tostation){
   travel<-betweenstops %>% 
@@ -1290,38 +1280,29 @@ traveltimes_day<-function(fromstation,tostation){
     dyEvent("12.00", label="Noon", labelLoc = "bottom") %>%
     dyShading(from = "7.00", to = "9.00",color="#FFE6E6") %>%
     dyShading(from = "17.00", to = "19.00",color="#CCEBD6") }
-```
 
-
-```{r}
 #Examples
 traveltimes_day("Park Street - to Alewife","Charles/MGH - Outbound")
 traveltimes_day("Charles/MGH - Outbound","Kendall/MIT - Outbound")
-```
 
-```{r}
 #Tweets
-travel_times_alerts$arr_dt<-ymd_hms(travel_times_alerts$arr_dt)
-travel_times_alerts$dep_dt<-ymd_hms(travel_times_alerts$dep_dt)
+travel_times$arr_dt<-ymd_hms(travel_times$arr_dt)
+travel_times$dep_dt<-ymd_hms(travel_times$dep_dt)
 red_line_alert$arr_dt<-ymd_hms(red_line_alert$arr_dt)
-travel_times_alerts2 <- travel_times_alerts %>% full_join(red_line_alert) %>% 
+travel_times <- travel_times %>% full_join(red_line_alert) %>% 
   filter(is.na(severity)==FALSE)
 
-```
-
-```{r}
 #Station of concern from alert
 regexp <- "[[:digit:]]+"
-travel_times_alerts2$stop_code<-as.integer(str_extract(travel_times_alerts2$alerts_at_station_code, regexp))
+travel_times$stop_code<-as.integer(str_extract(travel_times$alerts_at_station_code, regexp))
 
 #Get latitude and longitude values
-travel_times_alerts3 <- travel_times_alerts2 %>%
-  left_join(allstops,by="stop_code") %>%
-  select(dep_dt,arr_dt,severity,stop_code,stop_name.y,stop_lat,stop_lon) %>%
+travel_times<-travel_times %>% left_join(allstops,by="stop_code") %>%
+  select(dep_dt,arr_dt,severity,stop_code,stop_name,stop_lat,stop_lon) %>%
   filter(is.na(stop_lat)==FALSE) %>% filter(is.na(stop_lon)==FALSE)
 
 #Red line severity of alerts
-leaflet(data = travel_times_alerts3) %>% 
+leaflet(data = travel_times) %>% 
     addTiles() %>% 
     addProviderTiles("CartoDB.Positron") %>%
     addPolylines(data=redAshmontline,~stop_lon,~stop_lat,color="red") %>%
