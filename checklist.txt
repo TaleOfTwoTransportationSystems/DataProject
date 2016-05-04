@@ -12,9 +12,9 @@ May 4
 [ ].Rmd
 	[P] Words - Overview & Motivation
 	[ ] Words - Related Work
-	[S] Words - Initial Questions
+	[PLEASE REVIEW] Words - Initial Questions
 	[/] Words - Data
-	[ ] Words - Revised Questions 
+	[S] Words - Revised Questions 
 	[ ] Code - Finalize chunks
 		[/] MBTA Performance - travel times
 		[/] MBTA Performance - headways

@@ -30,9 +30,14 @@ These are the questions we asked in our proposal:
 
 * How much of a delay is there between a slow-down and an alert?  
 * How much does ridership slow when there is an alert? Are alerts associated with all (most? some?) detected slowdown events?
+Measuring ridership on the T requires turnstile data, which was present in our first data source but turned out to not be granular enough to associate directly with alerts, as the question would require.
+
+ASDF ASDF I remember seeing below that we did manage do do some association between alerts and travel_times; can someone summarize how close we got to answering these questions and what we learned about the relationship (if anything)?
+
 * Is there a marked change in MBTA ridership when Hubway stops for the winter or resumes in the spring?
 * Does activity at Hubway stations increase when a nearby subway train arrives? 
 * How do MBTA slow-downs or alerts affect Hubway ridership?  
+These three had to be dropped when we determined the hubway data was too old to overlap with our other data sets. Rather than pursuing the Hubway data (which was pretty thoroughly explored in the Hubway Data Challenge: [link]http://hubwaydatachallenge.org/)
 
 ### Data
 These are the sources we were looking at when putting together our proposal.  The MBTA's [GTFS](https://developers.google.com/transit/gtfs/) archive was a little intimidating because the data is scatter across several CSVs, but it looked like a rich dataset.  The Hubway data looked easy to work with, but it was only available for a limited timeframe.  Hubway also has a GTFS-like feed, which we could use to generate a current dataset, but would only be useful for future projects as the dataset would only grow in real time -- it does not provide historical data.  We were unclear at first far back we would be able to get MBTA alert data.  Alerts are not part of the GTFS archive, but are sent out on Twitter (originally by a third-party bot).  Initial research indicated we would probably only be able to get the last 3200 tweets, but we did not know how far back in time that would go.  It was not looking likely that we would have overlapping MBTA GTFS, MBTA alert, and Hubway data.  We were not deterred, if alerts and slow-downs were well correlated, then we could use MBTA's GTFS data in place of alerts when looking at the older Hubway data.
