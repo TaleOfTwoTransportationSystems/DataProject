@@ -24,8 +24,7 @@ asdf
 * https://api.rpubs.com/shimolu523/
 
 ### Initial Questions
-asdf
-from proposal:
+These are the questions we asked in our proposal:
 
 * How much of a delay is there between a slow-down and an alert?  
 * How much does ridership slow when there is an alert? Are alerts associated with all (most? some?) detected slowdown events?
@@ -91,7 +90,8 @@ library(grid)
 library(gridExtra)
 ```
 
-To access the MBTA Developer's APIs, some things we hard code:
+To access the APIs, some things we hard code:
+
 ```{r Hardcoded_Stuff}
 # API information for the real-time feed
 TKeyJeff <- "?api_key=tNprgYF1K027zEIVluAkCw"
@@ -114,7 +114,7 @@ access_token <- '111824999-KVpkYnMt3MZU2Bfxl9lcHZfMvdF5pYZiHQqSonE6'
 access_secret <- 'Ib5N3qKxZ7CT1TuQeznHv6XobdCmjZkSVTESkVj7TwVZm'
 
 # Weather data; we were prepared to use this, but did not end up doing so
-weather<-read.csv("https://www.ncei.noaa.gov/orders/cdo/729412.csv")
+weather_url<-"https://www.ncei.noaa.gov/orders/cdo/729412.csv"
 ```
 
 
@@ -163,7 +163,7 @@ This gives us a complete set of paired stops. We don't remove the Ashmont/Braint
 
 Next we use the MBTA's new API to fetch data for travel times. This data consists of one record (row) for each time a train went from one stop to another. In order the query it, we need to supply a pair of stops and a range of dates, and the result is all travel times between those stops within that window. The windows are throttled to one week, so we need to loop through both the set of stop-pairs and the set of weeks. Because the data is large and takes about half and hour to extract, first we check to be sure that we don't already have the data locally. If you wanted to force a manual refresh, it's easy enough to just run the appropriate segment of code (the final "else" statement).
 ```{r Fetch_Travel_Times}
-# The following can be skipped if "train_travel_times.csv" is present in the working directory
+# The following can be skipped if "train_travel_times.csv.gz" is present in the working directory
 if(length(ls(pattern="travel_times")) > 0) {
     # do nothing - we already have the data in the environment
     print("We already have a travel_times object. Did you mean to do that?")
@@ -251,7 +251,7 @@ if(length(ls(pattern="travel_times")) > 0) {
 We also want to pull what the MBTA calls "headways"; these track the time between departures at a given station. When trains are running late, headways exceed their benchmark targets. The root causes of slow service can probably be better picked apart from travel times and dwell times, but the eventual impact to riders is most cleanly seen in headways. In structure and access, this data is very similar to the travel times data, with each record representing one train leaving a station.
 
 ```{r Fetch_Headways}
-# The following can be skipped if "train_headway_times.csv" is present in the working directory
+# The following can be skipped if "train_headway_times.csv.gz" is present in the working directory
 
 if (length(ls(pattern="headway_times")) > 0) {
   # do nothing - we already have the data in the environment
@@ -770,15 +770,17 @@ ggplot(weekday_southbound, aes(as.ordered(interval_start_hour), parent_station_n
 asdf Alerts come in from Twitter via CodeForBoston blah blah
 
 ```{r Pull_Alerts}
-# The following can be skipped if "red_line_tweets.csv" is present in the working directory
-if (file.exists("red_line_tweets.csv") & file.exists("green_line_alert.csv") & file.exists("orange_line_alert.csv") & file.exists("blue_line_alert.csv")) {
-    print("Loading previously generated data.")
-    red_line_alert<- read_csv("red_line_tweets.csv") # can skip Twitter queries and load this instead
+# The following can be skipped if four "*_tweets.csv" files are present in the working directory
+if (file.exists("red_line_tweets.csv") & 
+    file.exists("green_line_alert.csv") & 
+    file.exists("orange_line_alert.csv") & 
+    file.exists("blue_line_alert.csv")) {
+    print("Loading previously generated data.") # can skip Twitter queries and load this instead
+    red_line_alert<- read_csv("red_line_tweets.csv")
     green_line_alert <- read_csv("green_line_alert.csv")
     blue_line_alert <- read_csv("blue_line_alert.csv")
     orange_line_alert <- read_csv("orange_line_alert.csv")
 } else {
-    
     # authorizing twitter 
     setup_twitter_oauth(consumer_key = consumer_key, 
                         consumer_secret =  consumer_secret, 
@@ -1048,6 +1050,7 @@ t.lub <- ymd_hms(dataset$dep_dt)
 dataset$time <- round((hour(t.lub) + minute(t.lub)/60), digits=2)
 
 # #Weather data; we're not currently using it this is where it would be pulled
+# weather<-read.csv(weather_url)
 # weather<-weather %>% 
 #   filter(DATE>20160124,STATION_NAME=="BOSTON LOGAN INTERNATIONAL AIRPORT MA US") %>%
 #   select(DATE,PRCP,SNOW) %>%
@@ -1418,6 +1421,6 @@ asdf
 
 ```{r Debug}
 #remove this when we're done asdf
-ls.str()
+ls()
 ```
 
