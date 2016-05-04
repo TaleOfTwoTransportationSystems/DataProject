@@ -138,7 +138,7 @@ OrangeLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Orange",
 ```
 
 The Red line is somewhat special in how it appears in the data; it is "one" line, but it has a fork at JFK/UMass which (if you're southbound) goes to Ashmont and Braintree. Since the Red line is the one we want to experiment on first, in order to get a full list of arrival/departure pairs with which to query the API we do some manual configuration.
-```{r}
+```{r redline_split}
 # Start with Southbound...
 south_main <- data.frame(
   stop_id = c("70061","70063","70065","70067","70069","70071","70073","70075","70077","70079","70081"),
@@ -344,7 +344,8 @@ if (length(ls(pattern="headway_times")) > 0) {
 ```
 
 Now we have two large, related data sets. Before we can work with the travel time or headways data, we need to clean up some data types. Almost all of the data is initially stored as text.
-```{r}
+```{r Times_Cleanup}
+# We should probably move this above the saving of the CSV so we don't need to do it every run
 travel_times$X <- NULL
 travel_times$direction <- as.character(travel_times$direction)
 travel_times$from_stop <- as.character(travel_times$from_stop)
@@ -389,6 +390,8 @@ headway_times$is_weekend <- as.POSIXlt(headway_times$dt)$wday %in% c(0,6)
 
 When we first started on this project, we believed that the MBTA archives contained the travel-time and headway information that we wanted. It turns out we were wrong, but this archive data is still useful for finding stop information. This is the code to pull it.
 ```{r Pull_Archive_Data, cache=TRUE, warning=FALSE}
+#This chunk is slow.  We should probably pull out the few things that are being used into a new chunk,
+#then turn off evaluation of the rest.
 for(i in 1:length(TArchiveURLs)) {
     if(file.exists(basename(TArchiveURLs[i]))) {
         print(paste("Using existing", basename(TArchiveURLs[i])))
@@ -527,6 +530,7 @@ travel_times <- travel_times %>%
 ```
 
 A simple scatter plot of train departures from Porter Square heading inbound over time, to demonstrate what the level of detail in this data.
+
 ```{r vis_train_departures}
 plot(as.numeric(travel_times[travel_times$from_stop == "70065",]$dep_dt - travel_times[travel_times$from_stop == "70065",]$dt,unit = 'mins'),
      travel_times[travel_times$from_stop == "70065",]$dt,
@@ -535,6 +539,7 @@ plot(as.numeric(travel_times[travel_times$from_stop == "70065",]$dep_dt - travel
 ```
 
 Here's one using headways, color-coding lateness (more on this later!); blue is "cool", with low lateness:
+
 ```{r vis_headway_lateness}
 plot(as.numeric(headway_times[headway_times$from_stop == "70065",]$current_dep_dt - headway_times[headway_times$from_stop == "70065",]$dt,unit = 'mins'),
      headway_times[headway_times$from_stop == "70065",]$dt,
@@ -544,6 +549,7 @@ plot(as.numeric(headway_times[headway_times$from_stop == "70065",]$current_dep_d
 ```
 
 Here we look at the times between trains by time of day. We restrict the data to only southbound weekday trains, so as to avoid mixing unrelated data in the same plot.
+
 ```{r vis_headway_weekday_southbound}
 ggplot(headway_times %>% filter(is_weekend == FALSE, direction == "0"), aes(x = as.numeric(dep_time, units="hours"), y = time_delta)) +
   geom_point(alpha=0.05) +
@@ -553,6 +559,7 @@ ggplot(headway_times %>% filter(is_weekend == FALSE, direction == "0"), aes(x = 
 ```
 
 Another way to visualize these time-deltas is a boxplot.
+
 ```{r vis_time_delta_boxplot} 
 boxplot(time_delta~parent_station_name,
      data = headway_times %>% filter(is_weekend == FALSE, direction == "0"),
@@ -568,6 +575,7 @@ boxplot(time_delta~stop_seq,
 The boxplots makes clear that though much of the data is very close to the benchmark, there are certainly instances where gaps are greater or less than their benchmark times. In fact, in order to clearly see the boxes we had to artificially restrict the range of the y axis. 
 
 To get a better sense of the full ranges of the data, lets try a density plot. Here we're looking at time-deltas for headways by station; there is naturally significant overplotting, but this helps us spot very unusual stations.
+
 ```{r vis_time_delta_density}
 headway_plots <- list()
 headway_plots[[1]] <- ggplot(headway_times %>% filter(direction == "0", is_weekend == FALSE), aes(x=time_delta)) +
@@ -636,7 +644,8 @@ grid.rect(gp=gpar(fill=NA, col="gray"))
 We can see that the distributions tend to skew right; this isn't a surprise, because there is a limit to how early a train can be, but a much greater limit to how late it can be! We also note that even though the "center mass" of the density plots is very close to 0 (no delay), there are a significant number of late and early trains as well. Weekend northbound trains seem to be the most consistent (density closest to 0), but even there some noteworthy delays can be seen in the plot.
 
 We know that some amount of headway delay can be caused by longer-than-expected times to travel between stations. Let's look at what northbound, weekday trains' travel times look like; here we plot densities of travel times, also by station.
-```{r}
+
+```{r trav_dens}
 ggplot((travel_times %>% filter(direction == 1, is_weekend == FALSE)), aes(x=travel_time_sec)) +
   geom_density(aes(group = parent_station_name, colour= parent_station_name, fill= parent_station_name), alpha=0.2) +
   ggtitle("Travel times for Northbound trains of weekdays, by departing station") +
@@ -647,7 +656,8 @@ We certainly get less overplotting! This makes sense as any given connection is 
 Lets take a look at service quality. One sensible metric would be how long pasengers are waiting on platforms for trains beyond how long they "should" be waiting per normal service. In our data this can be thought of as the difference between the actual observed times and the benchmark times provided by the MBTA. However, we only look for cases where this number is positive; the MBTA gets no extra credit for early trains! This isn't because we're mean spirited, it's because faster-than-expected headways are indistinguishable from just happening to get to the platform at the right time to a typical rider, and because  faster-than-expected headways are often the result of backup cause by slowness earlier in the day.
 
 Here's a simple density plot of ALL observed lateness (on-time or early headways removed) to give an idea of what is typical.
-```{r}
+
+```{r lateness_dens}
 ggplot(headway_times %>% filter(lateness > 0), aes(x=lateness)) +
   geom_density(aes(colour="All Trains", fill="All Trains"), alpha=0.5) +
   ggtitle("Total distribution of Lateness (seconds)") +
@@ -663,10 +673,12 @@ ggplot(headway_times %>% filter(lateness > 0), aes(x=lateness)) +
         axis.title.x=element_blank(),
         plot.title = element_text(size = 10))
 ```
+
 This shape should be familiar; it's the right-half of the "time-delta" headway distributions above.
 
 Lets see if there are broad patterns by type of day or direction of travel.
-```{r}
+
+```{r type_of_day}
 ggplot(headway_times %>% filter(lateness > 0) %>% mutate(is_weekend = ifelse(is_weekend, "Weekend", "Weekday")), aes(x=lateness)) +
   geom_density(aes(group=paste(is_weekend, heading), colour=paste(is_weekend, heading), fill=paste(is_weekend, heading)), alpha=0.3) +
   ggtitle("Total distribution of Lateness (seconds)") +
@@ -686,13 +698,15 @@ Interesting; it looks like the MBTA's expected benchmarks are pretty good, in th
 
 What if we wanted a sense of both where __and__ when this lateness is most accutely felt? One approach would be to bucket the lateness events, add up the total amount of "overage" in each bucket, and divide by the total time in each bucket. Because of the way intervals of time are handled, though, the process is a bit round-about. 
 First, we build the buckets. In this case, we're using hourly intervals, defined by the number of seconds since midnight.
-```{r}
+
+```{r time_buckets}
 seconds_of_day <- data.frame(interval_start_hour = seq(0,26,1), hour_start = seq(0, 60*60*26, 60*60),
 hour_end = seq(60*60, 60*60*27, 60*60))
 ```
 
 We also need to count the number of days (both weekend and weekdays) in our observation window.
-```{r}
+
+```{r count_days}
 count_of_days <- headway_times %>%
 # group our observations by day and day-type
   group_by(is_weekend, dt) %>%
@@ -705,7 +719,8 @@ count_of_days <- headway_times %>%
 ```
 
 Now, we find how many "delay seconds" appear in each of our buckets. The really tricky part is accounting for long delays which are partially in one bucket, and partially in another.
-```{r}
+
+```{r delay_seconds}
 total_lateness <- headway_times %>%
 # Filter to only events with actual lateness.
   filter(lateness > 0) %>%
@@ -734,8 +749,10 @@ total_lateness <- headway_times %>%
   mutate(seconds_observed = (days_observed*60*60)) %>%
   select(-days_observed)
 ```
+
 Hey, that's cool! We can now compute how late the T was running for any arbitrary combination of hour-of-day, stop, heading, weekend/weekday, just by summing the seconds of observed lateness and deviding by the sum of seconds observed. This gives us a metric, "percent late", which we can think of as "for the entire time we observed the station, for what % of that time was a train past it's benchmark arrival time? So, for example:
-```{r}
+
+```{r total_lateness}
 total_lateness %>%
   group_by(heading, stop_seq, parent_station_name) %>%
   summarize(percent_late = sum(total_lateness)/sum(seconds_observed)) %>%
@@ -743,7 +760,8 @@ total_lateness %>%
 ```
 
 Given this rate, we can compute a heatmap of delay severity:
-```{r}
+
+```{r delay_heatmap}
 weekday_southbound <- total_lateness %>%
   filter(heading == "Southbound", weekend == "Weekday") %>%
   group_by(parent_station_name, interval_start_hour) %>%
@@ -753,7 +771,6 @@ ggplot(weekday_southbound, aes(as.ordered(interval_start_hour), parent_station_n
   geom_tile(aes(fill = percent_late), color = "white") +
   scale_fill_gradient(low = "white",high = "red")
 ```
-
 
 asdf Alerts come in from Twitter via CodeForBoston blah blah
 
@@ -1025,14 +1042,14 @@ travel_times_alerts$from_stop <- as.integer(travel_times_alerts$from_stop)
 travel_times_alerts$to_stop <- as.integer(travel_times_alerts$to_stop)
 ```
 
+asdf
 
-```{r}
+```{r merge_latlng}
 #Merge latitude and longitude values
 dataset<-travel_times_alerts %>%
   left_join(allstops,by="from_stop") %>%
   select(-stop_code,-to_stop.y) %>%
   rename(to_stop=to_stop.x, start_stop=stop_name.x, start_lat=stop_lat, start_long=stop_lon)
-#>>>>>>> 269ba259f0fd3dfc0650cbb155566db34954c164
 
 dataset<-dataset %>% 
   left_join(allstops,by="to_stop") %>% 
@@ -1050,7 +1067,6 @@ weather<-weather %>%
   select(DATE,PRCP,SNOW) %>%
   rename(precipitation=PRCP,snowfall=SNOW)
 ```
-#>>>>>>> 269ba259f0fd3dfc0650cbb155566db34954c164
 
 ```{r lines}
 #RedLine
@@ -1119,32 +1135,31 @@ all_lines <- all_lines %>%
   select(-extra)
 ```
 
-```{r}
-#=======
-#Map of Boston
-lon_range <- extendrange(all_lines$stop_long)
-lat_range <- extendrange(all_lines$stop_lat)
-
-gc <- geocode("boston massachusetts")
-map <- get_map(gc,maptype = "toner-lite",calc_zoom(lon_range, lat_range))
-
-#Static Map
-ggmap(map)+
-  geom_path(data=Red,aes(x=stop_lon,y=stop_lat),color="red",size=1)+
-  geom_path(data=GreenB,aes(x=stop_lon,y=stop_lat),color="green",size=1)+
-  geom_path(data=GreenC,aes(x=stop_lon,y=stop_lat),color="green",size=1)+
-  geom_path(data=GreenD,aes(x=stop_lon,y=stop_lat),color="green",size=1)+
-  geom_path(data=GreenE,aes(x=stop_lon,y=stop_lat),color="green",size=1)+
-  geom_path(data=Orange,aes(x=stop_lon,y=stop_lat),color="orange",size=1)+
-  geom_path(data=Blue,aes(x=stop_lon,y=stop_lat),color="blue",size=1)+
-  geom_point(data=Red,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
-  geom_point(data=GreenB,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
-  geom_point(data=GreenC,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
-  geom_point(data=GreenD,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
-  geom_point(data=GreenE,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
-  geom_point(data=Orange,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
-  geom_point(data=Blue,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
-  theme(axis.ticks = element_blank(), axis.text = element_blank(),axis.title=element_blank())
+```{r maps}
+# #Map of Boston
+# lon_range <- extendrange(all_lines$stop_long)
+# lat_range <- extendrange(all_lines$stop_lat)
+# 
+# gc <- geocode("boston massachusetts")
+# map <- get_map(gc,maptype = "toner-lite",calc_zoom(lon_range, lat_range))
+# 
+# #Static Map
+# ggmap(map)+
+#   geom_path(data=Red,aes(x=stop_lon,y=stop_lat),color="red",size=1)+
+#   geom_path(data=GreenB,aes(x=stop_lon,y=stop_lat),color="green",size=1)+
+#   geom_path(data=GreenC,aes(x=stop_lon,y=stop_lat),color="green",size=1)+
+#   geom_path(data=GreenD,aes(x=stop_lon,y=stop_lat),color="green",size=1)+
+#   geom_path(data=GreenE,aes(x=stop_lon,y=stop_lat),color="green",size=1)+
+#   geom_path(data=Orange,aes(x=stop_lon,y=stop_lat),color="orange",size=1)+
+#   geom_path(data=Blue,aes(x=stop_lon,y=stop_lat),color="blue",size=1)+
+#   geom_point(data=Red,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
+#   geom_point(data=GreenB,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
+#   geom_point(data=GreenC,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
+#   geom_point(data=GreenD,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
+#   geom_point(data=GreenE,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
+#   geom_point(data=Orange,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
+#   geom_point(data=Blue,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
+#   theme(axis.ticks = element_blank(), axis.text = element_blank(),axis.title=element_blank())
 
 ## The static map is somewhat boring, so we want to make an interactive one
 
@@ -1322,7 +1337,7 @@ This is a slightly simpler initial version of our map-of-Boston code, for refere
    theme(axis.ticks = element_blank(), axis.text = element_blank(),axis.title=element_blank())
 ```
 
-```{r}
+```{r Leaflet}
 #Using Leaflet
 redline<-all_lines %>% filter(line=="Red")
 redAshmontline<-all_lines %>% filter(line=="RedAshmont")
@@ -1356,7 +1371,7 @@ boston <- leaflet() %>%
 boston
 ```
 
-```{r}
+```{r avg_travel_times}
 #Average travel times between stops
 traveltime<-dataset %>% group_by(start_stop,end_stop) %>%
   summarize(avg_traveltime=mean(travel_time_sec))
@@ -1365,7 +1380,7 @@ betweenstops<-dataset %>% left_join(traveltime,by=c("start_stop","end_stop")) %>
   mutate(residualtime=avg_traveltime-travel_time_sec)
 ```
 
-```{r}
+```{r delay_v_timeofday}
 #Delay vs. hour of day plot, input using start and stop_codes
 traveltimes_day<-function(fromstation,tostation){
   travel<-betweenstops %>% 
@@ -1378,16 +1393,13 @@ traveltimes_day<-function(fromstation,tostation){
     dyEvent("12.00", label="Noon", labelLoc = "bottom") %>%
     dyShading(from = "7.00", to = "9.00",color="#FFE6E6") %>%
     dyShading(from = "17.00", to = "19.00",color="#CCEBD6") }
-```
 
-
-```{r}
 #Examples
 traveltimes_day("Park Street - to Alewife","Charles/MGH - Outbound")
 traveltimes_day("Charles/MGH - Outbound","Kendall/MIT - Outbound")
 ```
 
-```{r}
+```{r plot_alerts}
 #Tweets
 travel_times_alerts$arr_dt<-ymd_hms(travel_times_alerts$arr_dt)
 travel_times_alerts$dep_dt<-ymd_hms(travel_times_alerts$dep_dt)
@@ -1395,9 +1407,6 @@ red_line_alert$arr_dt<-ymd_hms(red_line_alert$arr_dt)
 travel_times_alerts2 <- travel_times_alerts %>% full_join(red_line_alert) %>% 
   filter(is.na(severity)==FALSE)
 
-```
-
-```{r}
 #Station of concern from alert
 regexp <- "[[:digit:]]+"
 travel_times_alerts2$stop_code<-as.integer(str_extract(travel_times_alerts2$alerts_at_station_code, regexp))
@@ -1416,7 +1425,8 @@ leaflet(data = travel_times_alerts3) %>%
     addPolylines(data=redBraintreeline,~stop_lon,~stop_lat,color="red") %>%
     addCircleMarkers(data=redline, ~stop_lon,~stop_lat,color="red",radius=1,popup=~stop_name) %>%
     addMarkers(~stop_lon, ~stop_lat, clusterOptions = markerClusterOptions())
-#=======
+
+# stop doing CSV reads unless there's also code here to create the underlying data set
 red_line_alert<-read.csv("https://raw.githubusercontent.com/TaleOfTwoTransportationSystems/DataProject/master/red_line_tweets_enhanced.csv")
 
 #copy of alerts data 
@@ -1461,7 +1471,6 @@ allalerts <- allalerts %>% left_join(allstops,by="stop_code") %>% filter(severit
 #All lines severity of alerts
 boston %>% 
   addMarkers(data=allalerts,~stop_lon,~stop_lat,clusterOptions=markerClusterOptions())
-#>>>>>>> 269ba259f0fd3dfc0650cbb155566db34954c164
 ```
 
 ### Final Analysis
