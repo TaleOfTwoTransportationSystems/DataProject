@@ -439,7 +439,7 @@ else {
 
 ```
 
-Before we can work with the travel time or headways data, we need ot clean up some data types.
+Before we can work with the travel time or headways data, we need to clean up some data types.
 ```{r}
 travel_times$X <- NULL
 travel_times$direction <- as.character(travel_times$direction)
@@ -527,7 +527,7 @@ plot(as.numeric(headway_times[headway_times$from_stop == "70065",]$current_dep_d
 Here we look at the times between trains by time of day. We restrict the data to only southbound weekday trains, so as to avoid mixing unrelated data in the same plot.
 ```{r vis_headway_weekday_southbound}
 ggplot(headway_times %>% filter(is_weekend == FALSE, direction == "0"), aes(x = as.numeric(dep_time, units="hours"), y = time_delta)) +
-  geom_point(alpha=0.1) +
+  geom_point(alpha=0.05) +
   xlab("Hours (24+ is past midnight)") +
   ylab("Seconds from Benchmark") +
   ggtitle("Times between trains by time of day, weekday Southbound")
@@ -548,9 +548,8 @@ boxplot(time_delta~stop_seq,
 
 The boxplots makes clear that though much of the data is very close to the benchmark, there are certainly instances where gaps are greater or less than their benchmark times. In fact, in order to clearly see the boxes we had to artificially restrict the range of the y axis. 
 
-# Boxplot of times between trains by station, weekday Northbound.
-
-# density plot of times between trains by station.
+To get a better sense of the full ranges of the data, lets try a density plot. Here we're looking at time-deltas for headways by station; there is naturally significant overplotting, but this helps us spot very unusual stations.
+```{r vis_time_delta_density}
 headway_plots <- list()
 headway_plots[[1]] <- ggplot(headway_times %>% filter(direction == "0", is_weekend == FALSE), aes(x=time_delta)) +
   geom_density(aes(group = parent_station_name, colour= parent_station_name, fill= parent_station_name), alpha=0.2) +
@@ -614,25 +613,22 @@ headway_plots[[4]] <- ggplot(headway_times %>% filter(direction == "1", is_weeke
   
 grid.arrange(headway_plots[[1]], headway_plots[[2]],headway_plots[[3]],headway_plots[[4]], ncol=2, left="Type of Day", top="Heading")
 grid.rect(gp=gpar(fill=NA, col="gray"))
+```
+We can see that the distributions tend to skew right; this isn't a surprise, because there is a limit to how early a train can be, but a much greater limit to how late it can be! We also note that even though the "center mass" of the density plots is very close to 0 (no delay), there are a significant number of late and early trains as well. Weekend northbound trains seem to be the most consistent (density closest to 0), but even there some noteworthy delays can be seen in the plot.
 
-# And a simple plot of the densities of travel times for Northbound trains of weekdays, all times of day.
+We know that some amount of headway delay can be caused by longer-than-expected times to travel between stations. Let's look at what northbound, weekday trains' travel times look like; here we plot densities of travel times, also by station.
+```{r}
 ggplot((travel_times %>% filter(direction == 1, is_weekend == FALSE)), aes(x=travel_time_sec)) +
   geom_density(aes(group = parent_station_name, colour= parent_station_name, fill= parent_station_name), alpha=0.2) +
   ggtitle("Travel times for Northbound trains of weekdays, by departing station") +
   xlim(0, 200) + ylim(0, .25)
+```
+We certainly get less overplotting! This makes sense as any given connection is of different geographic separation, but what's more interesting is how variable those times appear to be even along fixed routes.
 
-# Lets take a look at service quality. One sensible metric would be how long pasengers are 
-# waiting on platforms for trains beyond how long they "should" be waiting per normal service.
-# In our data this can be thought of as the difference between the actual observed times
-# and the benchmark times provided by the MBTA. However, we only look for cases where this
-# number is positive; the MBTA gets no extra credit for early trains! This isn't because
-# we're mean spirited, it's because faster-than-expected headways are indistinguishable from
-# just happening to get to the platform at the right time to a typical rider, and because 
-# faster-than-expected headways are often the result of backup cause by slowness earlier in
-# the day.
+Lets take a look at service quality. One sensible metric would be how long pasengers are waiting on platforms for trains beyond how long they "should" be waiting per normal service. In our data this can be thought of as the difference between the actual observed times and the benchmark times provided by the MBTA. However, we only look for cases where this number is positive; the MBTA gets no extra credit for early trains! This isn't because we're mean spirited, it's because faster-than-expected headways are indistinguishable from just happening to get to the platform at the right time to a typical rider, and because  faster-than-expected headways are often the result of backup cause by slowness earlier in the day.
 
-# Here's a simple density plot of ALL observed lateness (on-time or early headways removed)
-# to give an idea of what is typical
+Here's a simple density plot of ALL observed lateness (on-time or early headways removed) to give an idea of what is typical.
+```{r}
 ggplot(headway_times %>% filter(lateness > 0), aes(x=lateness)) +
   geom_density(aes(colour="All Trains", fill="All Trains"), alpha=0.5) +
   ggtitle("Total distribution of Lateness (seconds)") +
@@ -647,8 +643,11 @@ ggplot(headway_times %>% filter(lateness > 0), aes(x=lateness)) +
         axis.title.y=element_blank(),
         axis.title.x=element_blank(),
         plot.title = element_text(size = 10))
+```
+This shape should be familiar; it's the right-half of the "time-delta" headway distributions above.
 
-# Lets see if there are broad patterns by type of day or direction of travel.
+Lets see if there are broad patterns by type of day or direction of travel.
+```{r}
 ggplot(headway_times %>% filter(lateness > 0) %>% mutate(is_weekend = ifelse(is_weekend, "Weekend", "Weekday")), aes(x=lateness)) +
   geom_density(aes(group=paste(is_weekend, heading), colour=paste(is_weekend, heading), fill=paste(is_weekend, heading)), alpha=0.3) +
   ggtitle("Total distribution of Lateness (seconds)") +
@@ -663,48 +662,69 @@ ggplot(headway_times %>% filter(lateness > 0) %>% mutate(is_weekend = ifelse(is_
         axis.title.y=element_blank(),
         axis.title.x=element_blank(),
         plot.title = element_text(size = 10))
+```
+Interesting; it looks like the MBTA's expected benchmarks are pretty good, in that the they appear to account well for variances by weekend and direction. If they didn't, the we would expect the distributions to show some systemic bias, but they're actually pretty similar. The weekday southbound trains tend to have somewhat shorter lateness events, and for weekend northbound they tend to be longer. Note, however, that we can't say that weekend Northbound tends to be late moreoften, because we through out anything that wasn't lateness already.
 
-# Interesting; it looks like the MBTA's expected benchmarks are pretty good, though the Weekday
-# Southbound trains tend to have shorter lateness events, and Weekend Northbound they tend to be
-# longer. NOTE, however, that we can't say that weekend Northbound tends to be late moreoften,
-# because we through out anything that wasn't lateness already.
-
+What if we wanted a sense of both where __and__ when this lateness is most accutely felt? One approach would be to bucket the lateness events, add up the total amount of "overage" in each bucket, and divide by the total time in each bucket. Because of the way intervals of time are handled, though, the process is a bit round-about. 
+First, we build the buckets. In this case, we're using hourly intervals, defined by the number of seconds since midnight.
+```{r}
 seconds_of_day <- data.frame(interval_start_hour = seq(0,26,1), hour_start = seq(0, 60*60*26, 60*60),
 hour_end = seq(60*60, 60*60*27, 60*60))
+```
 
+We also need to count the number of days (both weekend and weekdays) in our observation window.
+```{r}
 count_of_days <- headway_times %>%
+# group our observations by day and day-type
   group_by(is_weekend, dt) %>%
   summarize(count = 1) %>%
+# change the date type name for visualization purposes, then count the
+# number of each.
   mutate(weekend = ifelse(is_weekend, "Weekend", "Weekday")) %>%
   group_by(weekend) %>%
   summarize(days_observed = sum(count))
+```
 
+Now, we find how many "delay seconds" appear in each of our buckets. The really tricky part is accounting for long delays which are partially in one bucket, and partially in another.
+```{r}
 total_lateness <- headway_times %>%
+# Filter to only events with actual lateness.
   filter(lateness > 0) %>%
-  select(from_stop, parent_station_name, heading, is_weekend, current_dep_dt, dt, lateness) %>%
+# Trim down the data set; it's going to get bigger before it gets smaller.
+  select(from_stop, stop_seq, parent_station_name, heading, is_weekend, current_dep_dt, dt, lateness) %>%
+# Add columns determining, from the observed departure date and the lateness, when
+# the "expected" departure time was.
   mutate(lateness_start = current_dep_dt - lateness, stop_id = from_stop) %>%
   mutate(dep_t = as.numeric(current_dep_dt - dt, unit = "secs"), late_t = as.numeric(lateness_start - dt, unit = "secs")) %>%
+# Cross-join with the intervals; our R packages lack the facility to join
+# on intervals directly, so we add them all and then filter later.
   merge(.,seconds_of_day, all=TRUE) %>%
   filter((late_t > hour_start & late_t < hour_end) | (dep_t > hour_start & dep_t < hour_end) | (late_t < hour_start & dep_t > hour_end)) %>%
+# Determine the "effective" start and ends of the delays, which are the
+# portion of the delay interval which intersects the bucket. Subtract these
+# to get the relevant amount of delay.
   mutate(eff_late_start = ifelse(late_t < hour_start, hour_start, late_t), eff_late_end = ifelse(dep_t > hour_end, hour_end, dep_t)) %>%
   mutate(eff_lateness = eff_late_end - eff_late_start, weekend = ifelse(is_weekend, "Weekend", "Weekday")) %>%
-  group_by(interval_start_hour, stop_id, parent_station_name, heading, weekend) %>%
+# group by our categorical variables to sum up all of the lateness in
+# each bucket.
+  group_by(interval_start_hour, stop_id, stop_seq, parent_station_name, heading, weekend) %>%
   summarize(total_lateness = sum(eff_lateness)) %>%
+# Join to the "count of days" to determine how many total seconds of observations
+# there might have been in that bucket; this determines the divisor later.
   left_join(.,count_of_days) %>%
   mutate(seconds_observed = (days_observed*60*60)) %>%
   select(-days_observed)
-
-# Hey, that's cool! We can now compute how late the t was running for any arbitrary
-# combination of hour-of-day, stop, heading, weekend/weekday, just by summing the
-# seconds of observed lateness and deviding by the sum of seconds observed. This
-# gives us a metric, "percent late", which we can think of as "for the entire time
-# we observed the station, for what % of that time was a train past it's benchmark
-# arrival time? So, for example:
-
+```
+Hey, that's cool! We can now compute how late the T was running for any arbitrary combination of hour-of-day, stop, heading, weekend/weekday, just by summing the seconds of observed lateness and deviding by the sum of seconds observed. This gives us a metric, "percent late", which we can think of as "for the entire time we observed the station, for what % of that time was a train past it's benchmark arrival time? So, for example:
+```{r}
 total_lateness %>%
-  group_by(parent_station_name, heading) %>%
-  summarize(percent_late = sum(total_lateness)/sum(seconds_observed))
+  group_by(heading, stop_seq, parent_station_name) %>%
+  summarize(percent_late = sum(total_lateness)/sum(seconds_observed)) %>%
+  arrange(heading, stop_seq)
+```
 
+Given this rate, we can compute a heatmap of delay severity:
+```{r}
 weekday_southbound <- total_lateness %>%
   filter(heading == "Southbound", weekend == "Weekday") %>%
   group_by(parent_station_name, interval_start_hour) %>%
