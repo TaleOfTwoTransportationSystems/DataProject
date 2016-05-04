@@ -73,7 +73,7 @@ north_b <- data.frame(
 # Then rbind everything together.
 distinct_stop_pairs <- rbind(south_main, south_a, south_b, north_main, north_a, north_b)
 
-# The following can be skipped if "train_travel_times.csv" is present in the working directory
+# The following can be skipped if "train_headway_times.csv" is present in the working directory
 if(length(ls(pattern="headway_times")) > 0) {
   # do nothing - we already have the data in the environment
 } else if (file.exists("train_headway_times.csv.gz")) {
