@@ -10,7 +10,7 @@ Key:
 May 4
 ===============================================
 [ ].Rmd
-	[ ] Words - Overview & Motivation
+	[S] Words - Overview & Motivation
 	[j] Words - Related Work
 	[ ] Words - Initial Questions
 	[/] Words - Data
