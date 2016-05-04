@@ -354,10 +354,12 @@ asdf Alerts come in from Twitter via CodeForBoston blah blah
 
 ```{r Pull_Alerts}
 # The following can be skipped if "red_line_tweets.csv" is present in the working directory
-if (file.exists("red_line_tweets.csv") & file.exists("green_line_alert.csv")) {
+if (file.exists("red_line_tweets.csv") & file.exists("green_line_alert.csv") & file.exists("orange_line_alert.csv") & file.exists("blue_line_alert.csv")) {
     print("Loading previously generated data.")
     red_line_alert<- read_csv("red_line_tweets.csv") # can skip Twitter queries and load this instead
     green_line_alert <- read_csv("green_line_alert.csv")
+    blue_line_alert <- read_csv("blue_line_alert.csv")
+    orange_line_alert <- read_csv("orange_line_alert.csv")
 } else {
     
     # authorizing twitter 
@@ -387,14 +389,13 @@ if (file.exists("red_line_tweets.csv") & file.exists("green_line_alert.csv")) {
     # 
     # # MBTA Alerts user time line only 3200 hard limit
     # mbta_alerts_tweets <- userTimeline('mbta_alerts', n=3200, includeRts = FALSE, excludeReplies = TRUE)
-    # 
-    # # Orange Line Alerts user time line only 3200 hard limit
-    # OrangeLineAlert_tweets <- userTimeline('OrangeLineAlert', n=3200, includeRts = FALSE, excludeReplies = TRUE)
-    # 
-    # # Blue Line Alerts user time line only 3200 hard limit
-    # BlueLineAlerts_tweets <- userTimeline('BlueLineAlerts', n=3200, includeRts = FALSE, excludeReplies = TRUE)
     
-
+    # Orange Line Alerts user time line only 3200 hard limit
+    OrangeLineAlert_tweets <- userTimeline('OrangeLineAlert', n=3200, includeRts = FALSE, excludeReplies = TRUE)
+    
+    # Blue Line Alerts user time line only 3200 hard limit
+    BlueLineAlerts_tweets <- userTimeline('BlueLineAlerts', n=3200, includeRts = FALSE, excludeReplies = TRUE)
+    
     # Combining tweets from different twitter handles
     red_line_alert <- getSpecificTweetInformation(Red_Line_Alerts_tweets) %>% 
         union(getSpecificTweetInformation(highspeedalerts_tweets)) 
@@ -402,9 +403,17 @@ if (file.exists("red_line_tweets.csv") & file.exists("green_line_alert.csv")) {
     # for green line alerts
     green_line_alert <- getSpecificTweetInformation(GreenLineAlerts_tweets)
     
+    # for blue line alerts
+    blue_line_alert <- getSpecificTweetInformation(BlueLineAlerts_tweets)
+    
+    # for orange line alerts
+    orange_line_alert <- getSpecificTweetInformation(OrangeLineAlert_tweets)
+    
     # write all to a csv
     write_csv(red_line_alert, "red_line_alert.csv") 
     write_csv(green_line_alert, "green_line_alert.csv") 
+    write_csv(blue_line_alert, "blue_line_alert.csv") 
+    write_csv(orange_line_alert, "orange_line_alert.csv") 
 }
 
 # tweet count and oldest and most recent tweet dates
@@ -550,6 +559,48 @@ green_line_alert <- green_line_alert %>%
 green_line_alert$greenLine <- str_extract(green_line_alert$text, "#GreenLine [A-z] ") %>% 
   substr(12,12)
 
+#################################
+# Blue line 
+#################################
+
+# To relate to a data we already have is to add 
+# these tweets as "arrival date" ~ "created" and then join them.
+blue_line_alert <- blue_line_alert %>% 
+  filter(created > startTime) %>%
+  arrange(created) %>% 
+  select(text, created, favoriteCount, retweetCount) %>% 
+  mutate(arr_dt = created)
+blue_line_alert
+
+
+# if severity increases with delay time or
+# time series of severity increasing in the north/south bound trains
+blue_line_alert <- blue_line_alert %>% 
+  mutate(severity = ifelse(grepl("minor",text, ignore.case = TRUE), 1, 
+                           ifelse(grepl("moderate",text, ignore.case = TRUE), 2, 
+                                  ifelse(grepl("severe",text, ignore.case = TRUE), 3, 0))))
+
+
+#################################
+# Orange line 
+#################################
+
+# To relate to a data we already have is to add 
+# these tweets as "arrival date" ~ "created" and then join them.
+orange_line_alert <- orange_line_alert %>% 
+  filter(created > startTime) %>%
+  arrange(created) %>% 
+  select(text, created, favoriteCount, retweetCount) %>% 
+  mutate(arr_dt = created)
+orange_line_alert
+
+
+# if severity increases with delay time or
+# time series of severity increasing in the north/south bound trains
+orange_line_alert <- orange_line_alert %>% 
+  mutate(severity = ifelse(grepl("minor",text, ignore.case = TRUE), 1, 
+                           ifelse(grepl("moderate",text, ignore.case = TRUE), 2, 
+                                  ifelse(grepl("severe",text, ignore.case = TRUE), 3, 0))))
 
 ```
 
@@ -675,6 +726,54 @@ green_line_alert <- green_line_alert %>%
                                        )
                          )
                   )
+           )
+  ) %>% 
+  ungroup() %>% 
+  select(-after_at, -before_at) %>% 
+  rename(alerts_at_station_code = after_at_name_code)
+
+## Twitter analysis ~ for blue line
+## Getting actaul stop names for Blue line stops
+
+blue_line_stop_names_codes <- Blue %>% 
+  select(stop_id, stop_name) %>% 
+  unite(stop_code_name, stop_id, stop_name)
+
+### creating column for recognizing train station where delay is been tweeted ~ blue line
+
+blue_line_alert <- blue_line_alert %>% 
+  mutate(text_clone = text) %>% 
+  separate(text_clone, into = c("before_at", "after_at"), sep=" at ") %>% 
+  mutate(after_at = str_trim(gsub("#mbta|Station|Ave|Street|[.]", "", after_at, ignore.case = TRUE))) %>% 
+  rowwise() %>% 
+  mutate(after_at_name_code = 
+           ifelse(!is.na(after_at),
+                  toString(agrep(after_at, blue_line_stop_names_codes$stop_code_name, value = TRUE, ignore.case = TRUE)), 
+                  ''
+           )
+  ) %>% 
+ungroup() %>% 
+  select(-after_at, -before_at) %>% 
+  rename(alerts_at_station_code = after_at_name_code) 
+
+## Twitter analysis ~ for orange line
+## Getting actaul stop names for Orange line stops
+
+orange_line_stop_names_codes <- Orange %>% 
+  select(stop_id, stop_name) %>% 
+  unite(stop_code_name, stop_id, stop_name)
+
+### creating column for recognizing train station where delay is been tweeted ~ orange line
+
+orange_line_alert <- orange_line_alert %>% 
+  mutate(text_clone = text) %>% 
+  separate(text_clone, into = c("before_at", "after_at"), sep=" at ") %>% 
+  mutate(after_at = str_trim(gsub("#mbta|Station|Ave|Street|[.]", "", after_at, ignore.case = TRUE))) %>% 
+  rowwise() %>% 
+  mutate(after_at_name_code = 
+           ifelse(!is.na(after_at),
+                  toString(agrep(after_at, orange_line_stop_names_codes$stop_code_name, value = TRUE, ignore.case = TRUE)), 
+                  ''
            )
   ) %>% 
   ungroup() %>% 
