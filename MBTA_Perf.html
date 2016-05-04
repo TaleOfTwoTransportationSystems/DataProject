@@ -142,19 +142,27 @@ $(document).ready(function () {
 </div>
 <div id="overview-and-motivation" class="section level3">
 <h3>Overview and Motivation</h3>
-<p>asdf</p>
+<p>asdf from proposal: The MBTA is the greater Boston area’s traditional public transit system with over 1 million riders per typical weekday. It is comprised of subway trains, longer reach commuter trains, buses and ferries. Since 2009, the MBTA has made available a large amount of data regarding trips on the system, including alerts. The real time alerts are scraped and then Tweeted by CodeForBoston.</p>
+<p>Hubway is a growing bike sharing system implemented in Boston, Brookline, Cambridge, and Somerville. Users of the Hubway system range from young to old and live in various parts of the Greater Boston area. Users may rent bikes casually, or register for commutes.</p>
+<p>To our knowledge, there has been no previous analysis on the intersection of ridership of the MBTA and Hubway systems, both of which are deeply integrated into Boston’s transit system. Our project aims to related the trends in usage in a combined analysis of both transport systems.</p>
 </div>
 <div id="related-work" class="section level3">
 <h3>Related work</h3>
-<p>asdf</p>
+<p>asdf * <a href="https://github.com/nsfm/kgk-mbta" class="uri">https://github.com/nsfm/kgk-mbta</a> * <a href="https://mbtaviz.github.io/" class="uri">https://mbtaviz.github.io/</a> * <a href="https://api.rpubs.com/shimolu523/" class="uri">https://api.rpubs.com/shimolu523/</a></p>
 </div>
 <div id="initial-questions" class="section level3">
 <h3>Initial Questions</h3>
-<p>asdf</p>
+<p>asdf from proposal: * How much of a delay is there between a slow-down and an alert?<br />* How much does ridership slow when there is an alert? Are alerts associated with all (most? some?) detected slowdown events? * Is there a marked change in MBTA ridership when Hubway stops for the winter or resumes in the spring? * Does activity at Hubway stations increase when a nearby subway train arrives? * How do MBTA slow-downs or alerts affect Hubway ridership?</p>
 </div>
 <div id="data" class="section level3">
 <h3>Data</h3>
-<p>asdf</p>
+<p>asdf from proposal: MBTA Archive (2009-) * <a href="https://groups.google.com/forum/" class="uri">https://groups.google.com/forum/</a>#!topic/massdotdevelopers/3J6EYlqWghY * <a href="http://www.mbta.com/gtfs_archive/archived_feeds.txt" class="uri">http://www.mbta.com/gtfs_archive/archived_feeds.txt</a></p>
+<p>Hubway Data (2011-2013) * <a href="http://hubwaydatachallenge.org/" class="uri">http://hubwaydatachallenge.org/</a></p>
+<p>MBTA Alerts Twitter Feed (last 3200 tweets) * <a href="https://twitter.com/mbta_alerts" class="uri">https://twitter.com/mbta_alerts</a> * <a href="https://twitter.com/mbta?lang=en" class="uri">https://twitter.com/mbta?lang=en</a> * <a href="https://cran.r-project.org/web/packages/twitteR/index.html" class="uri">https://cran.r-project.org/web/packages/twitteR/index.html</a> * <a href="http://bigcomputing.blogspot.com/2016/02/the-twitter-r-package-by-jeff-gentry-is.html" class="uri">http://bigcomputing.blogspot.com/2016/02/the-twitter-r-package-by-jeff-gentry-is.html</a> * May ask <span class="citation">@CodeForBoson</span> to download their entire feed.</p>
+<p>NOAA (last 5 years) * <a href="http://w2.weather.gov/climate/index.php?wfo=box" class="uri">http://w2.weather.gov/climate/index.php?wfo=box</a></p>
+</div>
+<div id="code" class="section level3">
+<h3>Code</h3>
 <p>Load Libraries:</p>
 <pre class="r"><code>library(dplyr)
 library(jsonlite)

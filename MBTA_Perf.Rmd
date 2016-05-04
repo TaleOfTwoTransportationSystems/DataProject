@@ -8,15 +8,49 @@ output: html_document
 
 ### Overview and Motivation
 asdf
+from proposal:
+The MBTA is the greater Boston area’s traditional public transit system with over 1 million riders per typical weekday. It is comprised of subway trains, longer reach commuter trains, buses and ferries. Since 2009, the MBTA has made available a large amount of data regarding trips on the system, including alerts. The real time alerts are scraped and then Tweeted by CodeForBoston.
+
+Hubway is a growing bike sharing system implemented in Boston, Brookline, Cambridge, and Somerville. Users of the Hubway system range from young to old and live in various parts of the Greater Boston area. Users may rent bikes casually, or register for commutes. 
+
+To our knowledge, there has been no previous analysis on the intersection of ridership of the MBTA and Hubway systems, both of which are deeply integrated into Boston’s transit system. Our project aims to related the trends in usage in a combined analysis of both transport systems. 
 
 ### Related work
 asdf
+* https://github.com/nsfm/kgk-mbta
+* https://mbtaviz.github.io/
+* https://api.rpubs.com/shimolu523/
 
 ### Initial Questions
 asdf
+from proposal:
+* How much of a delay is there between a slow-down and an alert?  
+* How much does ridership slow when there is an alert? Are alerts associated with all (most? some?) detected slowdown events?
+* Is there a marked change in MBTA ridership when Hubway stops for the winter or resumes in the spring?
+* Does activity at Hubway stations increase when a nearby subway train arrives? 
+* How do MBTA slow-downs or alerts affect Hubway ridership?  
 
 ### Data
 asdf
+from proposal:
+MBTA Archive (2009-)
+* https://groups.google.com/forum/#!topic/massdotdevelopers/3J6EYlqWghY
+* http://www.mbta.com/gtfs_archive/archived_feeds.txt
+
+Hubway Data (2011-2013)
+* http://hubwaydatachallenge.org/
+
+MBTA Alerts Twitter Feed (last 3200 tweets)
+* https://twitter.com/mbta_alerts
+* https://twitter.com/mbta?lang=en
+* https://cran.r-project.org/web/packages/twitteR/index.html
+* http://bigcomputing.blogspot.com/2016/02/the-twitter-r-package-by-jeff-gentry-is.html
+* May ask @CodeForBoson to download their entire feed.
+
+NOAA (last 5 years)
+* http://w2.weather.gov/climate/index.php?wfo=box
+
+### Code
 
 Load Libraries:
 

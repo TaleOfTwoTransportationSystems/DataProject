@@ -9,19 +9,19 @@ Key:
 May 4
 ===============================================
 [ ].Rmd
-	[ ] Overview & Motivation
-	[ ] Related Work
-	[ ] Initial Questions
-	[ ] Data
+	[ ] Words - Overview & Motivation
+	[j] Words - Related Work
+	[ ] Words - Initial Questions
+	[j] Words - Data
 	[ ] Finalize chunks
 		[ ] MBTA Performance - travel times
 		[ ] MBTA Performance - headways
 		[ ] MBTA Schedule
-		[ ] Twitter Alerts
-		[ ] Visualizations
-	[ ] Description of each major chunk:
+		[v] Twitter Alerts
+		[j,d] Visualizations
+	[ ] Words - Description of each major chunk:
 		[ ] MBTA Performance - travel times
-		[ ] MBTA Performance - headways
+		[s] MBTA Performance - headways
 		[ ] MBTA Schedule
 		[ ] Twitter Alerts
 		[ ] Visualizations
