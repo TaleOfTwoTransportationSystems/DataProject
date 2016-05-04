@@ -120,19 +120,13 @@ asdf Google realtime performance blah blah
 
 ```{r Pull_Performance_Data}
 RedLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Red", sep=""))[[1]]
-```
-
-Here are the connections for some lines we're not using yet:
-```{r echo=FALSE}
-# Routes we're not using yet
-
- MattapanLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Mattapan", sep=""))[[1]]
- GreenBLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-B", sep=""))[[1]]
- GreenCLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-C", sep=""))[[1]]
- GreenDLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-D", sep=""))[[1]]
- GreenELineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-E", sep=""))[[1]]
- BlueLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Blue", sep=""))[[1]]
- OrangeLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Orange", sep=""))[[1]]
+MattapanLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Mattapan", sep=""))[[1]]
+GreenBLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-B", sep=""))[[1]]
+GreenCLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-C", sep=""))[[1]]
+GreenDLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-D", sep=""))[[1]]
+GreenELineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-E", sep=""))[[1]]
+BlueLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Blue", sep=""))[[1]]
+OrangeLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Orange", sep=""))[[1]]
 ```
 
 ```{r}
@@ -910,6 +904,7 @@ red_line_alert <- red_line_alert %>%
     ungroup() %>%
     select(-after_at, -before_at) %>% 
     rename(alerts_at_station_code = after_at_name_code) 
+#red_line_alert
 
 #################################
 # Green line 
@@ -922,7 +917,7 @@ green_line_alert <- green_line_alert %>%
   arrange(created) %>% 
   select(text, created, favoriteCount, retweetCount) %>% 
   mutate(arr_dt = created)
-green_line_alert
+#green_line_alert
 
 
 # if severity increases with delay time or
@@ -947,7 +942,7 @@ blue_line_alert <- blue_line_alert %>%
   arrange(created) %>% 
   select(text, created, favoriteCount, retweetCount) %>% 
   mutate(arr_dt = created)
-blue_line_alert
+#blue_line_alert
 
 
 # if severity increases with delay time or
@@ -969,7 +964,7 @@ orange_line_alert <- orange_line_alert %>%
   arrange(created) %>% 
   select(text, created, favoriteCount, retweetCount) %>% 
   mutate(arr_dt = created)
-orange_line_alert
+#orange_line_alert
 
 
 # if severity increases with delay time or
@@ -1003,17 +998,28 @@ dataset<-dataset %>%
 t.lub <- ymd_hms(dataset$dep_dt)
 dataset$time <- round((hour(t.lub) + minute(t.lub)/60), digits=2)
 
-#Weather data (not using it but its here)
-weather<-weather %>% 
-  filter(DATE>20160124,STATION_NAME=="BOSTON LOGAN INTERNATIONAL AIRPORT MA US") %>%
-  select(DATE,PRCP,SNOW) %>% rename(precipitation=PRCP,snowfall=SNOW)
+# #Weather data (not using it but its here)
+# weather<-weather %>% 
+#   filter(DATE>20160124,STATION_NAME=="BOSTON LOGAN INTERNATIONAL AIRPORT MA US") %>%
+#   select(DATE,PRCP,SNOW) %>% rename(precipitation=PRCP,snowfall=SNOW)
 
 #RedLine
 Red <-  RedLineRoute$stop[[1]] %>%
   select(stop_order, stop_id, stop_name, stop_lat, stop_lon)
 Red$stop_lat<-as.numeric(Red$stop_lat)
 Red$stop_lon<-as.numeric(Red$stop_lon)
-Red<-Red %>% mutate(line="Red")
+
+RedAshmont <- Red %>% 
+    filter(stop_order %in% c(1, seq(10, 110, 10), seq(130, 170, 10))) %>% 
+    mutate(line="RedAshmont")
+RedBraintree <- Red %>% 
+    filter(stop_order %in% c(1, seq(10, 110, 10), 120, seq(180, 220, 10))) %>% 
+    mutate(line="RedBraintree")
+
+# Red <- RedLineRoute$stop[1][[1]] %>% mutate(stop_lat=as.numeric(stop_lat), stop_lon=as.numeric(stop_lon))
+# Red <- filter(Red, !duplicated(Red$parent_station_name)) %>%
+#     select(parent_station_name, stop_lat, stop_lon) %>%
+#     rename(lat=stop_lat, lng=stop_lon)
 
 #GreenBLine
 GreenB <-  GreenBLineRoute$stop[[1]] %>%
