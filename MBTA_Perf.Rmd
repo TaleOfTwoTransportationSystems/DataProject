@@ -1033,6 +1033,8 @@ orange_line_alert <- orange_line_alert %>%
 
 asdf
 
+For the visualization of the Boston map, we first made a static reference map using ggmap, which was not interactive. Leaflet allowed for much more easy customization, which we used for overlaying alerts data with the map of the subway lines.
+
 ```{r Visuals}
 #Get data
 allstops <- Tarchive_stops %>% 
@@ -1379,8 +1381,8 @@ travel_times_alerts3 <- travel_times_alerts2 %>%
   select(dep_dt,arr_dt,severity,stop_code,stop_name.y,stop_lat,stop_lon) %>%
   filter(is.na(stop_lat)==FALSE) %>% filter(is.na(stop_lon)==FALSE)
 
-#copy of alerts data 
-#why make copies?
+#copy of alerts data
+#don't want to change the original files--have to rerun all previous chunks
 redalerts<-red_line_alert
 greenalerts<-green_line_alert
 bluealerts<-blue_line_alert
