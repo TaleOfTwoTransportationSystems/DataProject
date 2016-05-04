@@ -774,7 +774,7 @@ ggplot(weekday_southbound, aes(as.ordered(interval_start_hour), parent_station_n
   scale_fill_gradient(low = "white",high = "red")
 ```
 
-asdf Alerts come in from Twitter via CodeForBoston blah blah
+Alerts of T delays come in indirectly from Twitter handles for each of the specific lines. MBTA puts out an RSS feed that enterprising developers at codeforboston group started scraping and turned into tweets. We use twitteR r package, that procides access to Twitter API to get tweets for each individual twitter user. The API currently allows only 3200 latest tweets. Out of which we only use tweets that are direct from the user and have not been retweeted or replied over.
 
 ```{r Pull_Alerts}
 # The following can be skipped if four "*_tweets.csv" files are present in the working directory
