@@ -19,7 +19,7 @@ May 4
 		[s] MBTA Performance - headways
 		[ ] MBTA Schedule
 		[v] Twitter Alerts
-		[j,d] Visualizations
+		[d] Visualizations
 	[ ] Words - Description of each major chunk:
 		[ ] MBTA Performance - travel times
 		[ ] MBTA Performance - headways

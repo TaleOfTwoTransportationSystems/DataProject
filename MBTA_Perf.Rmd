@@ -1257,10 +1257,13 @@ travel_times<-travel_times %>% left_join(allstops,by="stop_code") %>%
   filter(is.na(stop_lat)==FALSE) %>% filter(is.na(stop_lon)==FALSE)
 
 #Red line severity of alerts
-leaflet(data = travel_times) %>% addTiles() %>% addProviderTiles("CartoDB.Positron") %>%
-  addPolylines(data=redline,~stop_lon,~stop_lat,color="red") %>%
-  addCircleMarkers(data=redline, ~stop_lon,~stop_lat,color="red",radius=1,popup=~stop_name) %>%
-  addMarkers(~stop_lon, ~stop_lat, clusterOptions = markerClusterOptions())
+leaflet(data = travel_times) %>% 
+    addTiles() %>% 
+    addProviderTiles("CartoDB.Positron") %>%
+    addPolylines(data=redAshmontline,~stop_lon,~stop_lat,color="red") %>%
+    addPolylines(data=redBraintreeline,~stop_lon,~stop_lat,color="red") %>%
+    addCircleMarkers(data=redline, ~stop_lon,~stop_lat,color="red",radius=1,popup=~stop_name) %>%
+    addMarkers(~stop_lon, ~stop_lat, clusterOptions = markerClusterOptions())
 ```
 
 ### Final Analysis
