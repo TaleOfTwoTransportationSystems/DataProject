@@ -171,7 +171,7 @@ This gives us a complete set of paired Red line stops. We don't remove the Ashmo
 Next we use the MBTA's new API to fetch data for travel times. This data consists of one record (row) for each time a train went from one stop to another. In order the query it, we need to supply a pair of stops and a range of dates, and the result is all travel times between those stops within that window. The windows are throttled to one week, so we need to loop through both the set of stop-pairs and the set of weeks. Because the data is large and takes about half and hour to extract, first we check to be sure that we don't already have the data locally. If you wanted to force a manual refresh, it's easy enough to just run the appropriate segment of code (the final "else" statement).
 ```{r Fetch_Travel_Times}
 # The following can be skipped if "train_travel_times.csv.gz" is present in the working directory
-if(length(ls(pattern="travel_times")) > 0) {
+if (length(ls(pattern="travel_times")) > 0) {
     # do nothing - we already have the data in the environment
     print("We already have a travel_times object. Did you mean to do that?")
 } else if (file.exists("train_travel_times.csv.gz")) {
@@ -271,12 +271,12 @@ if (length(ls(pattern="headway_times")) > 0) {
   print("Requesting data from realtime.mbta.com...")
   # create a holding frame for the data; we do this outside the loops so that it will persist.
   headway_times <- data.frame(direction=as.numeric(character()),
-                              current_dep_dt=as.POSIXct(character()), 
-                              previous_dep_dt=as.POSIXct(character()), 
-                              headway_time_sec=as.numeric(character()),
-                              benchmark_headway_time_sec=as.numeric(character()),
-                              from_stop=character(), 
-                              to_stop=character()) 
+                     current_dep_dt=as.POSIXct(character()), 
+                     previous_dep_dt=as.POSIXct(character()), 
+                     headway_time_sec=as.numeric(character()),
+                     benchmark_headway_time_sec=as.numeric(character()),
+                     from_stop=character(), 
+                     to_stop=character()) 
   
   # How many seven day periods from start to now?
   numWeeks <- as.integer(unclass(now() - startTime)/7)
@@ -398,7 +398,7 @@ When we first started on this project, we believed that the MBTA archives contai
 #This chunk is slow.  We should probably pull out the few things that are being used into a new chunk,
 #then turn off evaluation of the rest.
 for(i in 1:length(TArchiveURLs)) {
-    if(file.exists(basename(TArchiveURLs[i]))) {
+    if (file.exists(basename(TArchiveURLs[i]))) {
         print(paste("Using existing", basename(TArchiveURLs[i])))
     } else {
         download.file(TArchiveURLs[i], destfile=basename(TArchiveURLs[i]))
