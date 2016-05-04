@@ -533,19 +533,22 @@ ggplot(headway_times %>% filter(is_weekend == FALSE, direction == "0"), aes(x = 
   ggtitle("Times between trains by time of day, weekday Southbound")
 ```
 
-
-Boxplot of times between trains by station, weekday Southbound.
+Another way to visualize these time-deltas is a boxplot.
 ```{r vis_time_delta_boxplot} 
 boxplot(time_delta~parent_station_name,
      data = headway_times %>% filter(is_weekend == FALSE, direction == "0"),
-     main="times between trains by station, weekday Southbound",
+     main="Times between trains by station, weekday Southbound",
      xlab="Stop Sequence", ylab = "wait time (seconds)", pch=".", ylim=c(-800, 1600))
 
-# Boxplot of times between trains by station, weekday Northbound.
 boxplot(time_delta~stop_seq,
-        data = headway_times %>% filter(is_weekend == FALSE, direction == "1"),
-        main="times between trains by station, weekday Southbound",
+        data = headway_times %>% filter(is_weekend == TRUE, direction == "1"),
+        main="Times between trains by station, Weekend Northbound",
         xlab="Stop Sequence", ylab = "wait time (seconds)", pch=".", ylim=c(-800, 1600))
+```
+
+The boxplots makes clear that though much of the data is very close to the benchmark, there are certainly instances where gaps are greater or less than their benchmark times. In fact, in order to clearly see the boxes we had to artificially restrict the range of the y axis. 
+
+# Boxplot of times between trains by station, weekday Northbound.
 
 # density plot of times between trains by station.
 headway_plots <- list()
