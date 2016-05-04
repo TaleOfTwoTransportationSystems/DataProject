@@ -1450,8 +1450,8 @@ orangealerts$arr_dt<-ymd_hms(orangealerts$arr_dt)
 allalerts<-rbind(redalerts,greenalerts,bluealerts,orangealerts)
 
 #Get latitude and longitude values
-allstops<-allstops %>% rename(stop_code=from_stop) %>% select(-to_stop)
-allalerts<-allalerts %>% left_join(allstops,by="stop_code") %>% filter(severity!=0)
+allstops <- allstops %>% select(-to_stop)
+allalerts <- allalerts %>% left_join(allstops,by="stop_code") %>% filter(severity!=0)
   
 #All lines severity of alerts
 boston %>% 
