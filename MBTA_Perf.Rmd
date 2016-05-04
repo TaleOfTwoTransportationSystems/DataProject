@@ -40,7 +40,7 @@ ASDF ASDF I remember seeing below that we did manage do do some association betw
 These three had to be dropped when we determined the hubway data was too old to overlap with our other data sets. Rather than pursuing the Hubway data (which was pretty thoroughly explored in the Hubway Data Challenge: [link]http://hubwaydatachallenge.org/)
 
 ### Data
-These are the sources we were looking at when putting together our proposal.  The MBTA's [GTFS](https://developers.google.com/transit/gtfs/) archive was a little intimidating because the data is scatter across several CSVs, but it looked like a rich dataset.  The Hubway data looked easy to work with, but it was only available for a limited timeframe.  Hubway also has a GTFS-like feed, which we could use to generate a current dataset, but would only be useful for future projects as the dataset would only grow in real time -- it does not provide historical data.  We were unclear at first far back we would be able to get MBTA alert data.  Alerts are not part of the GTFS archive, but are sent out on Twitter (originally by a third-party bot).  Initial research indicated we would probably only be able to get the last 3200 tweets, but we did not know how far back in time that would go.  It was not looking likely that we would have overlapping MBTA GTFS, MBTA alert, and Hubway data.  We were not deterred, if alerts and slow-downs were well correlated, then we could use MBTA's GTFS data in place of alerts when looking at the older Hubway data.
+These are the sources we were looking at when putting together our proposal.  The MBTA's [GTFS](https://developers.google.com/transit/gtfs/) archive was a little intimidating because the data is scatter across several CSVs, but it looked like a rich dataset. The Hubway data looked easy to work with, but it was only available for a limited timeframe. Hubway also has a GTFS-like feed, which we could use to generate a current dataset, but would only be useful for future projects as the dataset would only grow in real time -- it does not provide historical data.  We were unclear at first far back we would be able to get MBTA alert data. Alerts are not part of the GTFS archive, but are sent out on Twitter (originally by a third-party bot). Initial research indicated we would probably only be able to get the last 3200 tweets, but we did not know how far back in time that would go. It was not looking likely that we would have overlapping MBTA GTFS, MBTA alert, and Hubway data. We were not deterred, if alerts and slow-downs were well correlated, then we could use MBTA's GTFS data in place of alerts when looking at the older Hubway data.
 
 **MBTA Archive (2009-)**
 
@@ -65,15 +65,14 @@ These are the sources we were looking at when putting together our proposal.  Th
 
 We discovered a major pitfall after the approval of our proposal.  The archive data the MBTA provides is only schedule data -- the archives do not include any actual arrival, departure, travel time, or headway data.  Because of the volume of the data and the way it is arranged amongst the various CSVs, we did not recognize this at first.
 
-We reached out to the MBTA and our timing was good -- they had just recently announced a preview of a new performance API for pulling down historical data, including actual arrivals, departures and headways.  However, the data here only goes back to mid-2015.  By this time, we also had our Twitter API keys and were able to pull down the alert data, which also only went back to 2015.  With no real MBTA data prior to 2015 and no recent Hubway data, we would not be able to do any comparisons between the two transit systems.  We were excited to work with MBTA's new API.
+We reached out to the MBTA and our timing was good -- they had just recently announced a preview of a new performance API for pulling down historical data, including actual arrivals, departures and headways. However, the data here only goes back to mid-2015. By this time, we also had our Twitter API keys and were able to pull down the alert data, which also only went back to 2015.  With no real MBTA data prior to 2015 and no recent Hubway data, we would not be able to do any comparisons between the two transit systems.  We were excited to work with MBTA's new API.
 
 **MBTA Performance Data (July 2015-)**
 
 * https://goo.gl/M6G4MZ
 
-
 ### Revised Questions
-asdf
+
 
 ### Code
 
@@ -124,7 +123,6 @@ access_secret <- 'Ib5N3qKxZ7CT1TuQeznHv6XobdCmjZkSVTESkVj7TwVZm'
 weather_url<-"https://www.ncei.noaa.gov/orders/cdo/729412.csv"
 ```
 
-
 In order to associate human-readable names, geographical data, and such with MBTA stops, we pull down sets of data regarding the routes.
 ```{r Pull_Performance_Data}
 RedLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Red", sep=""))[[1]]
@@ -137,7 +135,7 @@ BlueLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Blue", sep
 OrangeLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Orange", sep=""))[[1]]
 ```
 
-The Red line is somewhat special in how it appears in the data; it is "one" line, but it has a fork at JFK/UMass which (if you're southbound) goes to Ashmont and Braintree. Since the Red line is the one we want to experiment on first, in order to get a full list of arrival/departure pairs with which to query the API we do some manual configuration.
+The Red line is somewhat special in how it appears in the data; it is one line, but it has a fork at JFK/UMass which (if you're southbound) goes to Ashmont and Braintree. Since the Red line is the one we want to experiment on first, in order to get a full list of arrival/departure pairs with which to query the API we do some manual configuration.
 ```{r redline_split}
 # Start with Southbound...
 south_main <- data.frame(
@@ -166,7 +164,7 @@ north_b <- data.frame(
 # Then rbind everything together.
 distinct_stop_pairs <- rbind(south_main, south_a, south_b, north_main, north_a, north_b)
 ```
-This gives us a complete set of paired stops. We don't remove the Ashmont/Braintree/Main lists because we may want them later.
+This gives us a complete set of paired Red line stops. We don't remove the Ashmont/Braintree/Main lists because we may want them later.
 
 Next we use the MBTA's new API to fetch data for travel times. This data consists of one record (row) for each time a train went from one stop to another. In order the query it, we need to supply a pair of stops and a range of dates, and the result is all travel times between those stops within that window. The windows are throttled to one week, so we need to loop through both the set of stop-pairs and the set of weeks. Because the data is large and takes about half and hour to extract, first we check to be sure that we don't already have the data locally. If you wanted to force a manual refresh, it's easy enough to just run the appropriate segment of code (the final "else" statement).
 ```{r Fetch_Travel_Times}
