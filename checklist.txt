@@ -1,0 +1,44 @@
+To-Do
+===============================================
+
+Key:
+[ ] Not done; not in progress
+[J] In progress by [S]hawn, [J]eff, [V]aruni or [D]anielle
+[/] Complete
+
+May 4
+===============================================
+[ ].Rmd
+	[ ] Overview & Motivation
+	[ ] Related Work
+	[ ] Initial Questions
+	[ ] Data
+	[ ] Finalize chunks
+		[ ] MBTA Performance - travel times
+		[ ] MBTA Performance - headways
+		[ ] MBTA Schedule
+		[ ] Twitter Alerts
+		[ ] Visualizations
+	[ ] Description of each major chunk:
+		[ ] MBTA Performance - travel times
+		[ ] MBTA Performance - headways
+		[ ] MBTA Schedule
+		[ ] Twitter Alerts
+		[ ] Visualizations
+	[ ] Final Analysis
+	[ ] Remove debugging chunk
+	[ ] Make sure it knits as a stand-alone .Rmd
+	[ ] Submit .Rmd and HTML
+
+[ ] Self & peer assesments - Shawn
+[ ] Self & peer assesments - Jeff
+[ ] Self & peer assesments - Danielle
+[ ] Self & peer assesments - Varuni
+
+May 6
+===============================================
+[ ] Website
+
+[ ] Screencast
+
+May 

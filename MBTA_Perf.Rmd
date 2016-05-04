@@ -4,12 +4,7 @@ author: "Shawn Connor, Jeff Cunningham, Danielle Feng and Varuni Gang"
 date: "May 4, 2016"
 output: html_document
 ---
-
-## MBTA Performance Data
-
-#### CSCI E-107 Final Project
-
-#### Shawn Connor, Jeff Cunningham, Danille Feng and Varuni Gang
+#### _CSCI E-107 Final Project_
 
 ### Overview and Motivation
 asdf
@@ -58,6 +53,12 @@ startTime <- as.POSIXct("2016-01-25 04:00:00") # the start date of the class -- 
 
 TArchiveURLs <- c("http://www.mbta.com/uploadedfiles/MBTA_GTFS.zip",
                   "http://www.mbta.com/gtfs_archive/20151211.zip") # first is current archive; the rest are father back in time
+
+# generated from twitter's website
+consumer_key <- 'bpCAcAY27kfpSyOAOFXNP2PsO'
+consumer_secret <- '5skjmU5FgWUA77PI4OwuBLcmv3Rr03xEKZQoG0FJJbI0wt3oMa'
+access_token <- '111824999-KVpkYnMt3MZU2Bfxl9lcHZfMvdF5pYZiHQqSonE6'
+access_secret <- 'Ib5N3qKxZ7CT1TuQeznHv6XobdCmjZkSVTESkVj7TwVZm'
 
 weather<-read.csv("https://www.ncei.noaa.gov/orders/cdo/729412.csv")
 ```
@@ -401,11 +402,6 @@ if (file.exists("red_line_tweets.csv") & file.exists("green_line_alert.csv")) {
     red_line_alert<- read_csv("red_line_tweets.csv") # can skip Twitter queries and load this instead
     green_line_alert <- read_csv("green_line_alert.csv")
 } else {
-    # generated from twitter's website
-    consumer_key <- 'bpCAcAY27kfpSyOAOFXNP2PsO'
-    consumer_secret <- '5skjmU5FgWUA77PI4OwuBLcmv3Rr03xEKZQoG0FJJbI0wt3oMa'
-    access_token <- '111824999-KVpkYnMt3MZU2Bfxl9lcHZfMvdF5pYZiHQqSonE6'
-    access_secret <- 'Ib5N3qKxZ7CT1TuQeznHv6XobdCmjZkSVTESkVj7TwVZm'
     
     # authorizing twitter 
     setup_twitter_oauth(consumer_key = consumer_key, 
