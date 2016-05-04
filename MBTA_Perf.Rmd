@@ -4,6 +4,7 @@ author: "Shawn Connor, Jeff Cunningham, Danielle Feng and Varuni Gang"
 date: "May 1, 2016"
 output: html_document
 ---
+
 #### _CSCI E-107 Final Project_
 
 ### Overview and Motivation
