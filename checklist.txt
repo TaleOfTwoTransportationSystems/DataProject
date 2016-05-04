@@ -5,14 +5,14 @@ Key:
 [ ] Not done; not in progress
 [J] In progress by [S]hawn, [J]eff, [V]aruni or [D]anielle
 [/] Complete
-[P] Provisionally complete (more work possible but probably good enough unless we find ourselves with extra time?) <-- I think this will aplly to anything we mark complete ;) Jeff
+[P] Provisionally complete (more work possible but probably good enough unless we find ourselves with extra time?) <-- I think this will aplly to anything we mark complete ;) Jeff <-- I have a mental block on marking stuff done I want to come back too, but I suppose that's my issue, not yours :) Shawn
 
 May 4
 ===============================================
 [ ].Rmd
-	[S] Words - Overview & Motivation
+	[P] Words - Overview & Motivation
 	[ ] Words - Related Work
-	[ ] Words - Initial Questions
+	[S] Words - Initial Questions
 	[/] Words - Data
 	[ ] Words - Revised Questions 
 	[ ] Code - Finalize chunks

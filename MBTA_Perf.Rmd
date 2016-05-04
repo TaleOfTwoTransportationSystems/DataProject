@@ -8,13 +8,15 @@ output: html_document
 #### _CSCI E-107 Final Project_
 
 ### Overview and Motivation
-asdf
-from proposal:
 The MBTA is the greater Boston area’s traditional public transit system with over 1 million riders per typical weekday. It is comprised of subway trains, longer reach commuter trains, buses and ferries. Since 2009, the MBTA has made available a large amount of data regarding trips on the system, including alerts. The real time alerts are scraped and then Tweeted by CodeForBoston.
 
 Hubway is a growing bike sharing system implemented in Boston, Brookline, Cambridge, and Somerville. Users of the Hubway system range from young to old and live in various parts of the Greater Boston area. Users may rent bikes casually, or register for commutes. 
 
-To our knowledge, there has been no previous analysis on the intersection of ridership of the MBTA and Hubway systems, both of which are deeply integrated into Boston’s transit system. Our project aims to related the trends in usage in a combined analysis of both transport systems. 
+When we started our project, our goal was to combine these two data sets and determine what we could learn about how these two complementary (perhaps competing?) transit systems might influence each other; to our knowledge, there had been no previous analysis on the intersection of ridership of the MBTA and Hubway systems.
+
+However, after we started, it became apparent that the data we were looking at was not a rich as we thought (for details see the "Data" section below). Ultimately we were forced to scrap the Hubway portion due to insufficient overlap with other data. We also had the good fortune to find exciting new API for MBTA data which was just recently made available to the public; so recently in fact that we're not sure it's been officially announced yet outside the MBTA Developer forums (the API specification they shared is still stamped with a big "DRAFT" on the cover, which is kind of cool).
+
+Reorienting to these new, more "DIY" sources cut into our available time to pursue many of our statistical questions, but we were still able to conduct some interesting data sourcing, exploration, and visualization. The Twitter-sourced MBTA alerts give us both temporal and geographic insights into where problems may be occuring, and the MBTA-sourced data on train movements allow us to see both specific incidents in the T system and broad patterns in service quality throughout it. We hope that this project will be a good demonstration of what this new MBTA source contains and the sorts of insights it may allow and theresearch it might enable, with the connection to Twitter alerts being a first example of how to enrich it even further.
 
 ### Related work
 asdf
