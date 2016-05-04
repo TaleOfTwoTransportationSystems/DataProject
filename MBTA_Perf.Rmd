@@ -339,7 +339,7 @@ if (length(ls(pattern="headway_times")) > 0) {
 
 Now we have two large, related data sets. Before we can work with the travel time or headways data, we need to clean up some data types. Almost all of the data is initially stored as text.
 
-```{r Times_Cleanup}
+```{r Times_Cleanup, cache=TRUE}
 # We should probably move this above the saving of the CSV so we don't need to do it every run
 travel_times$X <- NULL
 travel_times$direction <- as.character(travel_times$direction)
@@ -535,7 +535,7 @@ plot(as.numeric(travel_times[travel_times$from_stop == "70065",]$dep_dt - travel
 
 Here's one using headways, color-coding lateness (more on this later!); blue is "cool", with low lateness:
 
-```{r vis_headway_lateness, eval=FALSE}
+```{r vis_headway_lateness}
 plot(as.numeric(headway_times[headway_times$from_stop == "70065",]$current_dep_dt - headway_times[headway_times$from_stop == "70065",]$dt,unit = 'mins'),
      headway_times[headway_times$from_stop == "70065",]$dt,
      main="Departures from Porter Square heading inbound\n color-coded by headway lateness",
@@ -555,7 +555,7 @@ ggplot(headway_times %>% filter(is_weekend == FALSE, direction == "0"), aes(x = 
 
 Another way to visualize these time-deltas is a boxplot.
 
-```{r vis_time_delta_boxplot, eval=FALSE} 
+```{r vis_time_delta_boxplot} 
 boxplot(time_delta~parent_station_name,
      data = headway_times %>% filter(is_weekend == FALSE, direction == "0"),
      main="Times between trains by station, weekday Southbound",
@@ -652,7 +652,7 @@ Lets take a look at service quality. One sensible metric would be how long pasen
 
 Here's a simple density plot of ALL observed lateness (on-time or early headways removed) to give an idea of what is typical.
 
-```{r lateness_dens, eval=FALSE}
+```{r lateness_dens}
 ggplot(headway_times %>% filter(lateness > 0), aes(x=lateness)) +
   geom_density(aes(colour="All Trains", fill="All Trains"), alpha=0.5) +
   ggtitle("Total distribution of Lateness (seconds)") +
@@ -715,7 +715,7 @@ count_of_days <- headway_times %>%
 
 Now, we find how many "delay seconds" appear in each of our buckets. The really tricky part is accounting for long delays which are partially in one bucket, and partially in another.
 
-```{r delay_seconds}
+```{r delay_seconds, cache=TRUE}
 total_lateness <- headway_times %>%
 # Filter to only events with actual lateness.
   filter(lateness > 0) %>%
@@ -1019,7 +1019,6 @@ orange_line_alert <- orange_line_alert %>%
   mutate(severity = ifelse(grepl("minor",text, ignore.case = TRUE), 1, 
                            ifelse(grepl("moderate",text, ignore.case = TRUE), 2, 
                                   ifelse(grepl("severe",text, ignore.case = TRUE), 3, 0))))
-
 ```
 
 asdf
@@ -1121,33 +1120,6 @@ all_lines <- all_lines %>%
 ```
 
 ```{r maps}
-# #Map of Boston
-# lon_range <- extendrange(all_lines$stop_long)
-# lat_range <- extendrange(all_lines$stop_lat)
-# 
-# gc <- geocode("boston massachusetts")
-# map <- get_map(gc,maptype = "toner-lite",calc_zoom(lon_range, lat_range))
-# 
-# #Static Map
-# ggmap(map)+
-#   geom_path(data=Red,aes(x=stop_lon,y=stop_lat),color="red",size=1)+
-#   geom_path(data=GreenB,aes(x=stop_lon,y=stop_lat),color="green",size=1)+
-#   geom_path(data=GreenC,aes(x=stop_lon,y=stop_lat),color="green",size=1)+
-#   geom_path(data=GreenD,aes(x=stop_lon,y=stop_lat),color="green",size=1)+
-#   geom_path(data=GreenE,aes(x=stop_lon,y=stop_lat),color="green",size=1)+
-#   geom_path(data=Orange,aes(x=stop_lon,y=stop_lat),color="orange",size=1)+
-#   geom_path(data=Blue,aes(x=stop_lon,y=stop_lat),color="blue",size=1)+
-#   geom_point(data=Red,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
-#   geom_point(data=GreenB,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
-#   geom_point(data=GreenC,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
-#   geom_point(data=GreenD,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
-#   geom_point(data=GreenE,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
-#   geom_point(data=Orange,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
-#   geom_point(data=Blue,aes(x=stop_lon,y=stop_lat),color="black",size=0.5)+
-#   theme(axis.ticks = element_blank(), axis.text = element_blank(),axis.title=element_blank())
-
-## The static map is somewhat boring, so we want to make an interactive one
-
 #Using Leaflet for interactive map
 redline<-all_lines %>% filter(line=="Red")
 greenBline<-all_lines %>% filter(line=="GreenB")
@@ -1174,7 +1146,7 @@ boston <- leaflet() %>%
   addCircleMarkers(data=greenEline,~stop_lon,~stop_lat,color="green",radius=1,popup=~stop_name) %>%
   addCircleMarkers(data=orangeline,~stop_lon,~stop_lat,color="orange",radius=1,popup=~stop_name) %>%
   addCircleMarkers(data=blueline,~stop_lon,~stop_lat,color="blue",radius=1,popup=~stop_name)
-boston
+#boston
 
 #Average travel times between stops
 traveltime<-dataset %>% group_by(start_stop,end_stop) %>%
@@ -1201,10 +1173,8 @@ traveltimes_day<-function(fromstation,tostation){
 traveltimes_day("Park Street - to Alewife","Charles/MGH - Outbound")
 traveltimes_day("Charles/MGH - Outbound","Kendall/MIT - Outbound")
 
-
-#>>>>>>> 269ba259f0fd3dfc0650cbb155566db34954c164
-## Twitter analysis ~ for green line
-## Getting actual stop names for Greenline stops
+# Twitter analysis ~ for green line
+# Getting actual stop names for Greenline stops
 greenB_stop_names_codes <- GreenB %>% 
   select(stop_id, stop_name) %>% 
   unite(stop_code_name, stop_id, stop_name)
@@ -1398,19 +1368,8 @@ travel_times_alerts3 <- travel_times_alerts2 %>%
   select(dep_dt,arr_dt,severity,stop_code,stop_name.y,stop_lat,stop_lon) %>%
   filter(is.na(stop_lat)==FALSE) %>% filter(is.na(stop_lon)==FALSE)
 
-#Red line severity of alerts
-leaflet(data = travel_times_alerts3) %>% 
-    addTiles() %>% 
-    addProviderTiles("CartoDB.Positron") %>%
-    addPolylines(data=redAshmontline,~stop_lon,~stop_lat,color="red") %>%
-    addPolylines(data=redBraintreeline,~stop_lon,~stop_lat,color="red") %>%
-    addCircleMarkers(data=redline, ~stop_lon,~stop_lat,color="red",radius=1,popup=~stop_name) %>%
-    addMarkers(~stop_lon, ~stop_lat, clusterOptions = markerClusterOptions())
-
-# stop doing CSV reads unless there's also code here to create the underlying data set
-red_line_alert<-read.csv("https://raw.githubusercontent.com/TaleOfTwoTransportationSystems/DataProject/master/red_line_tweets_enhanced.csv")
-
 #copy of alerts data 
+#why make copies?
 redalerts<-red_line_alert
 greenalerts<-green_line_alert
 bluealerts<-blue_line_alert
