@@ -767,9 +767,9 @@ total_lateness %>%
   summarize(percent_late = sum(total_lateness)/sum(seconds_observed)) %>%
   arrange(heading, stop_seq)
 ```
+Keep in mind that this may not be a perfect ratio; if trains get really backed up it's possible that two trains could be sitting at a station simultaneously, allowing us to observe more lateness that the actual clock-time where one ore more trains were late in a given bucket. However, it still makes a reasonable indicator of how behind schedule the system is.
 
 Given this rate, we can compute a heatmap of delay severity:
-
 ```{r delay_heatmap}
 weekday_southbound <- total_lateness %>%
   filter(heading == "Southbound", weekend == "Weekday") %>%
@@ -786,16 +786,18 @@ Alerts of T delays come in indirectly from Twitter handles for each of the speci
 ```{r Pull_Alerts}
 # The following can be skipped if four "*_tweets.csv" files are present in the working directory
 if (file.exists("red_line_tweets.csv") & 
-    file.exists("green_line_alert.csv") & 
+    file.exists("green_line_alert.csv") &
+    file.exists("highspeed_alert.csv") &
     file.exists("orange_line_alert.csv") & 
     file.exists("blue_line_alert.csv")) {
-    print("Loading previously generated data.") # can skip Twitter queries and load this instead
-    red_line_alert<- read_csv("red_line_tweets.csv")
-    green_line_alert <- read_csv("green_line_alert.csv")
-    blue_line_alert <- read_csv("blue_line_alert.csv")
-    orange_line_alert <- read_csv("orange_line_alert.csv")
+      print("Loading previously generated data.") # can skip Twitter queries and load this instead
+      red_line_alert<- read_csv("red_line_tweets.csv")
+      highspeed_alert <- read_csv("highspeed_alert.csv")
+      green_line_alert <- read_csv("green_line_alert.csv")
+      blue_line_alert <- read_csv("blue_line_alert.csv")
+      orange_line_alert <- read_csv("orange_line_alert.csv")
 } else {
-    # authorizing twitter 
+    # Authorizing twitter 
     setup_twitter_oauth(consumer_key = consumer_key, 
                         consumer_secret =  consumer_secret, 
                         access_token = access_token, 
@@ -807,54 +809,38 @@ if (file.exists("red_line_tweets.csv") &
             select(screenName, id, text, created, favoriteCount, retweetCount)
     }
     
-    # Red Line Alerts user time line only 3200 hard limit
+    # Alerts user time lines only allow 3200 records at most to be returned.
     Red_Line_Alerts_tweets <- userTimeline('Red_Line_Alerts', n=3200, includeRts = FALSE, excludeReplies = TRUE)
-    
-    # MattaPan Line Alerts user time line only 3200 hard limit
     highspeedalerts_tweets <- userTimeline('highspeedalerts', n=3200, includeRts = FALSE, excludeReplies = TRUE)
-    
-    # Green Line Alerts user time line only 3200 hard limit
     GreenLineAlerts_tweets <- userTimeline('GreenLineAlerts', n=3200, includeRts = FALSE, excludeReplies = TRUE)
-    
-    # For other twitter alerts: 
-    # # MBTA user time line only 3200 hard limit
-    # mbta_tweets <- userTimeline('MBTA', n=3200, includeRts = FALSE, excludeReplies = TRUE)
-    # 
-    # # MBTA Alerts user time line only 3200 hard limit
-    # mbta_alerts_tweets <- userTimeline('mbta_alerts', n=3200, includeRts = FALSE, excludeReplies = TRUE)
-    
-    # Orange Line Alerts user time line only 3200 hard limit
     OrangeLineAlert_tweets <- userTimeline('OrangeLineAlert', n=3200, includeRts = FALSE, excludeReplies = TRUE)
-    
-    # Blue Line Alerts user time line only 3200 hard limit
     BlueLineAlerts_tweets <- userTimeline('BlueLineAlerts', n=3200, includeRts = FALSE, excludeReplies = TRUE)
     
-    # Combining tweets from different twitter handles
-    red_line_alert <- getSpecificTweetInformation(Red_Line_Alerts_tweets) %>% 
-        union(getSpecificTweetInformation(highspeedalerts_tweets)) 
+    # Here are some other twitter alerts we're not using right now: 
+    # mbta_tweets <- userTimeline('MBTA', n=3200, includeRts = FALSE, excludeReplies = TRUE)
+    # mbta_alerts_tweets <- userTimeline('mbta_alerts', n=3200, includeRts = FALSE, excludeReplies = TRUE)
     
-    # for green line alerts
+    # Pull ou the specific tweet information; note we combine Red Line and High Speed (Mattapan)
+    red_line_alert <- getSpecificTweetInformation(Red_Line_Alerts_tweets) 
+    highspeed_alert <- getSpecificTweetInformation(highspeedalerts_tweets) 
     green_line_alert <- getSpecificTweetInformation(GreenLineAlerts_tweets)
-    
-    # for blue line alerts
     blue_line_alert <- getSpecificTweetInformation(BlueLineAlerts_tweets)
-    
-    # for orange line alerts
     orange_line_alert <- getSpecificTweetInformation(OrangeLineAlert_tweets)
     
-    # write all to a csv
+    # Write each to a csv
     write_csv(red_line_alert, "red_line_alert.csv") 
+    write_csv(highspeed_alert, "highspeed_alert.csv") 
     write_csv(green_line_alert, "green_line_alert.csv") 
     write_csv(blue_line_alert, "blue_line_alert.csv") 
     write_csv(orange_line_alert, "orange_line_alert.csv") 
 }
 
-# tweet count and oldest and most recent tweet dates
+# Display counts and oldest and most recent tweet dates
 red_line_alert %>% 
     group_by(screenName) %>% 
     summarise(num_of_tweets=n(), 
-              oldest_date=min(as.Date.POSIXct(created)), 
-              most_recent_date=max(as.Date.POSIXct(created)))
+      oldest_date=min(as.Date.POSIXct(created)), 
+      most_recent_date=max(as.Date.POSIXct(created)))
 ```
 
 For each of these twitter information we have extracted additional informations:
@@ -865,13 +851,13 @@ C) Which sepecific T station is the alerts being caused. We have also gone into 
 ```{r Compare_Alerts_To_Performance}
 # To relate to a data we already have is to add 
 # these tweets as "arrival date" ~ "created" and then join them.
-red_line_alert <- red_line_alert %>% 
+red_line_alert <- red_line_alert %>%
     filter(created > startTime) %>%
-    arrange(created) %>% 
-    select(text, created, favoriteCount, retweetCount) %>% 
+    arrange(created) %>%
+    select(text, created, favoriteCount, retweetCount) %>%
     mutate(arr_dt = created)
 
-travel_times_alerts <- travel_times %>% 
+travel_times_alerts <- travel_times %>%
     full_join(red_line_alert)
 
 # To add tweets as a parameter for stops is by 
