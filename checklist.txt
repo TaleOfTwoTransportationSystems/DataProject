@@ -9,32 +9,31 @@ Key:
 
 May 4
 ===============================================
-[ ].Rmd
+[/].Rmd
 	[/] Words - Overview & Motivation
 	[/] Words - Related Work
 	[/] Words - Initial Questions
 	[/] Words - Data
-	[S] Words - Revised Questions 
-	[ ] Code - Finalize chunks
+	[/] Code - Finalize chunks
 		[/] MBTA Performance - travel times
 		[/] MBTA Performance - headways
 		[/] MBTA Schedule
-		[v] Twitter Alerts
-		[d] Visualizations
+		[/] Twitter Alerts
+		[/] Visualizations
 	[ ] Words - Description of each major chunk:
 		[/] MBTA Performance - travel times
 		[/] MBTA Performance - headways
 		[/] MBTA Schedule
-		[ ] Twitter Alerts
-		[ ] Visualizations - split into multiple chunks and add words describing plots
-	[P] Words - Final Analysis
-	[ ] Code - Remove debugging chunk
-	[j] Code - Make sure it knits as a stand-alone .Rmd (WARNING - completely from scratch, this takes upwards of an hour!  Try by copying .Rmd outside of Git folder -- don't accidently break the repository by deleting supporting files.)
-	[ ] Submit .Rmd and HTML
+		[/] Twitter Alerts
+		[/] Visualizations - split into multiple chunks and add words describing plots
+	[/] Words - Final Analysis
+	[/] Code - Remove debugging chunk
+	[/] Code - Make sure it knits as a stand-alone .Rmd (WARNING - completely from scratch, this takes upwards of an hour!  Try by copying .Rmd outside of Git folder -- don't accidently break the repository by deleting supporting files.)
+	[/] Submit .Rmd and HTML
 
 [S] Self & peer assesments - Shawn
 [j] Self & peer assesments - Jeff
-[ ] Self & peer assesments - Danielle
+[D] Self & peer assesments - Danielle
 [V] Self & peer assesments - Varuni
 
 May 6
