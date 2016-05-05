@@ -220,11 +220,13 @@ if (length(ls(pattern="travel_times")) > 0) {
               benchmark_travel_time_sec = as.numeric(benchmark_travel_time_sec)) %>%
             select(-route_id, -contains("threshold"))
           travel_times <- rbind(travel_times, bar)
+          cat(".")
         } else {
           print(paste("Nothing returned for", fromStop, "to", toStop, "during period", fromTime, "-", toTime))
         }
-        Sys.sleep(2) #slow down a bit
+        Sys.sleep(1) #slow down a bit
       }
+      cat("\n")
     }
     
     # splitting date & time
@@ -309,11 +311,13 @@ if (length(ls(pattern="headway_times")) > 0) {
                  benchmark_headway_time_sec = as.numeric(benchmark_headway_time_sec)) %>%
           select(-route_id, -contains("threshold"))
         headway_times <- rbind(headway_times, bar)
+        cat(".")
       } else {
         print(paste("Nothing returned for", fromStop, "to", toStop, "during period", fromTime, "-", toTime))
       }
-      Sys.sleep(2) #slow down a bit
+      Sys.sleep(1) #slow down a bit
     }
+    cat("\n")
   }
   
   # splitting date & time
