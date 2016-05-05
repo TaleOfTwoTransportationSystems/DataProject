@@ -1170,7 +1170,7 @@ ggmap(map)+
   theme(axis.ticks = element_blank(), axis.text = element_blank(),axis.title=element_blank())
 ```
 
-OK, now we can draw the map.  We've added markers to show how many tweets over our time period correspond to the various stations.  You'll need to zoom in to see this broken out for each individual station.
+OK, now we can draw the map.  We've added markers to show how many tweets over our time period correspond to the various stations.  You'll need to zoom in to see this broken out for each individual station. You can also click on individual dots on each line to get the name of the station.
 
 ```{r maps}
 #Using Leaflet for interactive map
@@ -1208,7 +1208,7 @@ boston
 
 ```
 
-## Twitter Alerts Analysis
+# Twitter Alerts Analysis
 
 ```{r}
 # Twitter analysis for green line
@@ -1370,8 +1370,8 @@ boston %>%
   addMarkers(data=allalerts,~stop_lon,~stop_lat,clusterOptions=markerClusterOptions())
 ```
 
-``` {r benchmark_vs_actual}
 
+``` {r benchmark_vs_actual}
 #Average travel times between stops
 traveltime<-dataset %>% group_by(start_stop,end_stop) %>%
   summarize(avg_traveltime=mean(travel_time_sec))
