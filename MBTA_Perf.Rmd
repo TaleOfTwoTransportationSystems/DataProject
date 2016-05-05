@@ -215,8 +215,8 @@ if (length(ls(pattern="travel_times")) > 0) {
     # plan to use. We then append it to travel_times.
         if (length(foo) > 0) {
           bar <- foo %>%
-            mutate(from_stop = as.integer(from_j),
-              to_stop = as.integer(to_j),
+            mutate(from_stop = as.integer(as.character(from_j)),
+              to_stop = as.integer(as.character(to_j)),
               dep_dt = as.POSIXct(as.integer(dep_dt), origin="1970-01-01"),
               arr_dt = as.POSIXct(as.integer(arr_dt), origin="1970-01-01"),
               travel_time_sec = as.numeric(travel_time_sec),
@@ -306,8 +306,8 @@ if (length(ls(pattern="headway_times")) > 0) {
       # plan to use. We then append it to travel_times.
       if (length(foo) > 0) {
         bar <- foo %>%
-          mutate(from_stop = as.integer(from_j),
-                 to_stop = as.integer(to_j),
+          mutate(from_stop = as.integer(as.character(from_j)),
+                 to_stop = as.integer(as.character(to_j)),
                  current_dep_dt = as.POSIXct(as.integer(current_dep_dt), origin="1970-01-01"),
                  previous_dep_dt = as.POSIXct(as.integer(previous_dep_dt), origin="1970-01-01"),
                  headway_time_sec = as.numeric(headway_time_sec),
