@@ -7,6 +7,8 @@ output: html_document
 
 #### _CSCI E-107 Final Project_
 
+#### https://github.com/TaleOfTwoTransportationSystems/DataProject
+
 ### Overview and Motivation
 The MBTA is the greater Boston area’s traditional public transit system with over 1 million riders per typical weekday. It is comprised of subway trains, longer reach commuter trains, buses and ferries. Since 2009, the MBTA has made available a large amount of data regarding trips on the system, including alerts. The real time alerts are scraped and then Tweeted by CodeForBoston.
 
@@ -168,7 +170,8 @@ distinct_stop_pairs <- rbind(south_main, south_a, south_b, north_main, north_a, 
 
 This gives us a complete set of paired Red line stops. We don't remove the Ashmont/Braintree/Main lists because we may want them later.
 
-Next we use the MBTA's new API to fetch data for travel times. This data consists of one record (row) for each time a train went from one stop to another. In order the query it, we need to supply a pair of stops and a range of dates, and the result is all travel times between those stops within that window. The windows are throttled to one week, so we need to loop through both the set of stop-pairs and the set of weeks. Because the data is large and takes about half and hour to extract, first we check to be sure that we don't already have the data locally. If you wanted to force a manual refresh, it's easy enough to just run the appropriate segment of code (the final "else" statement).
+Next we use the MBTA's new API to fetch data for travel times. This data consists of one record (row) for each time a train went from one stop to another. In order to query it, we need to supply a pair of stops and a range of dates, and the result is all travel times between those stops within that window. The windows are throttled to one week, so we need to loop through both the set of stop-pairs and the set of weeks. Because the data is large and takes about half and hour to extract, first we check to be sure that we don't already have the data locally. If you wanted to force a manual refresh, it's easy enough to just run the appropriate segment of code (the final "else" statement).  If the API requests aren't working, you can download the pre-processed CSVs from the project's GitHub repository (shown above).
+
 ```{r Fetch_Travel_Times}
 # The following can be skipped if "train_travel_times.csv.gz" is present in the working directory
 if (length(ls(pattern="travel_times")) > 0) {
@@ -707,7 +710,7 @@ ggplot(headway_times %>% filter(lateness > 0) %>% mutate(is_weekend = ifelse(is_
         plot.title = element_text(size = 10))
 ```
 
-Interesting; it looks like the MBTA's expected benchmarks are pretty good, in that the they appear to account well for variances by weekend and direction. If they didn't, the we would expect the distributions to show some systemic bias, but they're actually pretty similar. The weekday southbound trains tend to have somewhat shorter lateness events, and for weekend northbound they tend to be longer. Note, however, that we can't say that weekend Northbound tends to be late moreoften, because we through out anything that wasn't lateness already.
+Interesting; it looks like the MBTA's expected benchmarks are pretty good, in that the they appear to account well for variances by weekend and direction. If they didn't, the we would expect the distributions to show some systemic bias, but they're actually pretty similar. The weekday southbound trains tend to have somewhat shorter lateness events, and for weekend northbound they tend to be longer. Note, however, that we can't say that weekend Northbound tends to be late more often, because we threw out anything that wasn't lateness already.
 
 What if we wanted a sense of both where __and__ when this lateness is most accutely felt? One approach would be to bucket the lateness events, add up the total amount of "overage" in each bucket, and divide by the total time in each bucket. Because of the way intervals of time are handled, though, the process is a bit round-about. 
 First, we build the buckets. In this case, we're using hourly intervals, defined by the number of seconds since midnight.
@@ -771,9 +774,11 @@ total_lateness %>%
   summarize(percent_late = sum(total_lateness)/sum(seconds_observed)) %>%
   arrange(heading, stop_seq)
 ```
+
 Keep in mind that this may not be a perfect ratio; if trains get really backed up it's possible that two trains could be sitting at a station simultaneously, allowing us to observe more lateness that the actual clock-time where one ore more trains were late in a given bucket. However, it still makes a reasonable indicator of how behind schedule the system is.
 
 Given this rate, we can compute a heatmap of delay severity:
+
 ```{r delay_heatmap}
 weekday_southbound <- total_lateness %>%
   filter(heading == "Southbound", weekend == "Weekday") %>%
