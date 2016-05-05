@@ -1210,32 +1210,6 @@ boston <- leaflet() %>%
   addCircleMarkers(data=blueline,~stop_lon,~stop_lat,color="blue",radius=1,popup=~stop_name)
 boston
 
-#Average travel times between stops
-traveltime<-dataset %>% group_by(start_stop,end_stop) %>%
-  summarize(avg_traveltime=mean(travel_time_sec))
-
-#Difference between benchmark travel time and individual, unique trips between stations
-#Could also do difference between average travel times and unique trip times
-betweenstops<-dataset %>% left_join(traveltime,by=c("start_stop","end_stop")) %>%
-  mutate(residualtime=benchmark_travel_time_sec-travel_time_sec)
-
-#Delay vs. hour of day plot, input using start and stop_codes
-#Rush hour highlighted at 7-9AM and 5-7PM
-traveltimes_day<-function(fromstation,tostation){
-  travel<-betweenstops %>% 
-    filter(start_stop==fromstation & end_stop==tostation) %>%
-    group_by(time) %>% summarize(mean(residualtime))
-  
-  dygraph(travel,main=c(as.character(fromstation), as.character(tostation))) %>% 
-    dyAxis("y", label = "Delay in Seconds") %>%
-    dyAxis("x", label="Hour of Day") %>% dyRangeSelector() %>%
-    dyEvent("12.00", label="Noon", labelLoc = "bottom") %>%
-    dyShading(from = "7.00", to = "9.00",color="#FFE6E6") %>%
-    dyShading(from = "17.00", to = "19.00",color="#CCEBD6") }
-
-#Examples; input using stations
-traveltimes_day("Park Street - to Alewife","Charles/MGH - Outbound")
-traveltimes_day("Charles/MGH - Outbound","Kendall/MIT - Outbound")
 ```
 
 ## Twitter Alerts Analysis
@@ -1398,6 +1372,36 @@ allalerts <- allalerts %>% left_join(allstops,by="stop_code") %>% filter(severit
 #All lines severity of alerts
 boston %>% 
   addMarkers(data=allalerts,~stop_lon,~stop_lat,clusterOptions=markerClusterOptions())
+```
+
+``` {r benchmark_vs_actual}
+
+#Average travel times between stops
+traveltime<-dataset %>% group_by(start_stop,end_stop) %>%
+  summarize(avg_traveltime=mean(travel_time_sec))
+
+#Difference between benchmark travel time and individual, unique trips between stations
+#Could also do difference between average travel times and unique trip times
+betweenstops<-dataset %>% left_join(traveltime,by=c("start_stop","end_stop")) %>%
+  mutate(residualtime=benchmark_travel_time_sec-travel_time_sec)
+
+#Delay vs. hour of day plot, input using start and stop_codes
+#Rush hour highlighted at 7-9AM and 5-7PM
+traveltimes_day<-function(fromstation,tostation){
+  travel<-betweenstops %>% 
+    filter(start_stop==fromstation & end_stop==tostation) %>%
+    group_by(time) %>% summarize(mean(residualtime))
+  
+  dygraph(travel,main=c(as.character(fromstation), as.character(tostation))) %>% 
+    dyAxis("y", label = "Delay in Seconds") %>%
+    dyAxis("x", label="Hour of Day") %>% dyRangeSelector() %>%
+    dyEvent("12.00", label="Noon", labelLoc = "bottom") %>%
+    dyShading(from = "7.00", to = "9.00",color="#FFE6E6") %>%
+    dyShading(from = "17.00", to = "19.00",color="#CCEBD6") }
+
+#Examples; input using stations
+traveltimes_day("Park Street - to Alewife","Charles/MGH - Outbound")
+traveltimes_day("Charles/MGH - Outbound","Kendall/MIT - Outbound")
 ```
 
 ### Final Analysis
