@@ -11,7 +11,7 @@ May 4
 ===============================================
 [ ].Rmd
 	[P] Words - Overview & Motivation
-	[ ] Words - Related Work
+	[j] Words - Related Work
 	[PLEASE REVIEW] Words - Initial Questions
 	[/] Words - Data
 	[S] Words - Revised Questions 
@@ -29,7 +29,7 @@ May 4
 		[ ] Visualizations - split into multiple chunks and add words describing plots
 	[ ] Words - Final Analysis
 	[ ] Code - Remove debugging chunk
-	[ ] Code - Make sure it knits as a stand-alone .Rmd (WARNING - completely from scratch, this takes upwards of an hour!  Try by copying .Rmd outside of Git folder -- don't accidently break the repository by deleting supporting files.)
+	[j] Code - Make sure it knits as a stand-alone .Rmd (WARNING - completely from scratch, this takes upwards of an hour!  Try by copying .Rmd outside of Git folder -- don't accidently break the repository by deleting supporting files.)
 	[ ] Submit .Rmd and HTML
 
 [S] Self & peer assesments - Shawn
