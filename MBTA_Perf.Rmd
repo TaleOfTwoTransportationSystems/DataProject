@@ -1405,7 +1405,13 @@ traveltimes_day("Charles/MGH - Outbound","Kendall/MIT - Outbound")
 ```
 
 ### Final Analysis
-asdf
+We feel that, after spending so long sourcing these rich data sets, we've only just scratched the surface when it comes to what we could do with them. We've demonstrated the sorts of measurements one can do, and how even relatively simple visualizations can give insights into the workings of the MBTA's subway lines.
+
+At least two avenues present themselves for further study. First, we expect that a thorough review of the permutations of variance from benchmarks (by station, time of day, etc) could derive insights to help the T operators make both short-term and long-term decisions that would positively impact service quality. The MBTA is certainly already reviewing the efficiency and performance of their system with an eye toward improvements as well as managing the system in real-time to deliver the best service, but access to this level of detail about the functioning of each route and station allows a level of modeling that could enhance both of those endeavors.
+
+Which segways into the second area for further research, which would be apply fancy time-series predictive modeling in real-time to help both T operators and riders. One example, which we had hoped to be able to pursue in this project (but were unable to do so), would be attempting to determine minutes or hours in advance when the system is likely to have problem and take corrective action, or at least alert passengers in time for them to seek alternate routes. One could imagine a situation where, for example, heavy traffic at one end of the Green Line reliably presages a slowdown on the Red Line some time in the future as the delays percolate through the whole system. We of course have no idea if that's actually true, but it's the sort of behavior this level of detail would allow one to attempt to model.
+
+In conclusion the team greatly enjoyed working with this data, and believes that while we were able to make a good start there is lots of interesting research left to be done.
 
 ```{r Debug}
 #remove this when we're done asdf
