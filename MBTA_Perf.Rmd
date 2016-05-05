@@ -1208,7 +1208,7 @@ boston
 
 ```
 
-# Twitter Alerts Analysis
+# Twitter Alerts Overlap
 
 ```{r}
 # Twitter analysis for green line
@@ -1370,6 +1370,7 @@ boston %>%
   addMarkers(data=allalerts,~stop_lon,~stop_lat,clusterOptions=markerClusterOptions())
 ```
 
+Most alerts are clustered around Park Street and Downtown Crossing, and also around Backbay. 
 
 ``` {r benchmark_vs_actual}
 #Average travel times between stops
