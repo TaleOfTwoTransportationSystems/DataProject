@@ -853,9 +853,9 @@ red_line_alert %>%
 ```
 
 For each of these twitter information we have extracted additional informations:
-A) If the alerts is from a T whoch is running southbound, northbound or both. 
-B) Severity of the alert. Is the alert indicating a minor, moderate or a mojor delay.
-C) Which sepecific T station is the alerts being caused. We have also gone into specific to understand if its for an inbound train or an outbound train. 
+1. If the alerts is from a T whoch is running southbound, northbound or both. 
+2. Severity of the alert. Is the alert indicating a minor, moderate or a mojor delay.
+3. Which sepecific T station is the alerts being caused. We have also gone into specific to understand if its for an inbound train or an outbound train. 
 
 ```{r Compare_Alerts_To_Performance}
 # To relate to a data we already have is to add 
@@ -1035,10 +1035,11 @@ orange_line_alert <- orange_line_alert %>%
                                   ifelse(grepl("severe",text, ignore.case = TRUE), 3, 0))))
 ```
 
-
 ##Some Visuals
 
 For the visualization of the Boston map, we first made a static reference map using ggmap, which was not interactive. Leaflet allowed for much more easy customization, which we used for overlaying alerts data with the map of the subway lines.
+
+First, we get all the stations and their latitude/longnitude information in order.
 
 ```{r Visuals}
 #Get data
@@ -1139,6 +1140,8 @@ all_lines <- all_lines %>%
   separate(stop_name, into = c("stop_name", "extra"), sep="-", fill="right") %>%
   select(-extra)
 ```
+
+OK, now we can draw the map.  We've added markers to show how many tweets over our time period correspond to the various stations.  You'll need to zoom in to this this broken out for each individual station.
 
 ```{r maps}
 #Using Leaflet for interactive map
