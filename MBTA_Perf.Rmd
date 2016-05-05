@@ -21,12 +21,16 @@ However, after we started, it became apparent that the data we were looking at w
 Reorienting to these new, more "DIY" sources cut into our available time to pursue many of our statistical questions, but we were still able to conduct some interesting data sourcing, exploration, and visualization. The Twitter-sourced MBTA alerts give us both temporal and geographic insights into where problems may be occuring, and the MBTA-sourced data on train movements allow us to see both specific incidents in the T system and broad patterns in service quality throughout it. We hope that this project will be a good demonstration of what this new MBTA source contains and the sorts of insights it may allow and theresearch it might enable, with the connection to Twitter alerts being a first example of how to enrich it even further.
 
 ### Related work
-An impressive set of MBTA visualizations from a pair of WPI graduate students (at the time).  Their initial work was done before the MBTA offered historical performance (actual arrival/departure times), so they had to build a system to collect and store the MBTA's realtime data in real time before starting in on their analysis.
+An impressive set of MBTA visualizations from a pair of WPI graduate students (at the time).  Their initial work was done before the MBTA offered historical performance (actual arrival/departure times), so they had to build a system to collect and store the MBTA's realtime data in real time before starting in on their analysis.  They were also able to get ridership information directly from the MBTA (which is still not availble from the MBTA's API).
+
 * https://mbtaviz.github.io/
 
+Thesis on MBTA performance metrics:
 
+* https://dspace.mit.edu/handle/1721.1/99541
 
 Many here:
+
 * http://hubwaydatachallenge.org/
 
 ### Initial Questions
@@ -34,17 +38,12 @@ These are the questions we asked in our proposal:
 
 * How much of a delay is there between a slow-down and an alert?  
 * How much does ridership slow when there is an alert? Are alerts associated with all (most? some?) detected slowdown events?
-Measuring ridership on the T requires turnstile data, which was present in our first data source but turned out to not be granular enough to associate directly with alerts, as the question would require.
-
-ASDF ASDF I remember seeing below that we did manage do do some association between alerts and travel_times; can someone summarize how close we got to answering these questions and what we learned about the relationship (if anything)?
-
 * Is there a marked change in MBTA ridership when Hubway stops for the winter or resumes in the spring?
 * Does activity at Hubway stations increase when a nearby subway train arrives? 
 * How do MBTA slow-downs or alerts affect Hubway ridership?  
-These three had to be dropped when we determined the hubway data was too old to overlap with our other data sets. Rather than pursuing the Hubway data (which was pretty thoroughly explored in the Hubway Data Challenge: [link]http://hubwaydatachallenge.org/)
 
 ### Data
-These are the sources we were looking at when putting together our proposal. The MBTA's [GTFS] (https://developers.google.com/transit/gtfs/) archive was a little intimidating because the data is scatter across several CSVs, but it looked like a rich dataset. The Hubway data looked easy to work with, but it was only available for a limited timeframe. Hubway also has a GTFS-like feed, which we could use to generate a current dataset, but would only be useful for future projects as the dataset would only grow in real time -- it does not provide historical data.  We were unclear at first far back we would be able to get MBTA alert data. Alerts are not part of the GTFS archive, but are sent out on Twitter (originally by a third-party bot). Initial research indicated we would probably only be able to get the last 3200 tweets, but we did not know how far back in time that would go. It was not looking likely that we would have overlapping MBTA GTFS, MBTA alert, and Hubway data. We were not deterred, if alerts and slow-downs were well correlated, then we could use MBTA's GTFS data in place of alerts when looking at the older Hubway data.
+These are the sources we were looking at when putting together our proposal. The MBTA's [GTFS] (https://developers.google.com/transit/gtfs/) archive was a little intimidating because the data is scatter across several CSVs, but it looked like a rich dataset. The Hubway data looked easy to work with, but it was only available for a limited timeframe. Hubway also has a GTFS-like feed, which we could use to generate a current dataset, but would only be useful for future projects as the dataset would only grow in real time -- it does not provide historical data.  We were unclear at first far back we would be able to get MBTA alert data. Alerts are not part of the GTFS archive, but are sent out on Twitter (originally by a third-party bot). Initial research indicated we would probably only be able to get the last 3200 tweets, but we did not know how far back in time that would go. It was not looking likely that we would have overlapping MBTA GTFS, MBTA alert, and Hubway data. We were not deterred, if alerts and slow-downs were well correlated, then we could use MBTA's GTFS data in place of alerts when looking at the older Hubway data.  
 
 **MBTA Archive (2009-)**
 
@@ -70,14 +69,11 @@ These are the sources we were looking at when putting together our proposal. The
 
 We discovered a major pitfall after the approval of our proposal.  The archive data the MBTA provides is only schedule data -- the archives do not include any actual arrival, departure, travel time, or headway data.  Because of the volume of the data and the way it is arranged amongst the various CSVs, we did not recognize this at first.
 
-We reached out to the MBTA and our timing was good -- they had just recently announced a preview of a new performance API for pulling down historical data, including actual arrivals, departures and headways. However, the data here only goes back to mid-2015. By this time, we also had our Twitter API keys and were able to pull down the alert data, which also only went back to 2015.  With no real MBTA data prior to 2015 and no recent Hubway data, we would not be able to do any comparisons between the two transit systems.  We were excited to work with MBTA's new API.
+We reached out to the MBTA and our timing was good -- they had just recently announced a preview of a new performance API for pulling down historical data, including actual arrivals, departures and headways. However, the data here only goes back to mid-2015. By this time, we also had our Twitter API keys and were able to pull down the alert data, which also only went back to 2015.  With no real MBTA data prior to 2015 and no recent Hubway data, we would not be able to do any comparisons between the two transit systems.  We were excited to work with MBTA's new API.  The MBTA does not offer ridership information through its APIs -- previous ridership studies were done in partnership with the MBTA where they provided the ridership data directly.
 
 **MBTA Performance Data (July 2015-)**
 
 * https://goo.gl/M6G4MZ
-
-### Revised Questions
-
 
 ### Code
 
@@ -1174,7 +1170,7 @@ ggmap(map)+
   theme(axis.ticks = element_blank(), axis.text = element_blank(),axis.title=element_blank())
 ```
 
-OK, now we can draw the map.  We've added markers to show how many tweets over our time period correspond to the various stations.  You'll need to zoom in to see this broken out for each individual station.
+OK, now we can draw the map.  We've added markers to show how many tweets over our time period correspond to the various stations.  You'll need to zoom in to see this broken out for each individual station. You can also click on individual dots on each line to get the name of the station.
 
 ```{r maps}
 #Using Leaflet for interactive map
@@ -1212,7 +1208,7 @@ boston
 
 ```
 
-## Twitter Alerts Analysis
+# Twitter Alerts Overlap
 
 ```{r}
 # Twitter analysis for green line
@@ -1374,8 +1370,9 @@ boston %>%
   addMarkers(data=allalerts,~stop_lon,~stop_lat,clusterOptions=markerClusterOptions())
 ```
 
-``` {r benchmark_vs_actual}
+Most alerts are clustered around Park Street and Downtown Crossing, and also around Backbay. 
 
+``` {r benchmark_vs_actual}
 #Average travel times between stops
 traveltime<-dataset %>% group_by(start_stop,end_stop) %>%
   summarize(avg_traveltime=mean(travel_time_sec))

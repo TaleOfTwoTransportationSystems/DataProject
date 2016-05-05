@@ -10,21 +10,21 @@ Key:
 May 4
 ===============================================
 [ ].Rmd
-	[P] Words - Overview & Motivation
-	[j] Words - Related Work
-	[PLEASE REVIEW] Words - Initial Questions
+	[/] Words - Overview & Motivation
+	[/] Words - Related Work
+	[/] Words - Initial Questions
 	[/] Words - Data
 	[S] Words - Revised Questions 
 	[ ] Code - Finalize chunks
 		[/] MBTA Performance - travel times
 		[/] MBTA Performance - headways
-		[ ] MBTA Schedule
+		[/] MBTA Schedule
 		[v] Twitter Alerts
 		[d] Visualizations
 	[ ] Words - Description of each major chunk:
-		[P] MBTA Performance - travel times
-		[P] MBTA Performance - headways
-		[P] MBTA Schedule
+		[/] MBTA Performance - travel times
+		[/] MBTA Performance - headways
+		[/] MBTA Schedule
 		[ ] Twitter Alerts
 		[ ] Visualizations - split into multiple chunks and add words describing plots
 	[ ] Words - Final Analysis
@@ -33,7 +33,7 @@ May 4
 	[ ] Submit .Rmd and HTML
 
 [S] Self & peer assesments - Shawn
-[ ] Self & peer assesments - Jeff
+[j] Self & peer assesments - Jeff
 [ ] Self & peer assesments - Danielle
 [V] Self & peer assesments - Varuni
 
