@@ -1,0 +1,1236 @@
+---
+title: "MBTA Performance Data"
+author: "Shawn Connor, Jeff Cunningham, Danielle Feng and Varuni Gang"
+date: "May 4, 2016"
+output: html_document
+---
+
+#### _CSCI E-107 Final Project_
+
+#### https://github.com/TaleOfTwoTransportationSystems/DataProject
+
+### Overview and Motivation
+The MBTA is the greater Boston area’s traditional public transit system with over 1 million riders per typical weekday. It is comprised of subway trains, longer reach commuter trains, buses and ferries. Since 2009, the MBTA has made available a large amount of data regarding trips on the system, including alerts. The real time alerts are scraped and then Tweeted by CodeForBoston.
+
+Hubway is a growing bike sharing system implemented in Boston, Brookline, Cambridge, and Somerville. Users of the Hubway system range from young to old and live in various parts of the Greater Boston area. Users may rent bikes casually, or register for commutes. 
+
+When we started our project, our goal was to combine these two data sets and determine what we could learn about how these two complementary (perhaps competing?) transit systems might influence each other; to our knowledge, there had been no previous analysis on the intersection of ridership of the MBTA and Hubway systems.
+
+However, after we started, it became apparent that the data we were looking at was not as rich as we thought (for details see the "Data" section below). Ultimately we were forced to scrap the Hubway portion due to insufficient overlap with other data. We also had the good fortune to find exciting new API for MBTA data which was just recently made available to the public; so recently in fact that we're not sure it's been officially announced yet outside the MBTA Developer forums (the API specification they shared is still stamped with a big "DRAFT" on the cover, which is kind of cool).
+
+Reorienting to these new, more "DIY" sources cut into our available time to pursue many of our statistical questions, but we were still able to conduct some interesting data sourcing, exploration, and visualization. The Twitter-sourced MBTA alerts give us both temporal and geographic insights into where problems may be occuring, and the MBTA-sourced data on train movements allow us to see both specific incidents in the T system and broad patterns in service quality throughout it. We hope that this project will be a good demonstration of what this new MBTA source contains and the sorts of insights it may allow and theresearch it might enable, with the connection to Twitter alerts being a first example of how to enrich it even further.
+
+### Related work
+An impressive set of MBTA visualizations from a pair of WPI graduate students (at the time).  Their initial work was done before the MBTA offered historical performance (actual arrival/departure times), so they had to build a system to collect and store the MBTA's realtime data in real time before starting in on their analysis.  They were also able to get ridership information directly from the MBTA (which is still not availble from the MBTA's API).
+
+* https://mbtaviz.github.io/
+
+Thesis on MBTA performance metrics:
+
+* https://dspace.mit.edu/handle/1721.1/99541
+
+Many here:
+
+* http://hubwaydatachallenge.org/
+
+### Initial Questions
+These are the questions we asked in our proposal:
+
+* How much of a delay is there between a slow-down and an alert?  
+* How much does ridership slow when there is an alert? Are alerts associated with all (most? some?) detected slowdown events?
+* Is there a marked change in MBTA ridership when Hubway stops for the winter or resumes in the spring?
+* Does activity at Hubway stations increase when a nearby subway train arrives? 
+* How do MBTA slow-downs or alerts affect Hubway ridership?  
+
+### Data
+These are the sources we were looking at when putting together our proposal. The MBTA's [GTFS] (https://developers.google.com/transit/gtfs/) archive was a little intimidating because the data is scatter across several CSVs, but it looked like a rich dataset. The Hubway data looked easy to work with, but it was only available for a limited timeframe. Hubway also has a GTFS-like feed, which we could use to generate a current dataset, but would only be useful for future projects as the dataset would only grow in real time -- it does not provide historical data.  We were unclear at first far back we would be able to get MBTA alert data. Alerts are not part of the GTFS archive, but are sent out on Twitter (originally by a third-party bot). Initial research indicated we would probably only be able to get the last 3200 tweets, but we did not know how far back in time that would go. It was not looking likely that we would have overlapping MBTA GTFS, MBTA alert, and Hubway data. We were not deterred, if alerts and slow-downs were well correlated, then we could use MBTA's GTFS data in place of alerts when looking at the older Hubway data.  
+
+**MBTA Archive (2009-)**
+
+* https://goo.gl/pgupka
+* http://www.mbta.com/gtfs_archive/archived_feeds.txt
+* https://developers.google.com/transit/gtfs/
+
+**Hubway Data (2011-2013)**
+
+* http://hubwaydatachallenge.org/
+
+**MBTA Alerts Twitter Feed (last 3200 tweets)**
+
+* https://twitter.com/mbta_alerts
+* https://twitter.com/mbta?lang=en
+* https://cran.r-project.org/web/packages/twitteR/index.html
+* http://bigcomputing.blogspot.com/2016/02/the-twitter-r-package-by-jeff-gentry-is.html
+* May ask @CodeForBoson to download their entire feed.
+
+**NOAA (last 5 years)**
+
+* http://w2.weather.gov/climate/index.php?wfo=box
+
+We discovered a major pitfall after the approval of our proposal.  The archive data the MBTA provides is only schedule data -- the archives do not include any actual arrival, departure, travel time, or headway data.  Because of the volume of the data and the way it is arranged amongst the various CSVs, we did not recognize this at first.
+
+We reached out to the MBTA and our timing was good -- they had just recently announced a preview of a new performance API for pulling down historical data, including actual arrivals, departures and headways. However, the data here only goes back to mid-2015. By this time, we also had our Twitter API keys and were able to pull down the alert data, which also only went back to 2015.  With no real MBTA data prior to 2015 and no recent Hubway data, we would not be able to do any comparisons between the two transit systems.  We were excited to work with MBTA's new API.  The MBTA does not offer ridership information through its APIs -- previous ridership studies were done in partnership with the MBTA where they provided the ridership data directly.
+
+**MBTA Performance Data (July 2015-)**
+
+* https://goo.gl/M6G4MZ
+
+### Code
+
+```{r Load_Libraries, warning=FALSE, message=FALSE, echo=FALSE}
+library(dplyr)
+library(jsonlite)
+library(lubridate)
+library(readr)
+library(tidyr)
+library(leaflet)
+library(ggplot2)
+library(twitteR) #masks id, location from dplyr
+library(stringr)
+library(ggmap)
+library(maps)
+library(mapproj)
+library(rworldmap)
+library(dygraphs)
+library(grid)
+library(gridExtra)
+```
+```{r Hardcoded_Stuff, warning=FALSE, echo=FALSE}
+# API information for the real-time feed
+TKeyJeff <- "?api_key=tNprgYF1K027zEIVluAkCw"
+TRouteURL <- "http://realtime.mbta.com/developer/api/v2/stopsbyroute"
+TTravelURL <- "http://realtime.mbta.com/developer/api/v2.1/traveltimes"
+THeadwaysURL <- "http://realtime.mbta.com/developer/api/v2.1/headways"
+TFormat <- "&format=json"
+
+# The start date of the class -- does affect how many archives are needed
+startTime <- as.POSIXct("2016-01-25 04:00:00") 
+
+# Load archives; first is current archive, the rest are father back in time
+TArchiveURLs <- c("http://www.mbta.com/uploadedfiles/MBTA_GTFS.zip",
+                  "http://www.mbta.com/gtfs_archive/20151211.zip") 
+
+# Keys we generated from Twitter's website
+consumer_key <- 'bpCAcAY27kfpSyOAOFXNP2PsO'
+consumer_secret <- '5skjmU5FgWUA77PI4OwuBLcmv3Rr03xEKZQoG0FJJbI0wt3oMa'
+access_token <- '111824999-KVpkYnMt3MZU2Bfxl9lcHZfMvdF5pYZiHQqSonE6'
+access_secret <- 'Ib5N3qKxZ7CT1TuQeznHv6XobdCmjZkSVTESkVj7TwVZm'
+
+# Weather data; we were prepared to use this, but did not end up doing so
+weather_url<-"https://www.ncei.noaa.gov/orders/cdo/729412.csv"
+```
+```{r Pull_Performance_Data, warning=FALSE, echo=FALSE}
+# In order to associate human-readable names, geographical data, and such
+# with MBTA stops, we pull down sets of data regarding the routes.
+
+RedLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Red", sep=""))[[1]]
+MattapanLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Mattapan", sep=""))[[1]]
+GreenBLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-B", sep=""))[[1]]
+GreenCLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-C", sep=""))[[1]]
+GreenDLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-D", sep=""))[[1]]
+GreenELineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Green-E", sep=""))[[1]]
+BlueLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Blue", sep=""))[[1]]
+OrangeLineRoute <- fromJSON(paste(TRouteURL, TKeyJeff, TFormat, "&route=Orange", sep=""))[[1]]
+```
+```{r redline_split, warning=FALSE, echo=FALSE}
+# The Red line is somewhat special in how it appears in the data; it is one line,
+# but it has a fork at JFK/UMass which (if you're southbound) goes to Ashmont and
+# Braintree. Since the Red line is the one we want to experiment on first, in order
+# to get a full list of arrival/departure pairs with which to query the API we do
+# some manual configuration.
+
+# Start with Southbound...
+south_main <- data.frame(
+  stop_id = c("70061","70063","70065","70067","70069","70071","70073","70075","70077","70079","70081"),
+  next_stop = c("70063","70065","70067","70069","70071","70073","70075","70077","70079","70081","70083"))
+
+south_a <- data.frame(
+  stop_id = c("70083","70085","70087","70089","70091"),
+  next_stop = c("70085","70087","70089","70091","70093"))
+
+south_b <- data.frame(
+  stop_id = c("70083","70095","70097","70099","70101","70103"),
+  next_stop = c("70095","70097","70099","70101","70103","70105"))
+
+# Repeat for Northbound...
+north_main <- data.frame(
+  stop_id = c("70084","70082","70080","70078","70076","70074","70072","70070","70068","70066","70064"),
+  next_stop = c("70082","70080","70078","70076","70074","70072","70070","70068","70066","70064","70061"))
+north_a <- data.frame(
+  stop_id = c("70094","70092","70090","70088","70086"),
+  next_stop = c("70092","70090","70088","70086","70084"))
+north_b <- data.frame(
+  stop_id = c("70105","70104","70102","70100","70098","70096"),
+  next_stop = c("70104","70102","70100","70098","70096","70084"))
+
+# Then rbind everything together.
+distinct_stop_pairs <- rbind(south_main, south_a, south_b, north_main, north_a, north_b)
+
+# This gives us a complete set of paired Red line stops. We don't remove the
+# Ashmont/Braintree/Main lists because we may want them later.
+
+```
+
+We used the MBTA's new API to fetch data for both travel times and headways. Travel Times consist of one record (row) for each time a train went from one stop to another. Headways track the time between departures at a given station. When trains are running late, headways exceed their benchmark targets. The root causes of slow service can probably be better picked apart from travel times and dwell times, but the eventual impact to riders is most cleanly seen in headways. In structure and access, this data is very similar to the travel times data, with each record representing one train leaving a station.
+
+```{r load_existing_data, warning=FALSE, echo=FALSE}
+# The following can be skipped if "train_travel_times.csv.gz" is present in the working directory
+travel_times <- read.csv(gzfile("train_travel_times.csv.gz"), as.is = TRUE)
+headway_times <- read.csv(gzfile("train_headway_times.csv.gz"), as.is = TRUE)
+
+travel_times$X <- NULL
+travel_times$direction <- as.character(travel_times$direction)
+travel_times$from_stop <- as.character(travel_times$from_stop)
+travel_times$to_stop <- as.character(travel_times$to_stop)
+travel_times$dep_dt <- as.POSIXct(travel_times$dep_dt, tz="EST")
+travel_times$arr_dt <- as.POSIXct(travel_times$arr_dt, tz="EST")
+travel_times$dep_d <- as.POSIXct(travel_times$dep_d, tz="EST")
+travel_times$arr_d <- as.POSIXct(travel_times$arr_d, tz="EST")
+
+headway_times$X <- NULL
+headway_times$direction <- as.character(headway_times$direction)
+headway_times$from_stop <- as.character(headway_times$from_stop)
+headway_times$to_stop <- as.character(headway_times$to_stop)
+headway_times$current_dep_dt <- as.POSIXct(headway_times$current_dep_dt, tz="EST")
+headway_times$previous_dep_dt <- as.POSIXct(headway_times$previous_dep_dt, tz="EST")
+headway_times$current_dep_d <- as.POSIXct(headway_times$current_dep_d, tz="EST")
+headway_times$previous_dep_d <- as.POSIXct(headway_times$previous_dep_d, tz="EST")
+
+# Add a column for how far off of benchmark each value is. In theory slowdowns are transferred
+# through the system linearly, so one minute of delay is one minute of delay.
+travel_times$time_delta <- travel_times$travel_time_sec - travel_times$benchmark_travel_time_sec
+headway_times$time_delta <- headway_times$headway_time_sec - headway_times$benchmark_headway_time_sec
+
+# While we're at it, we'll also calculate "lateness" for headways; how many seconds (if any)
+# the departure exceeded it's benchmark headway time.
+travel_times$lateness <- travel_times$travel_time_sec - travel_times$benchmark_travel_time_sec
+travel_times[travel_times$lateness < 0,]$lateness <- 0
+
+headway_times$lateness <- headway_times$headway_time_sec - headway_times$benchmark_headway_time_sec
+headway_times[headway_times$lateness < 0,]$lateness <- 0
+
+# Add a column for the "effective service date", so that late-night trains can be easily
+# counted as part of the previous day.
+travel_times$dt <- as.POSIXct(trunc(travel_times$dep_dt - seconds(14400), units = "days"))
+headway_times$dt <- as.POSIXct(trunc(headway_times$current_dep_dt - seconds(14400), units = "days"))
+
+# Adding a convenient reference column for whether the day is a weekend or not, since
+# train schedules are very different. This also makes it very convenient to replace the
+# contents of this column if, in future work, one wanted to replace this with an actual
+# schedule reference (weekday holidays sometimes run weekend schedules)
+travel_times$is_weekend <- as.POSIXlt(travel_times$dt)$wday %in% c(0,6)
+headway_times$is_weekend <- as.POSIXlt(headway_times$dt)$wday %in% c(0,6)
+```
+Here's what a raw block of travel times data from the MBTA's new API looks like:
+```{r, Fetch_Traveltimes, warning=FALSE, eval=FALSE}
+# I'm getting 400 errors from these; not sure why. The URL looks fine. If we can fix it, turn eval back on and echo off. Same with the next one.
+i <- 0
+fromStop <- as.character(70069)
+toStop <- as.character(70071)
+
+fromTime <- paste("&from_datetime=", as.numeric(startTime + days(i * 7)), sep="")
+toTime <- paste("&to_datetime=", as.numeric(startTime + days(i * 7) + days(7) - minutes(1)), sep="")
+
+TRequest <- paste(TTravelURL, TKeyJeff, TFormat, fromStop, toStop, fromTime, toTime, sep="")
+
+foo_travel <- fromJSON(TRequest)[[1]]
+foo_travel
+```
+And here are some headways:
+```{r Fetch_Headways, warning=FALSE, eval=FALSE}
+fromTime <- paste("&from_datetime=", as.numeric(startTime + days(i * 7)), sep="")
+toTime <- paste("&to_datetime=", as.numeric(startTime + days(i * 7) + days(7) - minutes(1)), sep="")
+TRequest <- paste(THeadwaysURL, TKeyJeff, TFormat, fromStop, toStop, fromTime, toTime, sep="")
+
+foo_headways <- fromJSON(TRequest)[[1]]
+foo_headways
+```
+
+With some cleaning, we turn this raw data (which comes to us in the semi-stuctured JSON format) into something we can more easily work with; simple tables.
+
+```{r data_frame_heads, warning=FALSE, echo=FALSE}
+# lets try to turn these into a prettier format
+head(headway_times)
+head(travel_times)
+```
+
+```{r Pull_Archive_Data, cache=TRUE, warning=FALSE, echo=FALSE}
+# When we first started on this project, we believed that the MBTA archives contained
+# the travel-time and headway information that we wanted. It turns out we were wrong,
+# but this archive data is still useful for finding stop information. This is the code
+# to pull it.
+# This chunk is slow.  We should probably pull out the few things that are being used
+# into a new chunk, then turn off evaluation of the rest.
+for(i in 1:length(TArchiveURLs)) {
+    if (file.exists(basename(TArchiveURLs[i]))) {
+        print(paste("Using existing", basename(TArchiveURLs[i])))
+    } else {
+        download.file(TArchiveURLs[i], destfile=basename(TArchiveURLs[i]))
+    }
+    unzip(basename(TArchiveURLs[i]), exdir=strsplit(basename(TArchiveURLs[i]), "\\.")[[1]][1], overwrite=FALSE)
+}
+
+# The following is fixed for two archives; should be loop based on length of TArchivesURLs
+setwd(strsplit(basename(TArchiveURLs[1]), "\\.")[[1]][1])
+
+# Get schedule data:
+Tarchive_cal <- read_csv("calendar.txt") %>% mutate(zip_file=basename(getwd()))
+Tarchive_calDates <- read_csv("calendar_dates.txt")
+Tarchive_trips <- read.csv("trips.txt")
+Tarchive_stopTimes <- read.csv("stop_times.txt")
+Tarchive_stops <- read.csv("stops.txt")
+
+# OK, as a first step, let's trim back the Tarchive tables to just the subway (RTL) data:
+Tarchive_cal <- filter(Tarchive_cal, grepl("RTL", service_id))
+Tarchive_calDates <- filter(Tarchive_calDates, grepl("RTL", service_id)) # exception_type; 1=added; 2=removed
+Tarchive_trips <- filter(Tarchive_trips, grepl("RTL", service_id))
+Tarchive_stopTimes <- filter(Tarchive_stopTimes, trip_id %in% Tarchive_trips$trip_id)
+
+setwd("..")
+
+# Loop, please:
+setwd(strsplit(basename(TArchiveURLs[2]), "\\.")[[1]][1])
+
+Tarchive_cal2 <- read_csv("calendar.txt") %>% mutate(zip_file=basename(getwd()))
+Tarchive_calDates2 <- read_csv("calendar_dates.txt")
+Tarchive_trips2 <- read.csv("trips.txt")
+Tarchive_stopTimes2 <- read.csv("stop_times.txt")
+
+# trim2 -- dealing with multiple archive files really cries out for a function here, doesn't it
+Tarchive_cal2 <- filter(Tarchive_cal2, grepl("RTL", service_id))
+Tarchive_calDates2 <- filter(Tarchive_calDates2, grepl("RTL", service_id)) # exception_type; 1=added; 2=removed
+Tarchive_trips2 <- filter(Tarchive_trips2, grepl("RTL", service_id))
+Tarchive_stopTimes2 <- filter(Tarchive_stopTimes2, trip_id %in% Tarchive_trips$trip_id)
+
+# combine our archives
+Tarchive_cal <- bind_rows(Tarchive_cal, Tarchive_cal2)
+Tarchive_calDates <- bind_rows(Tarchive_calDates, Tarchive_calDates2)
+Tarchive_trips <- bind_rows(Tarchive_trips, Tarchive_trips2)
+Tarchive_stopTimes <- bind_rows(Tarchive_stopTimes, Tarchive_stopTimes2)
+
+setwd("..")
+
+rm(Tarchive_cal2)
+rm(Tarchive_calDates2)
+rm(Tarchive_trips2)
+rm(Tarchive_stopTimes2)
+
+# Convert the dates:
+Tarchive_cal <- mutate(Tarchive_cal, start_date=as.Date(as.character(start_date), format="%Y%m%d", origin="1970-01-01"), 
+                                     end_date=as.Date(as.character(end_date), format="%Y%m%d", origin="1970-01-01"))
+Tarchive_calDates <- mutate(Tarchive_calDates, date=as.Date(as.character(date), format="%Y%m%d", origin="1970-01-01"))
+
+# Now, loop through each day between the start date and today,
+# for each day, get the relevant service_ids and,
+# find the corresponding trip_ids, then
+# pull all the corresponding train arrival and departure times
+schedule_dataset <- data.frame()
+for(i in 0:(as.integer(unclass(now() - startTime)))) {
+    iDate <- as.Date(startTime+days(i))
+    
+    #service_ids
+    todaysServices <- filter(Tarchive_cal, start_date<=iDate & end_date>=iDate) %>%
+        select(service_id) %>%
+        distinct()
+
+    #remove exceptions
+    if(iDate %in% Tarchive_calDates$date) {
+        servicesRemoved <- unique(filter(Tarchive_calDates, date==iDate & exception_type==2)[[1]])
+        if(length(servicesRemoved)>1) {
+            todaysServices <- filter(todaysServices, !service_id %in% servicesRemoved)
+        }
+    }
+    
+    #remove remaining regularly scheduled services that don't match this day of the week
+    if(wday(iDate)==1) {
+        todaysServices <- filter(todaysServices, grepl("Sunday", service_id))
+    } else if(wday(iDate)==7) {
+        todaysServices <- filter(todaysServices, grepl("Saturday", service_id))
+    } else {
+        todaysServices <- filter(todaysServices, grepl("Weekday", service_id))
+    }
+        
+    #add exceptions
+    if(iDate %in% Tarchive_calDates$date) {
+        servicesAdded <- filter(Tarchive_calDates, date==iDate & exception_type==1) %>% 
+                         select(service_id) %>% 
+                         distinct()
+        if(nrow(servicesAdded)>1) {
+            todaysServices <- bind_rows(todaysServices, servicesAdded)
+        }
+    }
+        
+    #trip_ids
+    todaysTrips <- filter(Tarchive_trips, service_id %in% todaysServices$service_id) %>% 
+                  filter(route_id=="Red") %>% 
+                  distinct()
+#     print(paste(i, "; Date: ", iDate, "; # Services: ", nrow(todaysServices), "; # Trips: ", nrow(todayTrips), 
+#                 "; Exception = ", (iDate %in% Tarchive_calDates$date), sep=""))
+
+    #stop_times
+    todaysStops <- filter(Tarchive_stopTimes, trip_id %in% todaysTrips$trip_id) %>% 
+                   mutate(arrival_date=iDate, departure_date=iDate)
+    
+    schedule_dataset <- bind_rows(schedule_dataset, todaysStops)
+}
+```
+```{r stop_lookup, warning=FALSE, echo=FALSE}
+
+# As a final table-modification step, create a simple ordered list of stops with relevant properties, both as a lookup and so stops can
+# appear in order in visualizations. It will still produce odd behavior around the Red Line's fork, but more advanced visualizations will
+# take this into account. We join this table to our headway and travel time data.
+
+stop_sequence <- rbind(
+# Southbound
+  RedLineRoute$stop[[1]] %>%
+  arrange(as.integer(stop_order)) %>%
+  mutate(stop_seq = row_number(), heading = "Southbound") %>%
+  select (stop_id, stop_name, parent_station_name, heading, stop_seq),
+# Northbound
+  RedLineRoute$stop[[2]] %>%
+  arrange(as.integer(stop_order)) %>%
+  mutate(stop_seq = row_number(), heading = "Northbound") %>%
+  select (stop_id, stop_name, parent_station_name, heading, stop_seq))
+
+headway_times <- headway_times %>%
+  mutate(dep_time = current_dep_dt - dt) %>%
+  left_join(.,stop_sequence, by=c("from_stop" = "stop_id"))
+
+travel_times <- travel_times %>%
+  mutate(dep_time = dep_dt - dt) %>%
+  left_join(.,stop_sequence, by=c("from_stop" = "stop_id"))
+```
+
+A simple scatter plot of train departures from Porter Square heading inbound over time, to demonstrate the level of detail in this data.
+
+```{r vis_train_departures, warning=FALSE, echo=FALSE}
+plot(as.numeric(travel_times[travel_times$from_stop == "70065",]$dep_dt - travel_times[travel_times$from_stop == "70065",]$dt,unit = 'mins'),
+     travel_times[travel_times$from_stop == "70065",]$dt,
+     main="train departures from Porter Square heading inbound",
+     xlab="Minutes since midnight", ylab = "Date of Trip", pch=".")
+```
+
+Here's one using headways, color-coding lateness (more on this later!); blue is "cool", with low lateness, pink is "warm", with high lateness values:
+
+```{r vis_headway_lateness, warning=FALSE, echo=FALSE}
+plot(as.numeric(headway_times[headway_times$from_stop == "70065",]$current_dep_dt - headway_times[headway_times$from_stop == "70065",]$dt,unit = 'mins'),
+     headway_times[headway_times$from_stop == "70065",]$dt,
+     main="Departures from Porter Square heading inbound\n color-coded by headway lateness",
+     xlab="Minutes since midnight", ylab = "Date of Trip", pch=".", col = cm.colors(headway_times[headway_times$from_stop == "70065",]$lateness))
+```
+
+It's interesting to compare this to a version using the raw difference from the benchmark, positive or negate. 
+
+```{r vis_headway_timedelta, warning=FALSE, echo=FALSE}
+plot(as.numeric(headway_times[headway_times$from_stop == "70065",]$current_dep_dt - headway_times[headway_times$from_stop == "70065",]$dt,unit = 'mins'),
+     headway_times[headway_times$from_stop == "70065",]$dt,
+     main="Departures from Porter Square heading inbound\n color-coded by headway lateness",
+     xlab="Minutes since midnight", ylab = "Date of Trip", pch=".", col = cm.colors(headway_times[headway_times$from_stop == "70065",]$time_delta))
+```
+
+Here we look at the times between trains by time of day. We restrict the data to only southbound weekday trains, so as to avoid mixing unrelated data in the same plot.
+
+```{r vis_headway_weekday_southbound, warning=FALSE, echo=FALSE}
+ggplot(headway_times %>% filter(is_weekend == FALSE, direction == "0"), aes(x = as.numeric(dep_time, units="hours"), y = time_delta)) +
+  geom_point(alpha=0.05) +
+  xlab("Hours (24+ is past midnight)") +
+  ylab("Seconds from Benchmark") +
+  ggtitle("Times between trains by time of day, weekday Southbound")
+```
+
+Another way to visualize these time-deltas is a boxplot.
+
+```{r vis_time_delta_boxplot, warning=FALSE, echo=FALSE} 
+boxplot(time_delta~parent_station_name,
+     data = headway_times %>% filter(is_weekend == FALSE, direction == "0"),
+     main="Times between trains by station, weekday Southbound",
+     xlab="Stop Sequence", ylab = "wait time (seconds)", pch=".", ylim=c(-800, 1600))
+
+boxplot(time_delta~stop_seq,
+        data = headway_times %>% filter(is_weekend == TRUE, direction == "1"),
+        main="Times between trains by station, Weekend Northbound",
+        xlab="Stop Sequence", ylab = "wait time (seconds)", pch=".", ylim=c(-800, 1600))
+```
+
+The boxplots makes clear that though much of the data is very close to the benchmark, there are certainly instances where gaps are greater or less than their benchmark times. In fact, in order to clearly see the boxes we had to artificially restrict the range of the y axis. 
+
+To get a better sense of the full ranges of the data, lets try a density plot. Here we're looking at time-deltas for headways by station; there is naturally significant overplotting, but this helps us spot very unusual stations.
+
+```{r vis_time_delta_density, warning=FALSE, echo=FALSE}
+headway_plots <- list()
+headway_plots[[1]] <- ggplot(headway_times %>% filter(direction == "0", is_weekend == FALSE), aes(x=time_delta)) +
+  geom_density(aes(group = parent_station_name, colour= parent_station_name, fill= parent_station_name), alpha=0.2) +
+  ggtitle("Weekday, Southbound") +
+  xlim(-1200,2000) +
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.title=element_blank(),
+        legend.key.size=unit(0.3, "cm"),
+        legend.text=element_text(size=6),
+        axis.ticks.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.title.y=element_blank(),
+        axis.title.x=element_blank(),
+        plot.title = element_text(size = 10))
+
+headway_plots[[2]] <- ggplot(headway_times %>% filter(direction == "1", is_weekend == FALSE), aes(x=time_delta)) +
+  geom_density(aes(group = parent_station_name, colour= parent_station_name, fill= parent_station_name), alpha=0.2) +
+  ggtitle("Weekday, Northbound") + 
+  xlim(-1200,2000) +
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.title=element_blank(),
+        legend.key.size=unit(0.3, "cm"),
+        legend.text=element_text(size=6),
+        axis.ticks.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.title.y=element_blank(),
+        axis.title.x=element_blank(),
+        plot.title = element_text(size = 10))
+
+headway_plots[[3]] <- ggplot(headway_times %>% filter(direction == "0", is_weekend == TRUE), aes(x=time_delta)) +
+  geom_density(aes(group = parent_station_name, colour= parent_station_name, fill= parent_station_name), alpha=0.2) +
+  ggtitle("Weekend, Southbound") +
+  xlim(-1200,2000) +
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.title=element_blank(),
+        legend.key.size=unit(0.3, "cm"),
+        legend.text=element_text(size=6),
+        axis.ticks.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.title.y=element_blank(),
+        axis.title.x=element_blank(),
+        plot.title = element_text(size = 10))
+
+headway_plots[[4]] <- ggplot(headway_times %>% filter(direction == "1", is_weekend == TRUE), aes(x=time_delta)) +
+  geom_density(aes(group = parent_station_name, colour= parent_station_name, fill= parent_station_name), alpha=0.2) +
+  ggtitle("Weekend, Northbound") +
+  xlim(-1200,2000) +
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.title=element_blank(),
+        legend.key.size=unit(0.3, "cm"),
+        legend.text=element_text(size=6),
+        axis.ticks.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.title.y=element_blank(),
+        axis.title.x=element_blank(),
+        plot.title = element_text(size = 10))
+  
+grid.arrange(headway_plots[[1]], headway_plots[[2]],headway_plots[[3]],headway_plots[[4]], ncol=2, left="Type of Day", top="Heading")
+grid.rect(gp=gpar(fill=NA, col="gray"))
+```
+
+We can see that the distributions tend to skew right; this isn't a surprise, because there is a limit to how early a train can be, but a much greater limit to how late it can be! We also note that even though the "center mass" of the density plots is very close to 0 (no delay), there are a significant number of late and early trains as well. Weekend northbound trains seem to be the most consistent (density closest to 0), but even there some noteworthy delays can be seen in the plot.
+
+We know that some amount of headway delay can be caused by longer-than-expected times to travel between stations. Let's look at what northbound, weekday trains' travel times look like; here we plot densities of travel times, also by station.
+
+```{r trav_dens, warning=FALSE, echo=FALSE}
+ggplot((travel_times %>% filter(direction == 1, is_weekend == FALSE)), aes(x=travel_time_sec)) +
+  geom_density(aes(group = parent_station_name, colour= parent_station_name, fill= parent_station_name), alpha=0.2) +
+  ggtitle("Travel times for Northbound trains of weekdays, by departing station") +
+  xlim(0, 200) + ylim(0, .25)
+```
+
+We certainly get less overplotting! This makes sense as any given connection is of different geographic separation, but what's more interesting is how variable those times appear to be even along fixed routes.
+
+Lets take a look at service quality. One sensible metric would be how long pasengers are waiting on platforms for trains beyond how long they "should" be waiting per normal service. In our data this can be thought of as the difference between the actual observed times and the benchmark times provided by the MBTA. However, we only look for cases where this number is positive; the MBTA gets no extra credit for early trains! This isn't because we're mean spirited, it's because faster-than-expected headways are indistinguishable from just happening to get to the platform at the right time to a typical rider, and because  faster-than-expected headways are often the result of backup cause by slowness earlier in the day.
+
+Here's a simple density plot of ALL observed lateness (on-time or early headways removed) to give an idea of what is typical.
+
+```{r lateness_dens, warning=FALSE, echo=FALSE}
+ggplot(headway_times %>% filter(lateness > 0), aes(x=lateness)) +
+  geom_density(aes(colour="All Trains", fill="All Trains"), alpha=0.5) +
+  ggtitle("Total distribution of Lateness (seconds)") +
+  xlim(0,2000) +
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.title=element_blank(),
+        legend.key.size=unit(0.3, "cm"),
+        legend.text=element_text(size=6),
+        axis.ticks.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.title.y=element_blank(),
+        axis.title.x=element_blank(),
+        plot.title = element_text(size = 10))
+```
+
+This shape should be familiar; it's the right-half of the "time-delta" headway distributions above.
+
+Lets see if there are broad patterns by type of day or direction of travel.
+
+```{r type_of_day, warning=FALSE, echo=FALSE}
+ggplot(headway_times %>% filter(lateness > 0) %>% mutate(is_weekend = ifelse(is_weekend, "Weekend", "Weekday")), aes(x=lateness)) +
+  geom_density(aes(group=paste(is_weekend, heading), colour=paste(is_weekend, heading), fill=paste(is_weekend, heading)), alpha=0.3) +
+  ggtitle("Total distribution of Lateness (seconds)") +
+  xlim(0,2000) +
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.title=element_blank(),
+        legend.key.size=unit(0.3, "cm"),
+        legend.text=element_text(size=6),
+        axis.ticks.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.title.y=element_blank(),
+        axis.title.x=element_blank(),
+        plot.title = element_text(size = 10))
+```
+
+Interesting; it looks like the MBTA's expected benchmarks are pretty good, in that the they appear to account well for variances by weekend and direction. If they didn't, the we would expect the distributions to show some systemic bias, but they're actually pretty similar. The weekday southbound trains tend to have somewhat shorter lateness events, and for weekend northbound they tend to be longer. Note, however, that we can't say that weekend Northbound tends to be late more often, because we threw out anything that wasn't lateness already.
+
+What if we wanted a sense of both where __and__ when this lateness is most accutely felt? One approach would be to bucket the lateness events, add up the total amount of "overage" in each bucket, and divide by the total time in each bucket. This gives us a metric, "percent late", which we can think of as "for the entire time we observed the station, for what % of that time was a train past it's benchmark arrival time? Keep in mind that this may not be a perfect ratio; if trains get really backed up it's possible that two trains could be sitting at a station simultaneously, allowing us to observe more lateness that the actual clock-time where one ore more trains were late in a given bucket. However, it still makes a reasonable indicator of how behind schedule the system is.
+
+Given this rate, we can compute a heatmap of delay severity:
+```{r time_buckets, warning=FALSE, echo=FALSE}
+# First, we build the buckets. In this case, we're using hourly intervals, defined by the
+# number of seconds since midnight.
+seconds_of_day <- data.frame(interval_start_hour = seq(0,26,1), hour_start = seq(0, 60*60*26, 60*60),
+hour_end = seq(60*60, 60*60*27, 60*60))
+# We also need to count the number of days (both weekend and weekdays) in our observation window.
+count_of_days <- headway_times %>%
+# group our observations by day and day-type
+  group_by(is_weekend, dt) %>%
+  summarize(count = 1) %>%
+# change the date type name for visualization purposes, then count the
+# number of each.
+  mutate(weekend = ifelse(is_weekend, "Weekend", "Weekday")) %>%
+  group_by(weekend) %>%
+  summarize(days_observed = sum(count))
+# Now, we find how many "delay seconds" appear in each of our buckets. The really tricky part
+# is accounting for long delays which are partially in one bucket, and partially in another.
+
+  total_lateness <- headway_times %>%
+# Filter to only events with actual lateness.
+  filter(lateness > 0) %>%
+# Trim down the data set; it's going to get bigger before it gets smaller.
+  select(from_stop, stop_seq, parent_station_name, heading, is_weekend, current_dep_dt, dt, lateness) %>%
+# Add columns determining, from the observed departure date and the lateness, when
+# the "expected" departure time was.
+  mutate(lateness_start = current_dep_dt - lateness, stop_id = from_stop) %>%
+  mutate(dep_t = as.numeric(current_dep_dt - dt, unit = "secs"), late_t = as.numeric(lateness_start - dt, unit = "secs")) %>%
+# Cross-join with the intervals; our R packages lack the facility to join
+# on intervals directly, so we add them all and then filter later.
+  merge(.,seconds_of_day, all=TRUE) %>%
+  filter((late_t > hour_start & late_t < hour_end) | (dep_t > hour_start & dep_t < hour_end) | (late_t < hour_start & dep_t > hour_end)) %>%
+# Determine the "effective" start and ends of the delays, which are the
+# portion of the delay interval which intersects the bucket. Subtract these
+# to get the relevant amount of delay.
+  mutate(eff_late_start = ifelse(late_t < hour_start, hour_start, late_t), eff_late_end = ifelse(dep_t > hour_end, hour_end, dep_t)) %>%
+  mutate(eff_lateness = eff_late_end - eff_late_start, weekend = ifelse(is_weekend, "Weekend", "Weekday")) %>%
+# group by our categorical variables to sum up all of the lateness in
+# each bucket.
+  group_by(interval_start_hour, stop_id, stop_seq, parent_station_name, heading, weekend) %>%
+  summarize(total_lateness = sum(eff_lateness)) %>%
+# Join to the "count of days" to determine how many total seconds of observations
+# there might have been in that bucket; this determines the divisor later.
+  left_join(.,count_of_days) %>%
+  mutate(seconds_observed = (days_observed*60*60)) %>%
+  select(-days_observed)
+```
+
+```{r delay_heatmap}
+weekday_southbound <- total_lateness %>%
+  filter(heading == "Southbound", weekend == "Weekday") %>%
+  group_by(parent_station_name, interval_start_hour) %>%
+  summarize(percent_late = sum(total_lateness)/sum(seconds_observed))
+
+ggplot(weekday_southbound, aes(as.ordered(interval_start_hour), parent_station_name)) +
+  geom_tile(aes(fill = percent_late), color = "white") +
+  scale_fill_gradient(low = "white",high = "red")
+```
+
+Alerts of T delays come in indirectly from Twitter handles for each of the specific lines. The MBTA puts out an RSS feed that enterprising developers at codeforboston group started scraping and turned into tweets. We can user the twitteR R package to retrieve these alerts from codeforboston, as though we had been archiving the alerts ourselves.
+
+```{r Pull_Alerts, echo=FALSE, warning=FALSE}
+# The following can be skipped if four "*_tweets.csv" files are present in the working directory
+if (file.exists("red_line_tweets.csv") & 
+    file.exists("green_line_alert.csv") &
+    file.exists("highspeed_alert.csv") &
+    file.exists("orange_line_alert.csv") & 
+    file.exists("blue_line_alert.csv")) {
+      print("Loading previously generated data.") # can skip Twitter queries and load this instead
+      red_line_alert<- read_csv("red_line_tweets.csv")
+      highspeed_alert <- read_csv("highspeed_alert.csv")
+      green_line_alert <- read_csv("green_line_alert.csv")
+      blue_line_alert <- read_csv("blue_line_alert.csv")
+      orange_line_alert <- read_csv("orange_line_alert.csv")
+} else {
+    # Authorizing twitter 
+    setup_twitter_oauth(consumer_key = consumer_key, 
+                        consumer_secret =  consumer_secret, 
+                        access_token = access_token, 
+                        access_secret = access_secret)
+    
+    # makes dataframe for results and gets specific features
+    getSpecificTweetInformation <- function(x) {
+        twListToDF(x) %>% 
+            select(screenName, id, text, created, favoriteCount, retweetCount)
+    }
+    
+    # Alerts user time lines only allow 3200 records at most to be returned.
+    Red_Line_Alerts_tweets <- userTimeline('Red_Line_Alerts', n=3200, includeRts = FALSE, excludeReplies = TRUE)
+    highspeedalerts_tweets <- userTimeline('highspeedalerts', n=3200, includeRts = FALSE, excludeReplies = TRUE)
+    GreenLineAlerts_tweets <- userTimeline('GreenLineAlerts', n=3200, includeRts = FALSE, excludeReplies = TRUE)
+    OrangeLineAlert_tweets <- userTimeline('OrangeLineAlert', n=3200, includeRts = FALSE, excludeReplies = TRUE)
+    BlueLineAlerts_tweets <- userTimeline('BlueLineAlerts', n=3200, includeRts = FALSE, excludeReplies = TRUE)
+    
+    # Here are some other twitter alerts we're not using right now: 
+    # mbta_tweets <- userTimeline('MBTA', n=3200, includeRts = FALSE, excludeReplies = TRUE)
+    # mbta_alerts_tweets <- userTimeline('mbta_alerts', n=3200, includeRts = FALSE, excludeReplies = TRUE)
+    
+    # Pull ou the specific tweet information; note we combine Red Line and High Speed (Mattapan)
+    red_line_alert <- getSpecificTweetInformation(Red_Line_Alerts_tweets) 
+    highspeed_alert <- getSpecificTweetInformation(highspeedalerts_tweets) 
+    green_line_alert <- getSpecificTweetInformation(GreenLineAlerts_tweets)
+    blue_line_alert <- getSpecificTweetInformation(BlueLineAlerts_tweets)
+    orange_line_alert <- getSpecificTweetInformation(OrangeLineAlert_tweets)
+    
+    # Write each to a csv
+    write_csv(red_line_alert, "red_line_alert.csv") 
+    write_csv(highspeed_alert, "highspeed_alert.csv") 
+    write_csv(green_line_alert, "green_line_alert.csv") 
+    write_csv(blue_line_alert, "blue_line_alert.csv") 
+    write_csv(orange_line_alert, "orange_line_alert.csv") 
+}
+
+# Display counts and oldest and most recent tweet dates
+red_line_alert %>% 
+    group_by(screenName) %>% 
+    summarise(num_of_tweets=n(), 
+      oldest_date=min(as.Date.POSIXct(created)), 
+      most_recent_date=max(as.Date.POSIXct(created)))
+
+head(red_line_alert)
+```
+
+As you can see the tweets follow a regular format, so with some simple text mining we can extract additional information:
+A) Directionality. If the alert relates to routes running southbound, northbound or both. 
+B) Severity. Is the alert indicating a minor, moderate or major delay?
+C) Location. Which specific T station is the alert related to. 
+
+```{r Compare_Alerts_To_Performance, echo=FALSE, warning=FALSE}
+# To relate to a data we already have is to add 
+# these tweets as "arrival date" ~ "created" and then join them.
+red_line_alert <- red_line_alert %>%
+    filter(created > startTime) %>%
+    arrange(created) %>%
+    select(text, created, favoriteCount, retweetCount) %>%
+    mutate(arr_dt = created)
+
+travel_times_alerts <- travel_times %>%
+    full_join(red_line_alert)
+
+# To add tweets as a parameter for stops is by 
+# pulling in stop names from the tweets and then mapping them to stop ids.
+
+# First step is to pull in all the relevant stop ids from our full dataset
+stop_ids <- c(travel_times_alerts$from_stop, travel_times_alerts$to_stop) %>% unique()
+
+# Second step is get the actaul stop names for these stops
+stop_names_codes <- Tarchive_stops %>% 
+    filter(stop_id %in% stop_ids) %>% 
+    select(stop_code, stop_name) %>% 
+    unite(stop_code_name, stop_code, stop_name)
+
+# Steps that I am taking to get the tweet-station pair
+# 1. Pull in if the delay or issue is from a north_bound or south_bound or both trips
+red_line_alert <- red_line_alert %>% 
+    mutate(bounded = ifelse(grepl("northbound", text, ignore.case = TRUE), "northbound",
+                            ifelse(grepl("southbound", text, ignore.case = TRUE), "southbound",
+                                   ifelse(grepl("both ways|both direction", text, ignore.case = TRUE), "northbound_and_southbound", ""))))
+
+# (side-step) level of severity ~ would be cool to draw a graph to see
+# if severity increases with delay time or
+# time series of severity increasing in the north/south bound trains
+red_line_alert <- red_line_alert %>% 
+    mutate(severity = ifelse(grepl("minor delay",text, ignore.case = TRUE), 1, 
+                             ifelse(grepl("moderate delay",text, ignore.case = TRUE), 2, 
+                                    ifelse(grepl("severe delay",text, ignore.case = TRUE), 3, 0))))
+
+# Things are a bit tricky here, because red line has very different 
+# different meaning of southbound/northbound ~ inbound/outbound trains
+# From the information online 
+# Red Line:  Toward Park Street (Green Line intersection) is Inbound; away is Outbound
+# http://www.boston-discovery-guide.com/boston-subway.html
+# 
+# Alewife -- inbound/southbound---> Park street  <--- inbound/northbound---- Braintree/Ashmont
+# Alewife <--outbound/northbound--- Park street  ---outbound/southbound----> Braintree/Ashmont
+# Lets make a map of stops that are northbound and southbound
+
+# stations with inbound/outbounds, northbound/southbound
+northbound_inbound <- c("Braintree", 
+                        "Quincy Adams",
+                        "Quincy Center",
+                        "Wollaston",
+                        "North Quincy",
+                        "JFK/UMASS Braintree",
+                        "Broadway",
+                        "South Station",
+                        "Downtown Crossing - to Alewife",
+                        "Savin",
+                        "Fields",
+                        "Shawmut",
+                        "Ashmont",
+                        "Park")
+
+northbound_outbound <- c("Charles",
+                         "Kendal",
+                         "Central",
+                         "Harvard",
+                         "Porter",
+                         "Davis",
+                         "Alewife")
+
+# southbound_outbound <- northbound_inbound # contains same stations
+# southbound_inbound <- northbound_outbound # contains same stations
+
+# One way of thinking about it in terms of getting to features are:
+# creating column for recognizing train station where delay is been tweeted
+red_line_alert <- red_line_alert %>% 
+    mutate(text_clone = text) %>% 
+    separate(text_clone, into = c("before_at", "after_at"), sep=" at ") %>% 
+    mutate(after_at = str_trim(gsub("#mbta|Station|Ave|Street|[.]", "", after_at, ignore.case = TRUE))) %>% 
+    rowwise() %>% 
+    mutate( after_at = ifelse(!is.na(after_at),
+                              ifelse(bounded != "", 
+                                     ifelse(length(agrep(after_at, northbound_inbound, ignore.case = TRUE, value = TRUE,max =6))>0 & bounded == "northbound",
+                                            paste(after_at, "inbound"),
+                                            ifelse(length(agrep(after_at, northbound_inbound, ignore.case = TRUE,max =6))>0 & bounded == "southbound",
+                                                   paste(after_at, "outbound"),
+                                                   after_at
+                                            )
+                                     )
+                                     , 
+                                     ifelse(length(agrep(after_at, northbound_outbound, ignore.case = TRUE, value = TRUE,max =6))>0 & bounded == "northbound",
+                                            paste(after_at, "outbound"),
+                                            ifelse(length(agrep(after_at, northbound_outbound, ignore.case = TRUE, value = TRUE, max =6))>0 & bounded == "southbound",
+                                                   paste(after_at, "inbound"),
+                                                   after_at
+                                            )
+                                     ))
+                              , after_at),
+            after_at_name_code = 
+                ifelse(!is.na(after_at),
+                       toString(agrep(after_at, stop_names_codes$stop_code_name, value = TRUE, ignore.case = TRUE)), '')) %>%
+    ungroup() %>%
+    select(-after_at, -before_at) %>% 
+    rename(alerts_at_station_code = after_at_name_code) 
+#red_line_alert
+
+#################################
+# Green line 
+#################################
+
+# To relate to a data we already have is to add 
+# these tweets as "arrival date" ~ "created" and then join them.
+green_line_alert <- green_line_alert %>% 
+  filter(created > startTime) %>%
+  arrange(created) %>% 
+  select(text, created, favoriteCount, retweetCount) %>% 
+  mutate(arr_dt = created)
+#green_line_alert
+
+
+# if severity increases with delay time or
+# time series of severity increasing in the north/south bound trains
+green_line_alert <- green_line_alert %>% 
+  mutate(severity = ifelse(grepl("minor",text, ignore.case = TRUE), 1, 
+                           ifelse(grepl("moderate",text, ignore.case = TRUE), 2, 
+                                  ifelse(grepl("severe",text, ignore.case = TRUE), 3, 0))))
+
+# Which green line is the alert from?
+green_line_alert$greenLine <- str_extract(green_line_alert$text, "#GreenLine [A-z] ") %>% 
+  substr(12,12)
+
+#################################
+# Blue line 
+#################################
+
+# To relate to a data we already have is to add 
+# these tweets as "arrival date" ~ "created" and then join them.
+blue_line_alert <- blue_line_alert %>% 
+  filter(created > startTime) %>%
+  arrange(created) %>% 
+  select(text, created, favoriteCount, retweetCount) %>% 
+  mutate(arr_dt = created)
+#blue_line_alert
+
+
+# if severity increases with delay time or
+# time series of severity increasing in the north/south bound trains
+blue_line_alert <- blue_line_alert %>% 
+  mutate(severity = ifelse(grepl("minor",text, ignore.case = TRUE), 1, 
+                           ifelse(grepl("moderate",text, ignore.case = TRUE), 2, 
+                                  ifelse(grepl("severe",text, ignore.case = TRUE), 3, 0))))
+
+
+#################################
+# Orange line 
+#################################
+
+# To relate to a data we already have is to add 
+# these tweets as "arrival date" ~ "created" and then join them.
+orange_line_alert <- orange_line_alert %>% 
+  filter(created > startTime) %>%
+  arrange(created) %>% 
+  select(text, created, favoriteCount, retweetCount) %>% 
+  mutate(arr_dt = created)
+#orange_line_alert
+
+
+# if severity increases with delay time or
+# time series of severity increasing in the north/south bound trains
+orange_line_alert <- orange_line_alert %>% 
+  mutate(severity = ifelse(grepl("minor",text, ignore.case = TRUE), 1, 
+                           ifelse(grepl("moderate",text, ignore.case = TRUE), 2, 
+                                  ifelse(grepl("severe",text, ignore.case = TRUE), 3, 0))))
+```
+Here's a sample of what the data looks like once processed:
+```{r, echo=FALSE, warning=FALSE}
+head(red_line_alert)
+```
+Here are some summary statistics on the alerts:
+```{r}
+### Add in a summary table and at least one visualization; maybe a stacked bar chart with one bar per station and one series per severity.
+```
+
+```{r Visuals, echo=FALSE, warning=FALSE}
+#Get data
+allstops <- Tarchive_stops %>% 
+  select(stop_code, stop_name, stop_lat, stop_lon) %>%
+  filter(is.na(stop_code)==FALSE) %>%
+  mutate(from_stop=stop_code,to_stop=stop_code)
+
+travel_times_alerts$from_stop <- as.integer(travel_times_alerts$from_stop)
+travel_times_alerts$to_stop <- as.integer(travel_times_alerts$to_stop)
+
+#Merge latitude and longitude values
+dataset<-travel_times_alerts %>%
+  left_join(allstops,by="from_stop") %>%
+  select(-stop_code,-to_stop.y) %>%
+  rename(to_stop=to_stop.x, start_stop=stop_name.x, start_lat=stop_lat, start_long=stop_lon)
+
+dataset<-dataset %>% 
+  left_join(allstops,by="to_stop") %>% 
+  select(-stop_code,-from_stop.y) %>%
+  rename(end_stop=stop_name, end_lat=stop_lat, end_long=stop_lon, from_stop=from_stop.x)
+
+#Get hour and minute time of departure
+t.lub <- ymd_hms(dataset$dep_dt)
+dataset$time <- round((hour(t.lub) + minute(t.lub)/60), digits=2)
+
+# #Weather data: we're not currently using it--this is where it would be pulled
+# weather<-read.csv(weather_url)
+# weather<-weather %>% 
+#   filter(DATE>20160124,STATION_NAME=="BOSTON LOGAN INTERNATIONAL AIRPORT MA US") %>%
+#   select(DATE,PRCP,SNOW) %>%
+#   rename(precipitation=PRCP,snowfall=SNOW)
+
+#Red Line
+Red <-  RedLineRoute$stop[[1]] %>%
+  select(stop_order, stop_id, stop_name, stop_lat, stop_lon)
+Red$stop_lat<-as.numeric(Red$stop_lat)
+Red$stop_lon<-as.numeric(Red$stop_lon)
+
+#Branching of Red line into Ashmont and Braintree routes
+RedAshmont <- Red %>% 
+    filter(stop_order %in% c(1, seq(10, 110, 10), seq(130, 170, 10))) %>% 
+    mutate(line="RedAshmont")
+RedBraintree <- Red %>% 
+    filter(stop_order %in% c(1, seq(10, 110, 10), 120, seq(180, 220, 10))) %>% 
+    mutate(line="RedBraintree")
+
+Red <- Red %>% mutate(line="Red")
+
+#GreenB Line
+GreenB <-  GreenBLineRoute$stop[[1]] %>%
+  select(stop_order, stop_id, stop_name, stop_lat, stop_lon)
+GreenB$stop_lat<-as.numeric(GreenB$stop_lat)
+GreenB$stop_lon<-as.numeric(GreenB$stop_lon)
+GreenB<-GreenB %>% mutate(line="GreenB")
+
+#GreenC Line
+GreenC <-  GreenCLineRoute$stop[[1]] %>%
+  select(stop_order, stop_id, stop_name, stop_lat, stop_lon)
+GreenC$stop_lat<-as.numeric(GreenC$stop_lat)
+GreenC$stop_lon<-as.numeric(GreenC$stop_lon)
+GreenC<-GreenC %>% mutate(line="GreenC")
+
+#GreenD Line
+GreenD <-  GreenDLineRoute$stop[[1]] %>%
+  select(stop_order, stop_id, stop_name, stop_lat, stop_lon)
+GreenD$stop_lat<-as.numeric(GreenD$stop_lat)
+GreenD$stop_lon<-as.numeric(GreenD$stop_lon)
+GreenD<-GreenD %>% mutate(line="GreenD")
+
+#GreenE Line
+GreenE <-  GreenELineRoute$stop[[1]] %>%
+  select(stop_order, stop_id, stop_name, stop_lat, stop_lon)
+GreenE$stop_lat<-as.numeric(GreenE$stop_lat)
+GreenE$stop_lon<-as.numeric(GreenE$stop_lon)
+GreenE<-GreenE %>% mutate(line="GreenE")
+
+#Orange Line
+Orange <-  OrangeLineRoute$stop[[1]] %>%
+  select(stop_order, stop_id, stop_name, stop_lat, stop_lon)
+Orange$stop_lat<-as.numeric(Orange$stop_lat)
+Orange$stop_lon<-as.numeric(Orange$stop_lon)
+Orange<-Orange %>% mutate(line="Orange")
+
+#Blue Line
+Blue<-  BlueLineRoute$stop[[1]] %>%
+  select(stop_order, stop_id, stop_name, stop_lat, stop_lon)
+Blue$stop_lat<-as.numeric(Blue$stop_lat)
+Blue$stop_lon<-as.numeric(Blue$stop_lon)
+Blue<-Blue %>% mutate(line="Blue")
+
+#All stops in the T
+all_lines<-rbind(Red,RedAshmont,RedBraintree,GreenB,GreenC,GreenD,GreenE,Orange,Blue)
+all_lines$stop_lat<-as.numeric(all_lines$stop_lat)
+all_lines$stop_lon<-as.numeric(all_lines$stop_lon)
+
+all_lines <- all_lines %>% 
+  separate(stop_name, into = c("stop_name", "extra"), sep="-", fill="right") %>%
+  select(-extra)
+```
+
+Using all of the data we've pulled, we can draw maps of the subway lines Leaflet allowed for easy customization, which we used for overlaying alerts data with the map of the subway lines.  We've added markers to show how many tweets over our time period correspond to the various stations. 
+You'll need to zoom in to see this broken out for each individual station. You can also click on individual dots on each line to get the name of the station.
+
+```{r maps, echo=FALSE, warning=FALSE}
+#Using Leaflet for interactive map
+redline<-all_lines %>% filter(line=="Red")
+redAshmontline<-all_lines %>% filter(line=="RedAshmont")
+redBraintreeline<-all_lines %>% filter(line=="RedBraintree")
+greenBline<-all_lines %>% filter(line=="GreenB")
+greenCline<-all_lines %>% filter(line=="GreenC")
+greenDline<-all_lines %>% filter(line=="GreenD")
+greenEline<-all_lines %>% filter(line=="GreenE")
+orangeline<-all_lines %>% filter(line=="Orange")
+blueline<-all_lines %>% filter(line=="Blue")
+
+boston <- leaflet() %>% 
+  setView(lng = -71.0589, lat = 42.3601, zoom = 12) %>% 
+  addProviderTiles("CartoDB.Positron") %>%
+  addPolylines(data=redAshmontline,~stop_lon,~stop_lat,color="red") %>%
+  addPolylines(data=redBraintreeline,~stop_lon,~stop_lat,color="red") %>%
+  addPolylines(data=greenBline,~stop_lon,~stop_lat,color="springgreen") %>%
+  addPolylines(data=greenCline,~stop_lon,~stop_lat,color="palegreen") %>%
+  addPolylines(data=greenDline,~stop_lon,~stop_lat,color="limegreen") %>%
+  addPolylines(data=greenEline,~stop_lon,~stop_lat,color="green") %>%
+  addPolylines(data=orangeline,~stop_lon,~stop_lat,color="orange") %>%
+  addPolylines(data=blueline,~stop_lon,~stop_lat,color="blue") %>%
+  addCircleMarkers(data=redline, ~stop_lon,~stop_lat,color="red",radius=1,popup=~stop_name) %>%
+  addCircleMarkers(data=redAshmontline,~stop_lon,~stop_lat,color="red",radius=1,popup=~stop_name) %>%
+  addCircleMarkers(data=redBraintreeline,~stop_lon,~stop_lat,color="red",radius=1,popup=~stop_name) %>%
+  addCircleMarkers(data=greenBline,~stop_lon,~stop_lat,color="springgreen",radius=1,popup=~stop_name) %>%
+  addCircleMarkers(data=greenCline,~stop_lon,~stop_lat,color="palegreen",radius=1,popup=~stop_name) %>%
+  addCircleMarkers(data=greenDline,~stop_lon,~stop_lat,color="limegreen",radius=1,popup=~stop_name) %>%
+  addCircleMarkers(data=greenEline,~stop_lon,~stop_lat,color="green",radius=1,popup=~stop_name) %>%
+  addCircleMarkers(data=orangeline,~stop_lon,~stop_lat,color="orange",radius=1,popup=~stop_name) %>%
+  addCircleMarkers(data=blueline,~stop_lon,~stop_lat,color="blue",radius=1,popup=~stop_name)
+boston
+
+```
+
+# Twitter Alerts Overlap
+
+```{r, echo=FALSE, warning=FALSE}
+# Twitter analysis for green line
+# Getting actual stop names for Greenline stops
+greenB_stop_names_codes <- GreenB %>% 
+  select(stop_id, stop_name) %>% 
+  unite(stop_code_name, stop_id, stop_name)
+
+greenC_stop_names_codes <- GreenC %>% 
+  select(stop_id, stop_name) %>% 
+  unite(stop_code_name, stop_id, stop_name)
+
+greenD_stop_names_codes <- GreenD %>% 
+  select(stop_id, stop_name) %>% 
+  unite(stop_code_name, stop_id, stop_name)
+
+greenE_stop_names_codes <- GreenE %>% 
+  select(stop_id, stop_name) %>% 
+  unite(stop_code_name, stop_id, stop_name)
+
+### creating column for recognizing train station where delay is been tweeted ~ green line
+green_line_alert <- green_line_alert %>% 
+  mutate(text_clone = text) %>% 
+  separate(text_clone, into = c("before_at", "after_at"), sep=" at ") %>% 
+  mutate(after_at = str_trim(gsub("#mbta|Station|Ave|Street|[.]", "", after_at, ignore.case = TRUE))) %>% 
+  rowwise() %>% 
+  mutate(after_at_name_code = 
+           ifelse(!is.na(after_at) & !is.na(greenLine) & greenLine == "B",
+                  toString(agrep(after_at, greenB_stop_names_codes$stop_code_name, value = TRUE, ignore.case = TRUE)), 
+                  ifelse(!is.na(after_at) & !is.na(greenLine) & greenLine == 'C',
+                         toString(agrep(after_at, greenC_stop_names_codes$stop_code_name, value = TRUE, ignore.case = TRUE)),
+                         ifelse(!is.na(after_at) & !is.na(greenLine) & greenLine == 'D',
+                                toString(agrep(after_at, greenD_stop_names_codes$stop_code_name, value = TRUE, ignore.case = TRUE)),
+                                ifelse(!is.na(after_at) & !is.na(greenLine) & greenLine == 'E',
+                                       toString(agrep(after_at, greenD_stop_names_codes$stop_code_name, value = TRUE, ignore.case = TRUE)),
+                                       ''
+                                )
+                         )
+                  )
+           )
+  ) %>% 
+  ungroup() %>% 
+  select(-after_at, -before_at) %>% 
+  rename(alerts_at_station_code = after_at_name_code)
+
+## Twitter analysis ~ for blue line
+## Getting actual stop names for Blue line stops
+
+blue_line_stop_names_codes <- Blue %>% 
+  select(stop_id, stop_name) %>% 
+  unite(stop_code_name, stop_id, stop_name)
+
+### creating column for recognizing train station where delay is been tweeted ~ blue line
+
+blue_line_alert <- blue_line_alert %>% 
+  mutate(text_clone = text) %>% 
+  separate(text_clone, into = c("before_at", "after_at"), sep=" at ") %>% 
+  mutate(after_at = str_trim(gsub("#mbta|Station|Ave|Street|[.]", "", after_at, ignore.case = TRUE))) %>% 
+  rowwise() %>% 
+  mutate(after_at_name_code = 
+           ifelse(!is.na(after_at),
+                  toString(agrep(after_at, blue_line_stop_names_codes$stop_code_name, value = TRUE, ignore.case = TRUE)), 
+                  ''
+           )
+  ) %>% 
+  ungroup() %>% 
+  select(-after_at, -before_at) %>% 
+  rename(alerts_at_station_code = after_at_name_code) 
+
+## Twitter analysis ~ for orange line
+## Getting actaul stop names for Orange line stops
+
+orange_line_stop_names_codes <- Orange %>% 
+  select(stop_id, stop_name) %>% 
+  unite(stop_code_name, stop_id, stop_name)
+
+### creating column for recognizing train station where delay is been tweeted ~ orange line
+
+orange_line_alert <- orange_line_alert %>% 
+  mutate(text_clone = text) %>% 
+  separate(text_clone, into = c("before_at", "after_at"), sep=" at ") %>% 
+  mutate(after_at = str_trim(gsub("#mbta|Station|Ave|Street|[.]", "", after_at, ignore.case = TRUE))) %>% 
+  rowwise() %>% 
+  mutate(after_at_name_code = 
+           ifelse(!is.na(after_at),
+                  toString(agrep(after_at, orange_line_stop_names_codes$stop_code_name, value = TRUE, ignore.case = TRUE)), 
+                  ''
+           )
+  ) %>% 
+  ungroup() %>% 
+  select(-after_at, -before_at) %>% 
+  rename(alerts_at_station_code = after_at_name_code)
+```
+```{r plot_alerts, echo=FALSE, warning=FALSE}
+#Tweets
+travel_times_alerts$arr_dt<-ymd_hms(travel_times_alerts$arr_dt)
+travel_times_alerts$dep_dt<-ymd_hms(travel_times_alerts$dep_dt)
+red_line_alert$arr_dt<-ymd_hms(red_line_alert$arr_dt)
+travel_times_alerts2 <- travel_times_alerts %>% full_join(red_line_alert) %>% 
+  filter(is.na(severity)==FALSE)
+
+#Station of concern from alert
+regexp <- "[[:digit:]]+"
+travel_times_alerts2$stop_code<-as.integer(str_extract(travel_times_alerts2$alerts_at_station_code, regexp))
+
+#Get latitude and longitude values
+travel_times_alerts3 <- travel_times_alerts2 %>%
+  left_join(allstops,by="stop_code") %>%
+  select(dep_dt,arr_dt,severity,stop_code,stop_name.y,stop_lat,stop_lon) %>%
+  filter(is.na(stop_lat)==FALSE) %>% filter(is.na(stop_lon)==FALSE)
+
+
+#Extract station codes
+regexp <- "[[:digit:]]+"
+
+redalerts<-red_line_alert
+greenalerts<-green_line_alert
+bluealerts<-blue_line_alert
+orangealerts<-orange_line_alert
+
+redalerts$stop_code<-as.integer(str_extract(redalerts$alerts_at_station_code, regexp))
+greenalerts$stop_code<-as.integer(str_extract(greenalerts$alerts_at_station_code, regexp))
+orangealerts$stop_code<-as.integer(str_extract(orangealerts$alerts_at_station_code, regexp))
+bluealerts$stop_code<-as.integer(str_extract(bluealerts$alerts_at_station_code, regexp))
+
+#Green line alerts
+greenalerts<-greenalerts %>% 
+  select(arr_dt,severity,greenLine,stop_code) %>% rename(line=greenLine)
+greenalerts$line[greenalerts$line=="B"]<-"GreenB"
+greenalerts$line[greenalerts$line=="C"]<-"GreenC"
+greenalerts$line[greenalerts$line=="D"]<-"GreenD"
+greenalerts$line[greenalerts$line=="E"]<-"GreenE"
+greenalerts<-greenalerts %>% filter(-is.na(stop_code)==FALSE)
+greenalerts$arr_dt<-ymd_hms(greenalerts$arr_dt)
+
+#All other lines' alerts
+redalerts<-redalerts %>% mutate(line="Red") %>%
+  select(arr_dt,severity,line,stop_code) %>% filter(-is.na(stop_code)==FALSE)
+redalerts$arr_dt<-ymd_hms(redalerts$arr_dt)
+bluealerts<-bluealerts %>% mutate(line="Blue") %>%
+  select(arr_dt,severity,line,stop_code) %>% filter(-is.na(stop_code)==FALSE)
+bluealerts$arr_dt<-ymd_hms(bluealerts$arr_dt)
+orangealerts<-orangealerts %>% mutate(line="Orange") %>%
+  select(arr_dt,severity,line,stop_code) %>% filter(-is.na(stop_code)==FALSE)
+orangealerts$arr_dt<-ymd_hms(orangealerts$arr_dt)
+
+#Merge all alerts
+allalerts<-rbind(redalerts,greenalerts,bluealerts,orangealerts)
+
+#Get latitude and longitude values
+allstops <- allstops %>% select(-to_stop)
+allalerts <- allalerts %>% left_join(allstops,by="stop_code") %>% filter(severity!=0)
+
+#All lines severity of alerts
+boston %>% 
+  addMarkers(data=allalerts,~stop_lon,~stop_lat,clusterOptions=markerClusterOptions())
+```
+
+Most alerts are clustered around Park Street, Downtown Crossing, and Backbay. Note from our heatmap above that lateness also seemed worst around Park Street and Downtown Crossing (Back Bay isn't on the Red Line, so it wasn't in that plot.)
+
+Below we plot the delay in seconds, time difference between benchmark time between stops and actual time per individual trip, averaged over all hours:mins from January to April. Rush hour is highlighted in red and green for 7-9am and 5-7pm respectively. In the website, users can select individual stations and explore the delays between each.
+
+``` {r benchmark_vs_actual, echo=FALSE, warning=FALSE}
+#Average travel times between stops
+traveltime<-dataset %>% group_by(start_stop,end_stop) %>%
+  summarize(avg_traveltime=mean(travel_time_sec))
+
+#Difference between benchmark travel time and individual, unique trips between stations
+#Could also do difference between average travel times and unique trip times
+betweenstops<-dataset %>% left_join(traveltime,by=c("start_stop","end_stop")) %>%
+  mutate(residualtime=benchmark_travel_time_sec-travel_time_sec)
+
+#Delay vs. hour of day plot, input using start and stop_codes
+#Rush hour highlighted at 7-9AM and 5-7PM
+traveltimes_day<-function(fromstation,tostation){
+  travel<-betweenstops %>% 
+    filter(start_stop==fromstation & end_stop==tostation) %>%
+    group_by(time) %>% summarize(mean(residualtime))
+  
+  dygraph(travel,main=c(as.character(fromstation), as.character(tostation))) %>% 
+    dyAxis("y", label = "Delay in Seconds") %>%
+    dyAxis("x", label="Hour of Day") %>% dyRangeSelector() %>%
+    dyEvent("12.00", label="Noon", labelLoc = "bottom") %>%
+    dyShading(from = "7.00", to = "9.00",color="#FFE6E6") %>%
+    dyShading(from = "17.00", to = "19.00",color="#CCEBD6") }
+
+#Examples; input using stations
+traveltimes_day("Park Street - to Alewife","Charles/MGH - Outbound")
+traveltimes_day("Charles/MGH - Outbound","Kendall/MIT - Outbound")
+```
+
+### Final Analysis
+We feel that, after spending so long sourcing these rich data sets, we've only just scratched the surface when it comes to what we could do with them. We've demonstrated the sorts of measurements one can do, and how even relatively simple visualizations can give insights into the workings of the MBTA's subway lines.
+
+At least two avenues present themselves for further study. First, we expect that a thorough review of the permutations of variance from benchmarks (by station, time of day, etc) could derive insights to help the T operators make both short-term and long-term decisions that would positively impact service quality. The MBTA is certainly already reviewing the efficiency and performance of their system with an eye toward improvements as well as managing the system in real-time to deliver the best service, but access to this level of detail about the functioning of each route and station allows a level of modeling that could enhance both of those endeavors.
+
+Which segues into the second area for further research, which would be apply fancy time-series predictive modeling in real-time to help both T operators and riders. One example, which we had hoped to be able to pursue in this project (but were unable to do so), would be attempting to determine minutes or hours in advance when the system is likely to have problem and take corrective action, or at least alert passengers in time for them to seek alternate routes. One could imagine a situation where, for example, heavy traffic at one end of the Green Line reliably presages a slowdown on the Red Line some time in the future as the delays percolate through the whole system. We of course have no idea if that's actually true, but it's the sort of behavior this level of detail would allow one to attempt to model.
+
+In conclusion the team greatly enjoyed working with this data, and believes that while we were able to make a good start there is lots of interesting research left to be done.
