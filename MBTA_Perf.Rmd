@@ -1372,6 +1372,8 @@ boston %>%
 
 Most alerts are clustered around Park Street and Downtown Crossing, and also around Backbay. 
 
+Below we plot the delay in seconds, time difference between benchmark time between stops and actual time per individual trip, averaged over all hours:mins from January to April. Rush hour is highlighted in red and green for 7-9am and 5-7pm respectively. In the website, users can select individual stations and explore the delays between each.
+
 ``` {r benchmark_vs_actual}
 #Average travel times between stops
 traveltime<-dataset %>% group_by(start_stop,end_stop) %>%

@@ -14,13 +14,21 @@ May 4
 	[/] Words - Related Work
 	[/] Words - Initial Questions
 	[/] Words - Data
+<<<<<<< HEAD
+=======
+	[deleted] Words - Revised Questions 
+>>>>>>> 48e34b62fdf7392349730485d140f19b17fb7939
 	[/] Code - Finalize chunks
 		[/] MBTA Performance - travel times
 		[/] MBTA Performance - headways
 		[/] MBTA Schedule
 		[/] Twitter Alerts
 		[/] Visualizations
+<<<<<<< HEAD
 	[ ] Words - Description of each major chunk:
+=======
+	[/] Words - Description of each major chunk:
+>>>>>>> 48e34b62fdf7392349730485d140f19b17fb7939
 		[/] MBTA Performance - travel times
 		[/] MBTA Performance - headways
 		[/] MBTA Schedule
@@ -33,7 +41,11 @@ May 4
 
 [S] Self & peer assesments - Shawn
 [j] Self & peer assesments - Jeff
+<<<<<<< HEAD
 [D] Self & peer assesments - Danielle
+=======
+[d] Self & peer assesments - Danielle
+>>>>>>> 48e34b62fdf7392349730485d140f19b17fb7939
 [V] Self & peer assesments - Varuni
 
 May 6
