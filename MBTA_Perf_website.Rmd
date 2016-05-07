@@ -10,11 +10,19 @@ output: html_document
 #### https://github.com/TaleOfTwoTransportationSystems/DataProject
 
 ### The Project
+```{r echo=FALSE}
+knitr::asis_output(htmltools::htmlPreserve('
+<div><div>HOLDING SPACE FOR THE VIDEO</div></div>
+<iframe width="420" height="315" src="http://www.youtube.com/embed/MxEA5UFpTGw?autoplay=0"></iframe>
+'))
+```
+
+
 The MBTA is the greater Boston area’s traditional public transit system with over 1 million riders per typical weekday. It is comprised of subway trains, longer reach commuter trains, buses and ferries. Since 2009, the MBTA has made available a large amount of data regarding trips on the system, including alerts. The real time alerts are scraped and then Tweeted by CodeForBoston.
 
-While pursing another project (which also related to public transit in Boston), we ran into roadblocks with data availability but had the good fortune to find an exciting new API from MBTA Developers which was just recently made available to the public; so recently in fact that we're not sure it's been officially announced yet outside the MBTA Developer forums (the API specification they shared is still stamped with a big "DRAFT" on the cover, which was kind of cool).
+While pursing another project (which also related to public transit in Boston), we ran into roadblocks with data availability but had the good fortune to find an exciting new API from MBTA Developers which was just recently made accessible to the public; so recently in fact that we're not sure it's been officially announced yet outside the MBTA Developer forum post where they told us about it (the API specification they shared is still stamped with a big "DRAFT" on the cover, which was kind of cool).
 
-Using this API, as well as the CodeForBoston tweets, we were able to conduct some interesting data sourcing, exploration, and visualization. The Twitter-sourced MBTA alerts give us both temporal and geographic insights into where problems may be occuring, and the MBTA-sourced data on train movements allow us to see both specific incidents in the T system and broad patterns in service quality throughout it. We hope that this project will be a good demonstration of what this new MBTA source contains and the sorts of insights it may allow and theresearch it might enable, with the connection to Twitter alerts being a first example of how to enrich it even further.
+Using this API, as well as the CodeForBoston tweets, we were able to conduct some interesting data sourcing, exploration, and visualization. The Twitter-sourced MBTA alerts give us both temporal and geographic insights into where problems may be occuring, and the MBTA-sourced data on train movements allow us to see both specific incidents in the T system and broad patterns in service quality throughout it. We hope that this project will be a good demonstration of what this new MBTA source contains, the sorts of insights it may allow, and the research it might enable, with the connection to Twitter alerts being a first example of how to enrich it even further.
 
 ### Related work
 An impressive set of MBTA visualizations from a pair of WPI graduate students (at the time).  Their initial work was done before the MBTA offered historical performance (actual arrival/departure times), so they had to build a system to collect and store the MBTA's realtime data in real time before starting in on their analysis.  They were also able to get ridership information directly from the MBTA (which is still not availble from the MBTA's API).
@@ -25,27 +33,14 @@ Thesis on MBTA performance metrics:
 
 * https://dspace.mit.edu/handle/1721.1/99541
 
-### Initial Questions
-These are the questions we asked in our proposal:
-
-* How much of a delay is there between a slow-down and an alert?  
-* How much does ridership slow when there is an alert? Are alerts associated with all (most? some?) detected slowdown events?
-* Is there a marked change in MBTA ridership when Hubway stops for the winter or resumes in the spring?
-* Does activity at Hubway stations increase when a nearby subway train arrives? 
-* How do MBTA slow-downs or alerts affect Hubway ridership?  
-
 ### Data
-These are the sources we were looking at when putting together our proposal. The MBTA's [GTFS] (https://developers.google.com/transit/gtfs/) archive was a little intimidating because the data is scatter across several CSVs, but it looked like a rich dataset. The Hubway data looked easy to work with, but it was only available for a limited timeframe. Hubway also has a GTFS-like feed, which we could use to generate a current dataset, but would only be useful for future projects as the dataset would only grow in real time -- it does not provide historical data.  We were unclear at first far back we would be able to get MBTA alert data. Alerts are not part of the GTFS archive, but are sent out on Twitter (originally by a third-party bot). Initial research indicated we would probably only be able to get the last 3200 tweets, but we did not know how far back in time that would go. It was not looking likely that we would have overlapping MBTA GTFS, MBTA alert, and Hubway data. We were not deterred, if alerts and slow-downs were well correlated, then we could use MBTA's GTFS data in place of alerts when looking at the older Hubway data.  
+The MBTA's [GTFS] (https://developers.google.com/transit/gtfs/) archive was a little intimidating because the data is scatter across several CSVs, but is still a good source of schedule information. Alerts are not part of the GTFS archive, but are sent out on Twitter (originally by a third-party bot). Fetching from this source only allows us to get the last 3200 tweets, but the alerts are infrequent enough for that to be a reasonable window; we were able to go back to 2015. The new  MBTA performance API allows for pulling down historical data, including actual arrivals, departures and headways, back to mid-2015. Unfornately ridership information (such as turnstile metrics or fare collections) is not yet available through the APIs -- previous ridership studies were done in partnership with the MBTA, where they provided the ridership data directly.
 
 **MBTA Archive (2009-)**
 
 * https://goo.gl/pgupka
 * http://www.mbta.com/gtfs_archive/archived_feeds.txt
 * https://developers.google.com/transit/gtfs/
-
-**Hubway Data (2011-2013)**
-
-* http://hubwaydatachallenge.org/
 
 **MBTA Alerts Twitter Feed (last 3200 tweets)**
 
@@ -55,19 +50,11 @@ These are the sources we were looking at when putting together our proposal. The
 * http://bigcomputing.blogspot.com/2016/02/the-twitter-r-package-by-jeff-gentry-is.html
 * May ask @CodeForBoson to download their entire feed.
 
-**NOAA (last 5 years)**
-
-* http://w2.weather.gov/climate/index.php?wfo=box
-
-We discovered a major pitfall after the approval of our proposal.  The archive data the MBTA provides is only schedule data -- the archives do not include any actual arrival, departure, travel time, or headway data.  Because of the volume of the data and the way it is arranged amongst the various CSVs, we did not recognize this at first.
-
-We reached out to the MBTA and our timing was good -- they had just recently announced a preview of a new performance API for pulling down historical data, including actual arrivals, departures and headways. However, the data here only goes back to mid-2015. By this time, we also had our Twitter API keys and were able to pull down the alert data, which also only went back to 2015.  With no real MBTA data prior to 2015 and no recent Hubway data, we would not be able to do any comparisons between the two transit systems.  We were excited to work with MBTA's new API.  The MBTA does not offer ridership information through its APIs -- previous ridership studies were done in partnership with the MBTA where they provided the ridership data directly.
-
-**MBTA Performance Data (July 2015-)**
+**MBTA Performance Data (July 2015+)**
 
 * https://goo.gl/M6G4MZ
 
-### Code
+### The Results
 
 ```{r Load_Libraries, warning=FALSE, message=FALSE, echo=FALSE}
 library(dplyr)
@@ -86,6 +73,8 @@ library(rworldmap)
 library(dygraphs)
 library(grid)
 library(gridExtra)
+library(knitr)
+library(shiny)
 ```
 ```{r Hardcoded_Stuff, warning=FALSE, echo=FALSE}
 # API information for the real-time feed
@@ -162,9 +151,6 @@ distinct_stop_pairs <- rbind(south_main, south_a, south_b, north_main, north_a, 
 # Ashmont/Braintree/Main lists because we may want them later.
 
 ```
-
-We used the MBTA's new API to fetch data for both travel times and headways. Travel Times consist of one record (row) for each time a train went from one stop to another. Headways track the time between departures at a given station. When trains are running late, headways exceed their benchmark targets. The root causes of slow service can probably be better picked apart from travel times and dwell times, but the eventual impact to riders is most cleanly seen in headways. In structure and access, this data is very similar to the travel times data, with each record representing one train leaving a station.
-
 ```{r load_existing_data, warning=FALSE, echo=FALSE}
 # The following can be skipped if "train_travel_times.csv.gz" is present in the working directory
 travel_times <- read.csv(gzfile("train_travel_times.csv.gz"), as.is = TRUE)
@@ -213,39 +199,6 @@ headway_times$dt <- as.POSIXct(trunc(headway_times$current_dep_dt - seconds(1440
 travel_times$is_weekend <- as.POSIXlt(travel_times$dt)$wday %in% c(0,6)
 headway_times$is_weekend <- as.POSIXlt(headway_times$dt)$wday %in% c(0,6)
 ```
-Here's what a raw block of travel times data from the MBTA's new API looks like:
-```{r, Fetch_Traveltimes, warning=FALSE, eval=FALSE}
-# I'm getting 400 errors from these; not sure why. The URL looks fine. If we can fix it, turn eval back on and echo off. Same with the next one.
-i <- 0
-fromStop <- as.character(70069)
-toStop <- as.character(70071)
-
-fromTime <- paste("&from_datetime=", as.numeric(startTime + days(i * 7)), sep="")
-toTime <- paste("&to_datetime=", as.numeric(startTime + days(i * 7) + days(7) - minutes(1)), sep="")
-
-TRequest <- paste(TTravelURL, TKeyJeff, TFormat, fromStop, toStop, fromTime, toTime, sep="")
-
-foo_travel <- fromJSON(TRequest)[[1]]
-foo_travel
-```
-And here are some headways:
-```{r Fetch_Headways, warning=FALSE, eval=FALSE}
-fromTime <- paste("&from_datetime=", as.numeric(startTime + days(i * 7)), sep="")
-toTime <- paste("&to_datetime=", as.numeric(startTime + days(i * 7) + days(7) - minutes(1)), sep="")
-TRequest <- paste(THeadwaysURL, TKeyJeff, TFormat, fromStop, toStop, fromTime, toTime, sep="")
-
-foo_headways <- fromJSON(TRequest)[[1]]
-foo_headways
-```
-
-With some cleaning, we turn this raw data (which comes to us in the semi-stuctured JSON format) into something we can more easily work with; simple tables.
-
-```{r data_frame_heads, warning=FALSE, echo=FALSE}
-# lets try to turn these into a prettier format
-head(headway_times)
-head(travel_times)
-```
-
 ```{r Pull_Archive_Data, cache=TRUE, warning=FALSE, echo=FALSE}
 # When we first started on this project, we believed that the MBTA archives contained
 # the travel-time and headway information that we wanted. It turns out we were wrong,
@@ -255,7 +208,7 @@ head(travel_times)
 # into a new chunk, then turn off evaluation of the rest.
 for(i in 1:length(TArchiveURLs)) {
     if (file.exists(basename(TArchiveURLs[i]))) {
-        print(paste("Using existing", basename(TArchiveURLs[i])))
+#        print(paste("Using existing", basename(TArchiveURLs[i])))
     } else {
         download.file(TArchiveURLs[i], destfile=basename(TArchiveURLs[i]))
     }
@@ -393,7 +346,42 @@ travel_times <- travel_times %>%
   left_join(.,stop_sequence, by=c("from_stop" = "stop_id"))
 ```
 
-A simple scatter plot of train departures from Porter Square heading inbound over time, to demonstrate the level of detail in this data.
+We used the MBTA's new API to fetch data for both travel times and headways. Travel Times consist of one record (row) for each time a train went from one stop to another. Headways track the time between departures at a given station. When trains are running late, headways exceed their benchmark targets. The root causes of slow service can probably be better picked apart from travel times and dwell times, but the eventual impact to riders is most cleanly seen in headways. In structure and access, this data is very similar to the travel times data, with each record representing one train leaving a station.
+
+Here's what a raw block of travel times data from the MBTA's new API looks like:
+```{r, Fetch_Traveltimes, warning=FALSE, eval=FALSE}
+# I'm getting 400 errors from these; not sure why. The URL looks fine. If we can fix it, turn eval back on and echo off. Same with the next one.
+i <- 0
+fromStop <- as.character(70069)
+toStop <- as.character(70071)
+
+fromTime <- paste("&from_datetime=", as.numeric(startTime + days(i * 7)), sep="")
+toTime <- paste("&to_datetime=", as.numeric(startTime + days(i * 7) + days(7) - minutes(1)), sep="")
+
+TRequest <- paste(TTravelURL, TKeyJeff, TFormat, fromStop, toStop, fromTime, toTime, sep="")
+
+foo_travel <- fromJSON(TRequest)[[1]]
+foo_travel
+```
+And here are some headways:
+```{r Fetch_Headways, warning=FALSE, eval=FALSE}
+fromTime <- paste("&from_datetime=", as.numeric(startTime + days(i * 7)), sep="")
+toTime <- paste("&to_datetime=", as.numeric(startTime + days(i * 7) + days(7) - minutes(1)), sep="")
+TRequest <- paste(THeadwaysURL, TKeyJeff, TFormat, fromStop, toStop, fromTime, toTime, sep="")
+
+foo_headways <- fromJSON(TRequest)[[1]]
+foo_headways
+```
+
+With some cleaning, we turn this raw data (which comes to us in the semi-stuctured JSON format) into something we can more easily work with; simple tables. Here are some examples of what the tables end up looking like and the sorts of columns we have to work with. Most are from the source, a few, like service_dt, we have inferred to make other processing easier.
+
+```{r data_frame_heads, warning=FALSE, echo=FALSE}
+# lets try to turn these into a prettier format
+kable(head(travel_times %>% mutate(service_d = dt) %>% select(-dep_d, -dep_t, -arr_d, -arr_t, -dt)))
+kable(head(headway_times %>% mutate(service_d = dt) %>% select(-prev_route_id, -current_dep_d, -current_dep_t, -previous_dep_d, -previous_dep_t, -dt)))
+```
+
+As you can see, the data is not terribly complicated, but there is lots of it; the Red Line alone has almost 450,000 travel-time records in the time window we looked at. Here is a simple scatter plot of train departures within our window, just from Porter Square heading inbound.
 
 ```{r vis_train_departures, warning=FALSE, echo=FALSE}
 plot(as.numeric(travel_times[travel_times$from_stop == "70065",]$dep_dt - travel_times[travel_times$from_stop == "70065",]$dt,unit = 'mins'),
@@ -402,16 +390,14 @@ plot(as.numeric(travel_times[travel_times$from_stop == "70065",]$dep_dt - travel
      xlab="Minutes since midnight", ylab = "Date of Trip", pch=".")
 ```
 
-Here's one using headways, color-coding lateness (more on this later!); blue is "cool", with low lateness, pink is "warm", with high lateness values:
+Here's one using headways, so that we can color-code by how far from it's benchmark time the train was when it departed the station. Positive values indicate a train was running late, and are encoded tending toward pink. Negative values indicate the train was actually running a bit ahead, and are coded in blue.
 
-```{r vis_headway_lateness, warning=FALSE, echo=FALSE}
-plot(as.numeric(headway_times[headway_times$from_stop == "70065",]$current_dep_dt - headway_times[headway_times$from_stop == "70065",]$dt,unit = 'mins'),
-     headway_times[headway_times$from_stop == "70065",]$dt,
-     main="Departures from Porter Square heading inbound\n color-coded by headway lateness",
-     xlab="Minutes since midnight", ylab = "Date of Trip", pch=".", col = cm.colors(headway_times[headway_times$from_stop == "70065",]$lateness))
+```{r vis_headway_timedelta, warning=FALSE, echo=FALSE}
+plot(as.numeric(travel_times[travel_times$from_stop == "70065",]$current_dep_dt - travel_times[travel_times$from_stop == "70065",]$dt,unit = 'mins'),
+     travel_times[travel_times$from_stop == "70065",]$dt,
+     main="Departures from Porter Square heading inbound\n color-coded by travel lateness",
+     xlab="Minutes since midnight", ylab = "Date of Trip", pch=".", col = cm.colors(travel_times[travel_times$from_stop == "70065",]$time_delta))
 ```
-
-It's interesting to compare this to a version using the raw difference from the benchmark, positive or negate. 
 
 ```{r vis_headway_timedelta, warning=FALSE, echo=FALSE}
 plot(as.numeric(headway_times[headway_times$from_stop == "70065",]$current_dep_dt - headway_times[headway_times$from_stop == "70065",]$dt,unit = 'mins'),
@@ -419,6 +405,15 @@ plot(as.numeric(headway_times[headway_times$from_stop == "70065",]$current_dep_d
      main="Departures from Porter Square heading inbound\n color-coded by headway lateness",
      xlab="Minutes since midnight", ylab = "Date of Trip", pch=".", col = cm.colors(headway_times[headway_times$from_stop == "70065",]$time_delta))
 ```
+
+It's interesting to compare this to a version . 
+
+```{r vis_headway_lateness, warning=FALSE, echo=FALSE}
+plot(as.numeric(headway_times[headway_times$from_stop == "70065",]$current_dep_dt - headway_times[headway_times$from_stop == "70065",]$dt,unit = 'mins'),
+     headway_times[headway_times$from_stop == "70065",]$dt,
+     xlab="Minutes since midnight", ylab = "Date of Trip", pch=".", col = cm.colors(headway_times[headway_times$from_stop == "70065",]$lateness))
+```
+
 
 Below we plot the delay in seconds, time difference between benchmark time between stops and actual time per individual trip, averaged over all hours:mins from January to April. Rush hour is highlighted in red and green for 7-9am and 5-7pm respectively. In the website, users can select individual stations and explore the delays between each.
 ```{r Pull_Alerts, echo=FALSE, warning=FALSE}
