@@ -353,7 +353,9 @@ Here's what a raw block of travel times data from the MBTA's new API looks like:
 # I'm getting 400 errors from these; not sure why. The URL looks fine. If we can fix it, turn eval back on and echo off. Same with the next one.
 i <- 0
 fromStop <- as.character(70069)
+fromStop <- paste("&from_stop=", fromStop, sep="")
 toStop <- as.character(70071)
+toStop <- paste("&to_stop=", toStop, sep="")
 
 fromTime <- paste("&from_datetime=", as.numeric(startTime + days(i * 7)), sep="")
 toTime <- paste("&to_datetime=", as.numeric(startTime + days(i * 7) + days(7) - minutes(1)), sep="")
@@ -365,6 +367,11 @@ foo_travel
 ```
 And here are some headways:
 ```{r Fetch_Headways, warning=FALSE, eval=FALSE}
+fromStop <- as.character(70069)
+fromStop <- paste("&stop=", fromStop, sep="")
+toStop <- as.character(70071)
+toStop <- paste("&to_stop=", toStop, sep="")
+
 fromTime <- paste("&from_datetime=", as.numeric(startTime + days(i * 7)), sep="")
 toTime <- paste("&to_datetime=", as.numeric(startTime + days(i * 7) + days(7) - minutes(1)), sep="")
 TRequest <- paste(THeadwaysURL, TKeyJeff, TFormat, fromStop, toStop, fromTime, toTime, sep="")
@@ -399,7 +406,7 @@ plot(as.numeric(travel_times[travel_times$from_stop == "70065",]$current_dep_dt 
      xlab="Minutes since midnight", ylab = "Date of Trip", pch=".", col = cm.colors(travel_times[travel_times$from_stop == "70065",]$time_delta))
 ```
 
-```{r vis_headway_timedelta, warning=FALSE, echo=FALSE}
+```{r vis_headway_timedelta2, warning=FALSE, echo=FALSE}
 plot(as.numeric(headway_times[headway_times$from_stop == "70065",]$current_dep_dt - headway_times[headway_times$from_stop == "70065",]$dt,unit = 'mins'),
      headway_times[headway_times$from_stop == "70065",]$dt,
      main="Departures from Porter Square heading inbound\n color-coded by headway lateness",
