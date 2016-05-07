@@ -397,40 +397,25 @@ plot(as.numeric(travel_times[travel_times$from_stop == "70065",]$dep_dt - travel
      xlab="Minutes since midnight", ylab = "Date of Trip", pch=".")
 ```
 
-Here's one using headways, so that we can color-code by how far from it's benchmark time the train was when it departed the station. Positive values indicate a train was running late, and are encoded tending toward pink. Negative values indicate the train was actually running a bit ahead, and are coded in blue.
-
-```{r vis_headway_timedelta, warning=FALSE, echo=FALSE}
-plot(as.numeric(travel_times[travel_times$from_stop == "70065",]$current_dep_dt - travel_times[travel_times$from_stop == "70065",]$dt,unit = 'mins'),
-     travel_times[travel_times$from_stop == "70065",]$dt,
-     main="Departures from Porter Square heading inbound\n color-coded by travel lateness",
-     xlab="Minutes since midnight", ylab = "Date of Trip", pch=".", col = cm.colors(travel_times[travel_times$from_stop == "70065",]$time_delta))
-```
+Here's one using headways, so that we can color-code by how the trains were performing compared to its benchmark time when they departed the station. Positive values indicate a train was running late, and are encoded tending toward pink. Negative values indicate the train was actually running a bit ahead, and are coded in blue.
 
 ```{r vis_headway_timedelta2, warning=FALSE, echo=FALSE}
 plot(as.numeric(headway_times[headway_times$from_stop == "70065",]$current_dep_dt - headway_times[headway_times$from_stop == "70065",]$dt,unit = 'mins'),
      headway_times[headway_times$from_stop == "70065",]$dt,
-     main="Departures from Porter Square heading inbound\n color-coded by headway lateness",
+     main="Departures from Porter Square heading inbound,\n color-coded by headway performance",
      xlab="Minutes since midnight", ylab = "Date of Trip", pch=".", col = cm.colors(headway_times[headway_times$from_stop == "70065",]$time_delta))
 ```
-
-It's interesting to compare this to a version . 
-
-```{r vis_headway_lateness, warning=FALSE, echo=FALSE}
-plot(as.numeric(headway_times[headway_times$from_stop == "70065",]$current_dep_dt - headway_times[headway_times$from_stop == "70065",]$dt,unit = 'mins'),
-     headway_times[headway_times$from_stop == "70065",]$dt,
-     xlab="Minutes since midnight", ylab = "Date of Trip", pch=".", col = cm.colors(headway_times[headway_times$from_stop == "70065",]$lateness))
-```
-
+With this simple addition we can start to see patterns in the data. Headway lateness seems to cluster; once it happens in a given day it appears to take a while to sort itself out.
 
 Below we plot the delay in seconds, time difference between benchmark time between stops and actual time per individual trip, averaged over all hours:mins from January to April. Rush hour is highlighted in red and green for 7-9am and 5-7pm respectively. In the website, users can select individual stations and explore the delays between each.
-```{r Pull_Alerts, echo=FALSE, warning=FALSE}
+```{r Pull_Alerts, echo=FALSE, warning=FALSE, message=FALSE}
 # The following can be skipped if four "*_tweets.csv" files are present in the working directory
 if (file.exists("red_line_tweets.csv") & 
     file.exists("green_line_alert.csv") &
     file.exists("highspeed_alert.csv") &
     file.exists("orange_line_alert.csv") & 
     file.exists("blue_line_alert.csv")) {
-      print("Loading previously generated data.") # can skip Twitter queries and load this instead
+ #     print("Loading previously generated data.") # can skip Twitter queries and load this instead
       red_line_alert<- read_csv("red_line_tweets.csv")
       highspeed_alert <- read_csv("highspeed_alert.csv")
       green_line_alert <- read_csv("green_line_alert.csv")
@@ -475,14 +460,8 @@ if (file.exists("red_line_tweets.csv") &
     write_csv(orange_line_alert, "orange_line_alert.csv") 
 }
 
-# Display counts and oldest and most recent tweet dates
-red_line_alert %>% 
-    group_by(screenName) %>% 
-    summarise(num_of_tweets=n(), 
-      oldest_date=min(as.Date.POSIXct(created)), 
-      most_recent_date=max(as.Date.POSIXct(created)))
 ```
-```{r Compare_Alerts_To_Performance, echo=FALSE, warning=FALSE}
+```{r Compare_Alerts_To_Performance, echo=FALSE, warning=FALSE, message=FALSE}
 # To relate to a data we already have is to add 
 # these tweets as "arrival date" ~ "created" and then join them.
 red_line_alert <- red_line_alert %>%
@@ -659,7 +638,7 @@ orange_line_alert <- orange_line_alert %>%
                            ifelse(grepl("moderate",text, ignore.case = TRUE), 2, 
                                   ifelse(grepl("severe",text, ignore.case = TRUE), 3, 0))))
 ```
-```{r Visuals, echo=FALSE, warning=FALSE}
+```{r Visuals, echo=FALSE, warning=FALSE, message=FALSE}
 #Get data
 allstops <- Tarchive_stops %>% 
   select(stop_code, stop_name, stop_lat, stop_lon) %>%
@@ -758,6 +737,7 @@ all_lines <- all_lines %>%
   separate(stop_name, into = c("stop_name", "extra"), sep="-", fill="right") %>%
   select(-extra)
 ```
+
 ``` {r benchmark_vs_actual, echo=FALSE, warning=FALSE}
 #Average travel times between stops
 traveltime<-dataset %>% group_by(start_stop,end_stop) %>%
