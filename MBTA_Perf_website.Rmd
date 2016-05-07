@@ -10,10 +10,9 @@ output: html_document
 #### https://github.com/TaleOfTwoTransportationSystems/DataProject
 
 ### The Project
-```{r echo=FALSE, eval=FALSE}
+```{r echo=FALSE}
 knitr::asis_output(htmltools::htmlPreserve('
-<div><div>HOLDING SPACE FOR THE VIDEO</div></div>
-<iframe width="420" height="315" src="http://www.youtube.com/embed/MxEA5UFpTGw?autoplay=0"></iframe>
+<iframe width="420" height="315" src="http://www.youtube.com/embed/owNOBKalEOQ?autoplay=0"></iframe>
 '))
 ```
 
@@ -922,7 +921,7 @@ ggplot(headway_times %>% filter(lateness > 0) %>% mutate(is_weekend = ifelse(is_
         plot.title = element_text(size = 10))
 ```
 
-Interesting; it looks like the MBTA's expected benchmarks are pretty good, in that the they appear to account well for variances by weekend and direction. If they didn't, the we would expect the distributions to show some systemic bias, but they're actually pretty similar. The weekday southbound trains tend to have somewhat shorter lateness events, and for weekend northbound they tend to be longer. Note, however, that we can't say that weekend Northbound tends to be late more often, because we threw out anything that wasn't lateness already.
+Interesting; it looks like the MBTA's expected benchmarks are pretty good, in that the they appear to account well for variances by day-of-week and direction. If they didn't, the we would expect the distributions to show some systemic bias, but they're actually pretty similar. The weekday southbound trains tend to have somewhat shorter lateness events, and for weekend northbound they tend to be longer. Note, however, that we can't say that weekend Northbound tends to be late more often, because we threw out anything that wasn't lateness already.
 
 What if we wanted a sense of both where __and__ when this lateness is most accutely felt? One approach would be to bucket the lateness events, add up the total amount of "overage" in each bucket, and divide by the total time in each bucket. This gives us a metric, "percent late", which we can think of as "for the entire time we observed the station, for what % of that time was a train past it's benchmark arrival time? Keep in mind that this may not be a perfect ratio; if trains get really backed up it's possible that two trains could be sitting at a station simultaneously, allowing us to observe more lateness that the actual clock-time where one ore more trains were late in a given bucket. However, it still makes a reasonable indicator of how behind schedule the system is.
 
@@ -982,7 +981,9 @@ weekday_southbound <- total_lateness %>%
 
 ggplot(weekday_southbound, aes(as.ordered(interval_start_hour), parent_station_name)) +
   geom_tile(aes(fill = percent_late), color = "white") +
-  scale_fill_gradient(low = "white",high = "red")
+  scale_fill_gradient(low = "white",high = "red") +
+  xlab("Hour of Day") +
+  ylab("Station")
 ```
 
 Alerts of T delays come in indirectly from Twitter handles for each of the specific lines. The MBTA puts out an RSS feed that enterprising developers at codeforboston group started scraping and turned into tweets. We can user the twitteR R package to retrieve these alerts from codeforboston, as though we had been archiving the alerts ourselves.
@@ -998,15 +999,11 @@ C) Location. Which specific T station is the alert related to.
 
 Here's a sample of what the data looks like once processed:
 ```{r, echo=FALSE, warning=FALSE}
-head(red_line_alert)
-```
-Here are some summary statistics on the alerts:
-```{r}
-### Add in a summary table and at least one visualization; maybe a stacked bar chart with one bar per station and one series per severity.
+kable(head(red_line_alert))
 ```
 
-Using all of the data we've pulled, we can draw maps of the subway lines Leaflet allowed for easy customization, which we used for overlaying alerts data with the map of the subway lines.  We've added markers to show how many tweets over our time period correspond to the various stations. 
-You'll need to zoom in to see this broken out for each individual station. You can also click on individual dots on each line to get the name of the station.
+Since we can identify where the tweets came from, we can we can draw maps of the subway lines, and then overplot the tweets. We've added markers to show how many tweets over our time period correspond to the various stations. 
+You'll need to zoom in to see this broken out for each individual station; you can also click on individual dots on each line to get the name of the station.
 
 ```{r maps, echo=FALSE, warning=FALSE}
 #Using Leaflet for interactive map
@@ -1203,14 +1200,14 @@ boston %>%
   addMarkers(data=allalerts,~stop_lon,~stop_lat,clusterOptions=markerClusterOptions())
 ```
 
-Most alerts are clustered around Park Street, Downtown Crossing, and Backbay. Note from our heatmap above that lateness also seemed worst around Park Street and Downtown Crossing (Back Bay isn't on the Red Line, so it wasn't in that plot.)
+Most alerts are clustered around Park Street, Downtown Crossing, and Backbay. Remember from our plots above, general slownes also seems pretty bad around Park Street and Downtown Crossing (Back Bay isn't on the Red Line)
 
 
-### Final Analysis
-We feel that, after spending so long sourcing these rich data sets, we've only just scratched the surface when it comes to what we could do with them. We've demonstrated the sorts of measurements one can do, and how even relatively simple visualizations can give insights into the workings of the MBTA's subway lines.
+### Further Study
+We feel that we've only just scratched the surface when it comes to what we could do with this rich data. We've demonstrated the sorts of measurements one can do, and how even relatively simple visualizations can give insights into the workings of the MBTA's subway lines.
 
-At least two avenues present themselves for further study. First, we expect that a thorough review of the permutations of variance from benchmarks (by station, time of day, etc) could derive insights to help the T operators make both short-term and long-term decisions that would positively impact service quality. The MBTA is certainly already reviewing the efficiency and performance of their system with an eye toward improvements as well as managing the system in real-time to deliver the best service, but access to this level of detail about the functioning of each route and station allows a level of modeling that could enhance both of those endeavors.
+At least two avenues present themselves for further study. First, we expect that a thorough review of the permutations of variance from benchmarks (by station, time of day, etc) could derive insights to help the T operators make both short-term and long-term decisions that would positively impact service quality. The MBTA is certainly already reviewing the efficiency and performance of their system with an eye toward improvements as well as managing the system in real-time to deliver the best service, but access to this level of detail (especially crowd-sourced!) about the functioning of each route and station allows a level of modeling that could enhance both of those endeavors.
 
-Which segues into the second area for further research, which would be apply fancy time-series predictive modeling in real-time to help both T operators and riders. One example, which we had hoped to be able to pursue in this project (but were unable to do so), would be attempting to determine minutes or hours in advance when the system is likely to have problem and take corrective action, or at least alert passengers in time for them to seek alternate routes. One could imagine a situation where, for example, heavy traffic at one end of the Green Line reliably presages a slowdown on the Red Line some time in the future as the delays percolate through the whole system. We of course have no idea if that's actually true, but it's the sort of behavior this level of detail would allow one to attempt to model.
+Which segues into the second area for further research, which would be to apply fancy time-series predictive modeling in real-time to help both T operators and riders. One example, which we had hoped to be able to pursue in this project (but were unable to do so), would be attempting to determine minutes or hours in advance when the system is likely to have a problem and to take corrective action, or at least issue alerts in time for passengers to seek alternate routes. One could imagine a situation where, for example, heavy traffic at one end of the Green Line reliably presages a slowdown on the Red Line some time in the future, as the delays percolate through the whole system. We of course have no idea if that's actually true, but it's the sort of behavior this level of detail would allow one to attempt to model.
 
 In conclusion the team greatly enjoyed working with this data, and believes that while we were able to make a good start there is lots of interesting research left to be done.
