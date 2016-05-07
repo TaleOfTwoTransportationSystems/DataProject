@@ -349,8 +349,7 @@ travel_times <- travel_times %>%
 We used the MBTA's new API to fetch data for both travel times and headways. Travel Times consist of one record (row) for each time a train went from one stop to another. Headways track the time between departures at a given station. When trains are running late, headways exceed their benchmark targets. The root causes of slow service can probably be better picked apart from travel times and dwell times, but the eventual impact to riders is most cleanly seen in headways. In structure and access, this data is very similar to the travel times data, with each record representing one train leaving a station.
 
 Here's what a raw block of travel times data from the MBTA's new API looks like:
-```{r, Fetch_Traveltimes, warning=FALSE, eval=FALSE}
-# I'm getting 400 errors from these; not sure why. The URL looks fine. If we can fix it, turn eval back on and echo off. Same with the next one.
+```{r, Fetch_Traveltimes, warning=FALSE, echo=FALSE}
 i <- 0
 fromStop <- as.character(70069)
 fromStop <- paste("&from_stop=", fromStop, sep="")
@@ -363,10 +362,11 @@ toTime <- paste("&to_datetime=", as.numeric(startTime + days(i * 7) + days(7) - 
 TRequest <- paste(TTravelURL, TKeyJeff, TFormat, fromStop, toStop, fromTime, toTime, sep="")
 
 foo_travel <- fromJSON(TRequest)[[1]]
-foo_travel
+kable(head(foo_travel))
 ```
+
 And here are some headways:
-```{r Fetch_Headways, warning=FALSE, eval=FALSE}
+```{r Fetch_Headways, warning=FALSE, echo=FALSE}
 fromStop <- as.character(70069)
 fromStop <- paste("&stop=", fromStop, sep="")
 toStop <- as.character(70071)
@@ -377,10 +377,10 @@ toTime <- paste("&to_datetime=", as.numeric(startTime + days(i * 7) + days(7) - 
 TRequest <- paste(THeadwaysURL, TKeyJeff, TFormat, fromStop, toStop, fromTime, toTime, sep="")
 
 foo_headways <- fromJSON(TRequest)[[1]]
-foo_headways
+kable(head(foo_headways))
 ```
 
-With some cleaning, we turn this raw data (which comes to us in the semi-stuctured JSON format) into something we can more easily work with; simple tables. Here are some examples of what the tables end up looking like and the sorts of columns we have to work with. Most are from the source, a few, like service_dt, we have inferred to make other processing easier.
+With some cleaning, we turn this raw data into something we can more easily work with. Here are some examples of what the tables end up looking like and the sorts of columns we have. Most are from the source, a few, like service_dt, we have inferred to make other processing easier.
 
 ```{r data_frame_heads, warning=FALSE, echo=FALSE}
 # lets try to turn these into a prettier format
@@ -405,9 +405,9 @@ plot(as.numeric(headway_times[headway_times$from_stop == "70065",]$current_dep_d
      main="Departures from Porter Square heading inbound,\n color-coded by headway performance",
      xlab="Minutes since midnight", ylab = "Date of Trip", pch=".", col = cm.colors(headway_times[headway_times$from_stop == "70065",]$time_delta))
 ```
-With this simple addition we can start to see patterns in the data. Headway lateness seems to cluster; once it happens in a given day it appears to take a while to sort itself out.
 
-Below we plot the delay in seconds, time difference between benchmark time between stops and actual time per individual trip, averaged over all hours:mins from January to April. Rush hour is highlighted in red and green for 7-9am and 5-7pm respectively. In the website, users can select individual stations and explore the delays between each.
+With this simple addition we can start to see patterns in the data. Headway lateness seems to cluster; once it happens in a given day it appears to take a while to sort itself out. Delays tend to happen at the same time of day for several days in a row; this may indicate construction or some other persistent (but not permanent) interruption.
+
 ```{r Pull_Alerts, echo=FALSE, warning=FALSE, message=FALSE}
 # The following can be skipped if four "*_tweets.csv" files are present in the working directory
 if (file.exists("red_line_tweets.csv") & 
@@ -738,6 +738,18 @@ all_lines <- all_lines %>%
   select(-extra)
 ```
 
+What if we try piling on ALL of the stops for one direction? Here we look at the times between trains by time of day. We restrict the data to only northbound weekday trains, since the two directions have different patterns, as do weekends (when the train schedule is different).
+
+```{r vis_headway_weekday_southbound, warning=FALSE, echo=FALSE}
+ggplot(headway_times %>% filter(is_weekend == FALSE, direction == "1"), aes(x = as.numeric(dep_time, units="hours"), y = time_delta)) +
+  geom_point(alpha=0.05) +
+  xlab("Hours (24+ is past midnight)") +
+  ylab("Seconds from Benchmark") +
+  ggtitle("Times between trains by time of day, weekday Southbound")
+```
+
+That's a lot of points! Lets use travel times (the number of seconds between two pairs of stops) to look for some broad trends, by comparing the benchmark time (provided by the MBTA) and the actual time per individual trip, averaged over each minute from January to April. The daily rush hours is highlighted in red (7-9am) and green (5-7pm). This time we pick Park Street's northbound track (heading to Charles/MGH), a major stop for commuters. The plot is interactive, so you can look in more detail at different points or mouse-over for more information. Note the major spikes in the averages just before (and during) the rush hours, but also note that on average, travel times out of Park Street are, on average, consistently about a minute longer than expected even outside those spikes.
+
 ``` {r benchmark_vs_actual, echo=FALSE, warning=FALSE}
 #Average travel times between stops
 traveltime<-dataset %>% group_by(start_stop,end_stop) %>%
@@ -764,34 +776,28 @@ traveltimes_day<-function(fromstation,tostation){
 
 #Examples; input using stations
 traveltimes_day("Park Street - to Alewife","Charles/MGH - Outbound")
+```
+
+Compare Park Street to the next pair out on the line, Charles/MGH to Kendall. There is a noteworthy cyclical pattern in the averages, which actually is at it's lowest during those same rush hours.
+``` {r benchmark_vs_actual2, echo=FALSE, warning=FALSE}
 traveltimes_day("Charles/MGH - Outbound","Kendall/MIT - Outbound")
 ```
 
-Here we look at the times between trains by time of day. We restrict the data to only southbound weekday trains, so as to avoid mixing unrelated data in the same plot.
-
-```{r vis_headway_weekday_southbound, warning=FALSE, echo=FALSE}
-ggplot(headway_times %>% filter(is_weekend == FALSE, direction == "0"), aes(x = as.numeric(dep_time, units="hours"), y = time_delta)) +
-  geom_point(alpha=0.05) +
-  xlab("Hours (24+ is past midnight)") +
-  ylab("Seconds from Benchmark") +
-  ggtitle("Times between trains by time of day, weekday Southbound")
-```
-
-Another way to visualize these time-deltas is a boxplot.
+Park Street seems like it's generally pretty slow, while Charles/MGH appears more consistent. Lets take ALL of the stations, and see if there's evidence of this type difference in other stations.
 
 ```{r vis_time_delta_boxplot, warning=FALSE, echo=FALSE} 
-boxplot(time_delta~parent_station_name,
-     data = headway_times %>% filter(is_weekend == FALSE, direction == "0"),
-     main="Times between trains by station, weekday Southbound",
+boxplot(time_delta~stop_seq,
+     data = headway_times %>% filter(is_weekend == FALSE, direction == "1"),
+     main="Times between trains by station, weekday Nouthbound",
      xlab="Stop Sequence", ylab = "wait time (seconds)", pch=".", ylim=c(-800, 1600))
 
 boxplot(time_delta~stop_seq,
-        data = headway_times %>% filter(is_weekend == TRUE, direction == "1"),
-        main="Times between trains by station, Weekend Northbound",
+        data = headway_times %>% filter(is_weekend == TRUE, direction == "0"),
+        main="Times between trains by station, Weekend Southbound",
         xlab="Stop Sequence", ylab = "wait time (seconds)", pch=".", ylim=c(-800, 1600))
 ```
 
-The boxplots makes clear that though much of the data is very close to the benchmark, there are certainly instances where gaps are greater or less than their benchmark times. In fact, in order to clearly see the boxes we had to artificially restrict the range of the y axis. 
+The boxplots makes clear that though much of the data is very close to the benchmark, there are certainly instances where gaps are greater or less than their benchmark times. For reference, Park Street is #8 when on the Southbound plot and #16 Norhtbound.
 
 To get a better sense of the full ranges of the data, lets try a density plot. Here we're looking at time-deltas for headways by station; there is naturally significant overplotting, but this helps us spot very unusual stations.
 
@@ -866,7 +872,7 @@ We can see that the distributions tend to skew right; this isn't a surprise, bec
 We know that some amount of headway delay can be caused by longer-than-expected times to travel between stations. Let's look at what northbound, weekday trains' travel times look like; here we plot densities of travel times, also by station.
 
 ```{r trav_dens, warning=FALSE, echo=FALSE}
-ggplot((travel_times %>% filter(direction == 1, is_weekend == FALSE)), aes(x=travel_time_sec)) +
+ggplot((travel_times %>% filter(direction == 1, is_weekend == FALSE) %>% arrange(stop_seq)), aes(x=travel_time_sec)) +
   geom_density(aes(group = parent_station_name, colour= parent_station_name, fill= parent_station_name), alpha=0.2) +
   ggtitle("Travel times for Northbound trains of weekdays, by departing station") +
   xlim(0, 200) + ylim(0, .25)
@@ -982,7 +988,7 @@ ggplot(weekday_southbound, aes(as.ordered(interval_start_hour), parent_station_n
 Alerts of T delays come in indirectly from Twitter handles for each of the specific lines. The MBTA puts out an RSS feed that enterprising developers at codeforboston group started scraping and turned into tweets. We can user the twitteR R package to retrieve these alerts from codeforboston, as though we had been archiving the alerts ourselves.
 
 ```{r, echo=FALSE}
-head(red_line_alert)
+kable(head(red_line_alert))
 ```
 
 As you can see the tweets follow a regular format, so with some simple text mining we can extract additional information:
